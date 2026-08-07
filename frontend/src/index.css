@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The app is a light-only design. Without this, browsers in dark mode paint
+   the page canvas black, and any section without an explicit background
+   (marketing Features, FAQ) renders as a black band with unreadable text. */
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-white text-slate-800;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "collectors",
+  "version": "1.0.0",
+  "description": "Job collectors — one script per ATS, each reading its slug list from config/.",
+  "main": "collectors/greenhouse.js",
+  "scripts": {
+    "dev": "node collectors/greenhouse.js",
+    "start": "node collectors/greenhouse.js",
+    "greenhouse": "node collectors/greenhouse.js",
+    "ashby": "node collectors/ashby.js",
+    "lever": "node collectors/lever.js",
+    "workable": "node collectors/workable.js",
+    "smartrecruiters": "node collectors/smartrecruiters.js",
+    "linkedin": "node collectors/linkedin.js",
+    "all": "node collectors/greenhouse.js && node collectors/ashby.js && node collectors/lever.js && node collectors/workable.js && node collectors/smartrecruiters.js && node collectors/linkedin.js",
+    "check:collectors": "node tests/importCollectors.js",
+    "backfill": "node scripts/processExistingJobs.js",
+    "cleanup": "node scripts/cleanupExpiredJobs.js",
+    "verify:greenhouse": "node scripts/verifyGreenhouseBoards.js",
+    "verify:ashby": "node scripts/verifyAshbyBoards.js",
+    "test": "node tests/test.js",
+    "dedupe": "node scripts/dedupeJobs.js",
+    "indeed": "node collectors/indeed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@supabase/supabase-js": "^2.110.0",
+    "axios": "^1.18.1",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "playwright": "^1.62.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1"
+  }
+}
