@@ -43,11 +43,20 @@ const TITLE_FAMILIES = [
 const FUNCTION_LABELS = Object.fromEntries(TITLE_FAMILIES.map(([k, label]) => [k, label]));
 
 function jobFunctionOf(j) {
-  const stored = (j.role_family || "").toLowerCase();
-  if (stored && stored !== "other" && FUNCTION_LABELS[stored]) return stored;
+  // TITLE FIRST, matching the backend matcher's precedence exactly
+  // (scoreMatch.js jobFamily()) — measured there: of stored role_family
+  // values, over half contradict the job's own title. A live example: a
+  // Product Manager posting that merely mentions "partner with our DevOps
+  // team" gets role_family stored as "devops" by the collector's
+  // description-keyword heuristic. The backend correctly scores/gates that
+  // job as product-management from the title; trusting the stored value
+  // here would have shown the user a "DevOps / SRE / Platform" badge on a
+  // PM role — visibly wrong, and inconsistent with what actually matched it.
   for (const [family, , re] of TITLE_FAMILIES) {
     if (re.test(j.title || "")) return family;
   }
+  const stored = (j.role_family || "").toLowerCase();
+  if (stored && stored !== "other" && FUNCTION_LABELS[stored]) return stored;
   return "other";
 }
 

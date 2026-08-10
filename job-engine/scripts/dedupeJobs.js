@@ -16,6 +16,7 @@
 import { getSupabase, runCollector } from "../collectors/runtime.js";
 import { jobFingerprint } from "../processors/fingerprint.js";
 import { createLogger } from "../processors/logger.js";
+import withRetry from "../processors/retry.js";
 
 const log = createLogger("dedupe");
 const APPLY = process.argv.includes("--apply");
@@ -31,17 +32,30 @@ function bestOf(rows) {
   })[0];
 }
 
+// The table has grown enough (48k rows, some with ~10KB descriptions since
+// the Indeed collector started attaching full text) that a page fetch can
+// intermittently trip Postgres' statement_timeout — the same class of
+// server-side timeout tracked for upserts (task #17), now also hit on a
+// plain SELECT. Confirmed transient: an identical query succeeded seconds
+// after one failed. Retry each page rather than losing the whole scan to one
+// bad page.
 async function fetchAllActive(sb) {
   const rows = [];
   let from = 0;
   // PostgREST caps a response at 1000 rows — page explicitly.
   while (true) {
-    const { data, error } = await sb
-      .from("jobs")
-      .select("id,title,company,location,source,description,last_seen")
-      .eq("is_active", true)
-      .range(from, from + 999);
-    if (error) throw new Error(error.message);
+    const { data } = await withRetry(
+      async () => {
+        const res = await sb
+          .from("jobs")
+          .select("id,title,company,location,source,description,last_seen")
+          .eq("is_active", true)
+          .range(from, from + 999);
+        if (res.error) throw new Error(res.error.message);
+        return res;
+      },
+      { maxRetries: 3, baseDelayMs: 1000 },
+    );
     rows.push(...data);
     if (data.length < 1000) break;
     from += 1000;
@@ -87,13 +101,26 @@ export default async function dedupeExistingJobs() {
   }
 
   let retired = 0;
-  const CHUNK = 200;
+  // 200-row updates intermittently trip statement_timeout on this database
+  // (observed: 3 of ~12 batches failed even with retries, losing 600 rows of
+  // a 2,326-row pass). Smaller batches finish inside the limit; the whole
+  // pass is idempotent, so re-running mops up anything a previous run missed.
+  const CHUNK = Number(process.env.DEDUPE_CHUNK || 50);
   for (let i = 0; i < retireIds.length; i += CHUNK) {
     const batch = retireIds.slice(i, i + CHUNK);
-    const { error } = await sb
-      .from("jobs")
-      .update({ is_active: false })
-      .in("id", batch);
+    let error;
+    try {
+      ({ error } = await withRetry(
+        async () => {
+          const res = await sb.from("jobs").update({ is_active: false }).in("id", batch);
+          if (res.error) throw new Error(res.error.message);
+          return res;
+        },
+        { maxRetries: 2, baseDelayMs: 1000 },
+      ));
+    } catch (e) {
+      error = { message: e.message };
+    }
     if (error) {
       log.error(`batch of ${batch.length} failed: ${error.message}`);
       continue;
