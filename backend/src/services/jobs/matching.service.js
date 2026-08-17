@@ -262,6 +262,20 @@ export function invalidateJobPool() {
   poolCache = { jobs: null, expiresAt: 0 };
 }
 
+// A page query can itself trip Postgres' statement_timeout once the pool is
+// large (~69k rows) — reproduced live: a full cold-load run failed after 37s
+// on `canceling statement due to statement timeout` from one page's SELECT.
+// Retry that specific, known-transient failure with backoff; anything else
+// (a real query error, a bad filter) surfaces immediately, unretried.
+async function withStatementTimeoutRetry(fn, { retries = 2, baseDelayMs = 500 } = {}) {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fn();
+    const isTimeout = res.error?.code === "57014";
+    if (!isTimeout || attempt >= retries) return res;
+    await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt));
+  }
+}
+
 async function fetchAllLiveJobs() {
   if (poolCache.jobs && poolCache.expiresAt > Date.now()) return poolCache.jobs;
   const now = new Date().toISOString();
@@ -279,7 +293,12 @@ async function fetchAllLiveJobs() {
   // nothing, because ~97% of rows are stored as "other" (collector-side LLM
   // extraction is off, so the heuristic can't classify them and the real family
   // is inferred from the title at runtime).
-  const PAGE = 1000;
+  // Shrunk from 1000: at the current pool size (~69k rows) a 1000-row page
+  // pulling this whole column set was slow enough to occasionally trip
+  // statement_timeout on its own. A smaller page finishes faster per query —
+  // more round trips, but each one is far less likely to be the one that
+  // blows the limit.
+  const PAGE = 400;
   const LIVE_FILTER = `expires_at.is.null,expires_at.gt.${now},last_seen.gt.${freshCutoff}`;
   // A fresh query builder per page (builders are single-use).
   const pageQuery = () =>
@@ -289,35 +308,69 @@ async function fetchAllLiveJobs() {
       .eq("is_active", true)
       .or(LIVE_FILTER);
 
-  // How many rows are we about to page through?
-  const { count, error: countErr } = await supabase
-    .from("jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true)
-    .or(`expires_at.is.null,expires_at.gt.${now},last_seen.gt.${freshCutoff}`);
-  if (countErr) throw countErr;
-
-  // Fetch the pages CONCURRENTLY. Sequential paging cost ~0.6s per 1000 rows;
-  // at ~29k live jobs that was ~17s of pure waiting on every cold load. The
-  // page ranges are independent, so a bounded worker pool collapses it.
-  const pages = Math.ceil((count || 0) / PAGE);
-  const results = new Array(pages);
+  // Page through with .range() in concurrent waves until a page comes back
+  // short, rather than an upfront COUNT(*) to size the loop.
+  //
+  // The COUNT(*) this replaced started reliably failing once the table
+  // passed ~69k rows: an exact count over this three-column OR filter
+  // consistently returned HTTP 500 with an empty body (reproduced 3/3 live,
+  // ~10s each before failing) — not the intermittent statement_timeout seen
+  // elsewhere, a deterministic failure. Since `if (countErr) throw countErr`
+  // ran before any page was ever fetched, this alone took getMatchedJobs()
+  // from "slow" to "returns zero matches for every user." The count bought
+  // nothing this loop doesn't discover on its own by paging — dropping it
+  // removes the single most expensive query in the whole cold-load path.
+  //
+  // Fetch is CONCURRENT within each wave (sequential paging cost ~0.6s per
+  // 1000 rows; at ~29k live jobs that was ~17s of pure waiting on every cold
+  // load). A short page inside a wave safely ends the loop after that wave:
+  // page ranges are disjoint, so any later page is guaranteed empty too.
   const CONCURRENCY = 6;
-  let next = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(CONCURRENCY, pages) }, async () => {
-      while (next < pages) {
-        const p = next++;
-        const { data, error } = await pageQuery().range(p * PAGE, p * PAGE + PAGE - 1);
-        if (error) throw error;
-        results[p] = data || [];
-      }
-    }),
-  );
+  const results = [];
+  let pageIndex = 0;
+  let done = false;
+  const MAX_WAVES = 500; // sane upper bound — ~3M rows — never realistically hit
+  for (let wave = 0; !done && wave < MAX_WAVES; wave++) {
+    const responses = await Promise.all(
+      Array.from({ length: CONCURRENCY }, (_, i) => {
+        const p = pageIndex + i;
+        return withStatementTimeoutRetry(() =>
+          pageQuery().range(p * PAGE, p * PAGE + PAGE - 1),
+        );
+      }),
+    );
+    for (const { data, error } of responses) {
+      if (error) throw error;
+      results.push(data || []);
+      if ((data || []).length < PAGE) done = true;
+    }
+    pageIndex += CONCURRENCY;
+  }
 
   const out = results.flat();
   poolCache = { jobs: out, expiresAt: Date.now() + POOL_TTL_MS };
   return out;
+}
+
+/**
+ * Pre-populate poolCache so the FIRST real request after server start (or
+ * after a nodemon reload) doesn't pay the full cold-load cost. Verified
+ * live: a cold fetchAllLiveJobs() run over the current ~69k-row pool takes
+ * 40-65s; the frontend's own fetch timeout is 20s (api.js), so without this
+ * the very next user to open the matches page after a restart gets a
+ * timeout in the browser even though the backend would have succeeded.
+ * Call once from server.js at startup — fire-and-forget, never blocks boot.
+ */
+export async function warmJobPoolCache() {
+  try {
+    const t0 = Date.now();
+    const jobs = await fetchAllLiveJobs();
+    console.log(`Job pool cache warmed: ${jobs.length} jobs in ${Date.now() - t0}ms`);
+  } catch (e) {
+    // Non-fatal — the next real request will just pay the cold-load cost
+    // itself instead. Server startup must never depend on this succeeding.
+    console.error("Job pool warm-up failed (will retry on first real request):", e.message || e);
+  }
 }
 
 /** Attach descriptions to the (few) gate survivors, for IDF skill scanning. */

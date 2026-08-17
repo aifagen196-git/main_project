@@ -87,27 +87,21 @@ import {
   Cell,
 } from "recharts";
 
+// Theming (fonts, brand colors, .card/.num/.btn-brand) now lives in
+// tailwind.config.js + index.css, the single source of truth — this used to
+// duplicate all of it inline with different values (Sora instead of
+// Bricolage Grotesque, a solid .btn-brand instead of the gradient, a
+// different .bg-brand-grad), and since this block renders after Tailwind's
+// utilities in the DOM, its versions were silently winning every collision.
+// What's left here is everything Tailwind's config doesn't cover.
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@600;700&display=swap');
 .font-body{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.font-display{font-family:'Sora','Plus Jakarta Sans',sans-serif;letter-spacing:-.02em}
-.num{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
-.brand{color:#6d4aff}
-.bg-brand{background:#6d4aff}
-.bg-brand-50{background:#f3efff}
-.bg-brand-100{background:#e7e0ff}
-.border-brand{border-color:#6d4aff}
-.bg-brand-grad{background:linear-gradient(135deg,#7b5bff,#5a2fe6)}
-.btn-brand{background:#6d4aff;color:#fff}
-.btn-brand:hover{background:#5a2fe6}
 .page-bg{background:#f6f6fb}
 .hero-bg{background:radial-gradient(900px 500px at 80% 0%,rgba(124,91,255,.10),transparent 60%),radial-gradient(700px 400px at 60% 40%,rgba(244,114,182,.06),transparent 60%),#f8f8fc}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .fadeUp{animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .floaty{animation:floaty 6s ease-in-out infinite}
-.card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,border-color .25s}
-.card:hover{transform:translateY(-3px);box-shadow:0 20px 45px -22px rgba(40,20,90,.30)}
 .scroll::-webkit-scrollbar{width:8px;height:8px}
 .scroll::-webkit-scrollbar-thumb{background:#cdd2e0;border-radius:9px}
 *{scrollbar-width:thin;scrollbar-color:#cdd2e0 transparent}
