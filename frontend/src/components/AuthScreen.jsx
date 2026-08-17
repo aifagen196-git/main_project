@@ -1,6 +1,44 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { signIn, signUp } from "../services/auth";
+
+/* Exact port of the "AIFAGen v3" auth screen. Palette, type ramp and spacing
+   come from the design spec, so static properties are written inline; hover
+   and focus states live in the v3 CSS block in AIFAGen.jsx. The sign-up mode
+   reuses the same treatment, since the spec only draws the log-in state. */
+
+const C = {
+  brand: "#6D4AFF",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineMid: "#DDE3EE",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+const fieldLabel = {
+  fontFamily: C.mono,
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: ".14em",
+  textTransform: "uppercase",
+  color: C.faint,
+};
+
+const fieldInput = {
+  width: "100%",
+  marginTop: 8,
+  background: "#fff",
+  border: `1px solid ${C.lineMid}`,
+  borderRadius: 12,
+  padding: "14px 15px",
+  fontSize: 14.5,
+  color: C.ink,
+  outline: "none",
+  transition: "border-color .2s,box-shadow .2s",
+};
 
 export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState("login");
@@ -8,149 +46,330 @@ export default function AuthScreen({ onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const isSignup = mode === "signup";
 
   async function handleSubmit(e) {
     e.preventDefault();
-
+    setError("");
     try {
       setLoading(true);
-
-      if (mode === "signup") {
+      if (isSignup) {
         await signUp(email, password, name);
-        alert("Account created! Check your email.");
+        setError("Account created — check your email to confirm.");
       } else {
         await signIn(email, password);
       }
     } catch (err) {
-      alert(err.message);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5fb] flex items-center justify-center p-6">
-      <div className="w-full max-w-lg">
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 px-8 py-6 sm:px-10 sm:py-8">
-
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-2"
-            >
-              <ArrowLeft size={15} />
-              Back to home
-            </button>
-          )}
-
-          {/* Brand — goes back to the landing page (an href="/" here would
-              reload straight back into the login screen via the saved mode). */}
-          <button
-            onClick={onBack}
-            className="w-full flex items-center justify-center gap-4 mb-8"
+    <div
+      className="font-body"
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))",
+      }}
+    >
+      {/* ---------------- LEFT PANEL ---------------- */}
+      <div
+        style={{
+          background: C.ink,
+          color: C.page,
+          padding: "clamp(32px,5vw,64px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          minHeight: 340,
+        }}
+      >
+        <button
+          onClick={onBack}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="AIFAGen"
+            style={{
+              height: 32,
+              width: 32,
+              objectFit: "contain",
+              filter: "invert(1)",
+            }}
+          />
+          <span
+            style={{
+              fontFamily: C.display,
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: "-.03em",
+              color: C.page,
+            }}
           >
-            <img
-              src="/logo.png"
-              alt="AIFAGen"
-              className="h-16 w-16 object-contain"
-            />
-            <h1 className="text-4xl font-extrabold text-slate-900">AIFAGen</h1>
-          </button>
+            AIFAGen
+          </span>
+        </button>
 
-          {/* Heading */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">
-              {mode === "login"
-                ? "Welcome Back"
-                : "Create Account"}
-            </h2>
+        <div style={{ animation: "riseIn .8s cubic-bezier(.2,.7,.2,1) .1s both" }}>
+          <div
+            style={{
+              fontFamily: C.mono,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: C.faint,
+            }}
+          >
+            Since you were last here
           </div>
+          <div
+            style={{
+              fontFamily: C.display,
+              fontSize: "clamp(30px,4vw,52px)",
+              lineHeight: 1.02,
+              letterSpacing: "-.04em",
+              fontWeight: 700,
+              marginTop: 20,
+            }}
+          >
+            24 new roles
+            <br />
+            matched your
+            <br />
+            profile.
+          </div>
+          <p
+            style={{
+              margin: "20px 0 0",
+              fontSize: 15,
+              lineHeight: 1.6,
+              color: C.faint,
+              maxWidth: "26em",
+            }}
+          >
+            Your resume stays yours. We use it to rank opportunities, never to
+            spam recruiters on your behalf.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 26,
+            fontFamily: C.mono,
+            fontSize: 11,
+            fontWeight: 700,
+            color: C.faint,
+          }}
+        >
+          <span>50,000+ candidates</span>
+          <span>12 match signals</span>
+        </div>
+      </div>
+
+      {/* ---------------- RIGHT PANEL ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "clamp(32px,5vw,64px)",
+          background: "#fff",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            animation: "riseIn .7s cubic-bezier(.2,.7,.2,1) both",
+          }}
+        >
+          <h1
+            style={{
+              fontFamily: C.display,
+              fontSize: 34,
+              lineHeight: 1.06,
+              letterSpacing: "-.035em",
+              fontWeight: 700,
+              margin: 0,
+              color: C.ink,
+            }}
+          >
+            {isSignup ? "Create your account" : "Welcome back"}
+          </h1>
+          <p style={{ margin: "10px 0 0", fontSize: 14.5, color: C.muted }}>
+            {isSignup
+              ? "Start matching with roles built for you."
+              : "Log in to pick up where you left off."}
+          </p>
 
           <form
             onSubmit={handleSubmit}
-            className="space-y-4"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              marginTop: 32,
+            }}
           >
-            {mode === "signup" && (
-              <div>
-                <label className="block mb-2 text-sm font-medium text-slate-700">
-                  Full Name
-                </label>
-
+            {isSignup && (
+              <label style={{ display: "block" }}>
+                <span style={fieldLabel}>Full name</span>
                 <input
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Jane Doe"
                   value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
-                  }
-                  className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base focus:outline-none focus:border-[#6D4AFF] focus:ring-2 focus:ring-[#6D4AFF]/20"
+                  onChange={(e) => setName(e.target.value)}
+                  className="v3-input"
+                  style={fieldInput}
                 />
-              </div>
+              </label>
             )}
 
-            <div>
-              <label className="block mb-2 text-sm font-medium text-slate-700">
-                Email Address
-              </label>
-
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Email</span>
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base focus:outline-none focus:border-[#6D4AFF] focus:ring-2 focus:ring-[#6D4AFF]/20"
+                onChange={(e) => setEmail(e.target.value)}
+                className="v3-input"
+                style={fieldInput}
               />
-            </div>
+            </label>
 
-            <div>
-              <label className="block mb-2 text-sm font-medium text-slate-700">
-                Password
-              </label>
-
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Password</span>
               <input
                 type="password"
-                placeholder="Enter password"
+                placeholder="••••••••"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
-                className="w-full h-12 rounded-xl border border-slate-200 px-4 text-base focus:outline-none focus:border-[#6D4AFF] focus:ring-2 focus:ring-[#6D4AFF]/20"
+                onChange={(e) => setPassword(e.target.value)}
+                className="v3-input"
+                style={fieldInput}
               />
-            </div>
+            </label>
+
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: "#B4232F",
+                  background: "#FFF0F3",
+                  border: "1px solid #FBD5DC",
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                }}
+              >
+                {error}
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-xl text-white text-lg font-semibold bg-gradient-to-r from-[#6D4AFF] to-[#8B5CFF] hover:opacity-90 transition"
+              className="v3-btn-dark"
+              style={{
+                background: C.ink,
+                border: "none",
+                borderRadius: 12,
+                padding: 15,
+                fontSize: 15,
+                fontWeight: 700,
+                color: C.page,
+                cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.65 : 1,
+              }}
             >
               {loading
-                ? "Please wait..."
-                : mode === "login"
-                ? "Sign In"
-                : "Create Account"}
+                ? "Please wait…"
+                : isSignup
+                  ? "Create account"
+                  : "Log in"}
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span style={{ flex: 1, height: 1, background: C.line }} />
+              <span
+                style={{
+                  fontFamily: C.mono,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: ".14em",
+                  textTransform: "uppercase",
+                  color: C.faint,
+                }}
+              >
+                or
+              </span>
+              <span style={{ flex: 1, height: 1, background: C.line }} />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setError("Google sign-in is coming soon.")}
+              className="v3-btn-outline"
+              style={{
+                background: "#fff",
+                border: `1px solid ${C.lineMid}`,
+                borderRadius: 12,
+                padding: 14,
+                fontSize: 14.5,
+                fontWeight: 700,
+                color: C.ink,
+                cursor: "pointer",
+              }}
+            >
+              Continue with Google
             </button>
           </form>
 
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={() =>
-                setMode(
-                  mode === "login"
-                    ? "signup"
-                    : "login"
-                )
-              }
-              className="text-[#6D4AFF] font-medium hover:underline"
+          <p style={{ margin: "26px 0 0", fontSize: 13.5, color: C.muted }}>
+            {isSignup ? "Already have an account? " : "New here? "}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setError("");
+                setMode(isSignup ? "login" : "signup");
+              }}
+              style={{ fontWeight: 700, color: C.brand }}
             >
-              {mode === "login"
-                ? "Don't have an account? Create one"
-                : "Already have an account? Sign In"}
-            </button>
-          </div>
+              {isSignup ? "Log in" : "Create an account"}
+            </a>
+          </p>
 
+          {onBack && (
+            <p style={{ margin: "14px 0 0", fontSize: 13.5, color: C.muted }}>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onBack();
+                }}
+                style={{ fontWeight: 700, color: C.muted }}
+              >
+                ← Back to home
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>

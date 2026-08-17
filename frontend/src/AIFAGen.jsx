@@ -106,6 +106,104 @@ const CSS = `
 .scroll::-webkit-scrollbar-thumb{background:#cdd2e0;border-radius:9px}
 *{scrollbar-width:thin;scrollbar-color:#cdd2e0 transparent}
 .lift{transition:transform .2s}.lift:hover{transform:translateY(-2px)}
+
+/* ---------------------------------------------------------------------------
+   v3 landing design system. Keyframes and hover states ported verbatim from
+   the AIFAGen v3 design spec. Static properties live inline on the elements;
+   only things inline styles can't express (:hover, ::after, keyframes) are
+   here. Everything degrades under prefers-reduced-motion via the guard at the
+   bottom of this block.
+   ------------------------------------------------------------------------ */
+@keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes v3FadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes sheen{0%{transform:translateX(-120%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,-4%) scale(1.06)}66%{transform:translate(-3%,3%) scale(.97)}100%{transform:translate(0,0) scale(1)}}
+@keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.94)}60%{transform:translateY(-3px) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes wordIn{0%{opacity:0;transform:translateY(.16em)}100%{opacity:1;transform:none}}
+@keyframes wordInB{0%{opacity:0;transform:translateY(.16em)}100%{opacity:1;transform:none}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(109,74,255,.34)}70%{box-shadow:0 0 0 12px rgba(109,74,255,0)}100%{box-shadow:0 0 0 0 rgba(109,74,255,0)}}
+@keyframes auroraA{0%,100%{transform:translate(0,0) scale(1);opacity:.5}50%{transform:translate(6%,-8%) scale(1.18);opacity:.85}}
+@keyframes auroraB{0%,100%{transform:translate(0,0) scale(1.1);opacity:.45}50%{transform:translate(-7%,6%) scale(.92);opacity:.75}}
+@keyframes lineDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes cardFlip{0%{opacity:0;transform:perspective(900px) rotateY(-100deg)}60%{opacity:1}100%{opacity:1;transform:perspective(900px) rotateY(0)}}
+
+.v3-navlink{transition:color .18s}
+.v3-navlink:hover{color:#0F172A}
+.v3-btn-outline{transition:background .18s,border-color .18s}
+.v3-btn-outline:hover{background:#fff;border-color:#0F172A}
+.v3-btn-dark{transition:transform .2s cubic-bezier(.2,.7,.2,1),background .2s}
+.v3-btn-dark:hover{background:#6D4AFF;transform:translateY(-2px)}
+.v3-btn-hero::after{content:'';position:absolute;top:0;bottom:0;left:0;width:70px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:sheen 3.4s cubic-bezier(.3,.6,.3,1) 1.4s infinite}
+.v3-btn-light{transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+.v3-btn-light:hover{transform:translateY(-2px)}
+.v3-feedrow{transition:background .2s}
+.v3-feedrow:hover{background:#F6F8FF}
+[data-feature-card]{transition:background .25s}
+[data-feature-card]:hover{background:#FBFCFF}
+[data-feature-card]:hover [data-feature-chip]{transform:scale(1.08) rotate(-5deg)}
+.v3-footlink{transition:color .18s}
+.v3-footlink:hover{color:#0F172A}
+.v3-input:focus{border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
+.v3-search:focus{background:#fff!important;border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.1)}
+.v3-navbtn{transition:background .22s,color .22s}
+.v3-navbtn[data-active-nav="0"]:hover{background:#F8F9FE}
+.v3-softbtn{transition:background .18s}
+.v3-softbtn:hover{background:#F8F9FE}
+.v3-dangerbtn{transition:background .18s}
+.v3-dangerbtn:hover{background:#FFF0F3}
+.v3-iconbtn{transition:border-color .2s}
+.v3-iconbtn:hover{border-color:#0F172A}
+
+.v3-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+.v3-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px -26px rgba(15,23,42,.28)}
+.v3-matchrow{transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.7,.2,1)}
+.v3-matchrow:hover{border-color:#DDE3EE;background:#FBFCFF;transform:translateX(3px)}
+.v3-trackerbtn{transition:background .2s,border-color .2s}
+.v3-trackerbtn:hover{background:#fff;border-color:#0F172A}
+
+/* Dashboard grids. Stats stay two-up, the main row splits to a wide primary
+   column plus a rail at 1180px, and suggestions go 1 → 2 → 3 across. */
+[data-dashgrid]{display:grid;gap:16px;min-width:0}
+[data-dashgrid="stats"]{grid-template-columns:1fr 1fr;gap:14px}
+[data-dashgrid="main"]{grid-template-columns:1fr}
+[data-dashgrid="sugg"]{grid-template-columns:1fr}
+@media (max-width:560px){[data-dashgrid="stats"]{grid-template-columns:1fr}}
+@media (min-width:760px){
+  [data-dashgrid="sugg"]{grid-template-columns:1fr 1fr}
+  [data-dashgrid="sugg"] > *:last-child{grid-column:1 / -1}
+}
+@media (min-width:1180px){
+  [data-dashgrid="main"]{grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr)}
+  [data-dashgrid="sugg"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+  [data-dashgrid="sugg"] > *:last-child{grid-column:auto}
+}
+
+/* App shell: the sidebar is a static column on wide screens and a slide-over
+   drawer below 1024px, matching the spec's [data-r="sidebar"] behaviour. */
+@media (max-width:1023px){
+  .v3-sidebar{position:fixed!important;top:0;left:0;bottom:0;z-index:60;transform:translateX(-102%);transition:transform .34s cubic-bezier(.2,.7,.2,1)}
+  .v3-sidebar[data-open="1"]{transform:none!important}
+}
+@media (min-width:1024px){
+  .v3-scrim{display:none!important}
+}
+
+@media (max-width:1023px){
+  .v3-narrowhide{display:none!important}
+}
+@media (min-width:1024px){
+  .v3-burger{display:none!important}
+}
+@media (max-width:480px){
+  .v3-hdrbtns{gap:6px!important}
+  .v3-hdrbtns button{padding:9px 12px!important;font-size:12.5px!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important}
+}
 `;
 
 const bBrand =
@@ -602,117 +700,570 @@ function Switch({ on, onClick }) {
   );
 }
 
+/* ===================== v3 LANDING =====================
+   Exact port of the "AIFAGen v3" design. Palette, type ramp, spacing and
+   motion are taken verbatim from the spec, so static properties are written
+   inline rather than as Tailwind utilities — the spec leans on clamp() and
+   precise hex values that don't map cleanly onto the token scale. Hover and
+   keyframe rules live in the CSS block at the top of this file.
+   ==================================================== */
+
+const V3 = {
+  brand: "#6D4AFF",
+  ochre: "#F59E0B",
+  clay: "#F43F5E",
+  track: "#EDF0F8",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+const v3Kicker = (color) => ({
+  fontFamily: V3.mono,
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: ".16em",
+  textTransform: "uppercase",
+  color,
+});
+
+const v3Score = (score) =>
+  score >= 80 ? V3.brand : score >= 60 ? V3.ochre : V3.clay;
+
+// Eased 0→1 ramp that drives the match rings filling on first paint.
+function useRamp(duration = 1050) {
+  const [t, setT] = useState(prefersReducedMotion() ? 1 : 0);
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    let raf;
+    const start = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      setT(1 - Math.pow(1 - p, 3));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    // rAF is throttled to zero in a backgrounded or non-compositing tab, which
+    // would otherwise leave every ring drawn at 0. Land on the final value
+    // regardless once the ramp should have finished.
+    const settle = setTimeout(() => setT(1), duration + 150);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(settle);
+    };
+  }, [duration]);
+  return t;
+}
+
+// Fraction of the page scrolled, for the progress bar pinned to the viewport top.
+function useScrollProgress() {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const onScroll = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      setP(h > 0 ? Math.min(1, window.scrollY / h) : 0);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return p;
+}
+
+// Staggers a container's direct children in as it enters the viewport.
+// "flip" swings cards around their Y axis; "stagger" is a softer pop.
+function useRevealChildren(mode = "stagger") {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (prefersReducedMotion()) return;
+    const kids = Array.from(el.children);
+    kids.forEach((k) => {
+      k.style.opacity = "0";
+    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          kids.forEach((k, i) => {
+            k.style.animation =
+              mode === "flip"
+                ? `cardFlip .7s cubic-bezier(.2,.7,.2,1) ${i * 110}ms both`
+                : `pop .6s cubic-bezier(.2,.7,.2,1) ${i * 90}ms both`;
+          });
+          io.unobserve(e.target);
+        });
+      },
+      { threshold: 0.18 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [mode]);
+  return ref;
+}
+
+function V3Logo({ size = 34, children }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 11, flexShrink: 0 }}>
+      <img
+        src="/logo.png"
+        alt="AIFAGen"
+        style={{ height: size, width: size, objectFit: "contain" }}
+      />
+      {children}
+    </div>
+  );
+}
+
 function MarketingNav({ enter }) {
   const [open, setOpen] = useState(false);
-  const links = ["Features", "How It Works", "FAQ"];
-  const SECTION_IDS = {
-    Features: "features",
-    "How It Works": "how-it-works",
-    FAQ: "faq",
-  };
-  const scrollTo = (e, label) => {
+  const scrollTo = (e, id) => {
     e.preventDefault();
     setOpen(false);
-    const el = document.getElementById(SECTION_IDS[label]);
+    const el = document.getElementById(id);
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 64; // sticky header height
-    window.scrollTo({ top, behavior: "smooth" });
+    window.scrollTo({
+      top: el.getBoundingClientRect().top + window.scrollY - 74,
+      behavior: "smooth",
+    });
   };
+  const LINKS = [
+    ["Features", "features"],
+    ["How it works", "how-it-works"],
+    ["FAQ", "faq"],
+  ];
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-100">
-      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center gap-3 relative">
-        <button onClick={enter} className="flex items-center gap-2">
-          <img
-            src="/logo.png"
-            alt="AIFAGen"
-            className="h-8 w-8 object-contain"
-          />{" "}
-          <span className="font-display text-2xl font-extrabold text-slate-900 leading-none">
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 40,
+        background: "rgba(248,249,254,.86)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        borderBottom: `1px solid ${V3.line}`,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto",
+          padding: "0 clamp(16px,4vw,24px)",
+          height: 74,
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
+        }}
+      >
+        <V3Logo size={34}>
+          <span
+            style={{
+              fontFamily: V3.display,
+              fontSize: "clamp(19px,3vw,23px)",
+              fontWeight: 700,
+              letterSpacing: "-.03em",
+              whiteSpace: "nowrap",
+              color: V3.ink,
+            }}
+          >
             AIFAGen
           </span>
-          {/* <span className="font-display text-lg font-extrabold text-slate-900">
-            AIFAGen
-          </span> */}
-        </button>
-        <nav className="hidden md:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
-          {links.map((l) => (
+        </V3Logo>
+
+        <nav
+          className="v3-narrowhide"
+          style={{ display: "flex", alignItems: "center", gap: 26, marginLeft: 18 }}
+        >
+          {LINKS.map(([label, id]) => (
             <a
-              key={l}
-              href={`#${SECTION_IDS[l]}`}
-              onClick={(e) => scrollTo(e, l)}
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1"
+              key={id}
+              href={`#${id}`}
+              onClick={(e) => scrollTo(e, id)}
+              className="v3-navlink"
+              style={{ fontSize: 14, fontWeight: 600, color: V3.body }}
             >
-              {l}
-              {l === "Resources" && <ChevronDown size={14} />}
+              {label}
             </a>
           ))}
         </nav>
-        <div className="hidden md:flex items-center gap-3 ml-auto">
-          <button onClick={enter} className={bOutline}>
-            {" "}
-            Login{" "}
+
+        <div
+          className="v3-hdrbtns"
+          style={{
+            marginLeft: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={enter}
+            className="v3-btn-outline"
+            style={{
+              background: "transparent",
+              border: `1px solid ${V3.lineMid}`,
+              borderRadius: 11,
+              padding: "10px 18px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: V3.ink,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Login
+          </button>
+          <button
+            onClick={enter}
+            className="v3-btn-dark"
+            style={{
+              background: V3.ink,
+              border: "none",
+              borderRadius: 11,
+              padding: "11px 19px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: V3.page,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Get your career plan
+          </button>
+          <button
+            className="v3-burger"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Menu"
+            aria-expanded={open}
+            style={{
+              display: "inline-flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 4,
+              background: "transparent",
+              border: `1px solid ${V3.lineMid}`,
+              borderRadius: 10,
+              padding: 10,
+              cursor: "pointer",
+              width: 38,
+              height: 38,
+            }}
+          >
+            <span style={{ display: "block", width: 16, height: 1.8, background: V3.ink, margin: "0 auto" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: V3.ink, margin: "0 auto" }} />
           </button>
         </div>
-        <button
-          className="md:hidden ml-auto text-slate-600"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Menu"
-        >
-          {open ? <X /> : <Menu />}
-        </button>
       </div>
+
       {open && (
-        <div className="md:hidden border-t border-slate-100 px-5 py-3 space-y-2">
-          {links.map((l) => (
+        <nav
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            padding: "8px 16px 16px",
+            borderTop: `1px solid ${V3.line}`,
+            background: "#fff",
+          }}
+        >
+          {LINKS.map(([label, id], i) => (
             <a
-              key={l}
-              href={`#${SECTION_IDS[l]}`}
-              onClick={(e) => scrollTo(e, l)}
-              className="block text-sm font-semibold text-slate-700 py-1"
+              key={id}
+              href={`#${id}`}
+              onClick={(e) => scrollTo(e, id)}
+              style={{
+                padding: "12px 6px",
+                fontSize: 15,
+                fontWeight: 600,
+                color: V3.ink,
+                borderBottom: i < LINKS.length - 1 ? `1px solid ${V3.lineSoft}` : "none",
+              }}
             >
-              {l}
+              {label}
             </a>
           ))}
-          <button onClick={enter} className={bBrand}>
-            Get Your Career Plan
-          </button>
-        </div>
+        </nav>
       )}
     </header>
   );
 }
-function HeroCard({ icon: Icon, tint, t, d, className, style }) {
-  const map = {
-    violet: "bg-brand-50 brand",
-    emerald: "bg-emerald-50 text-emerald-600",
-    rose: "bg-rose-50 text-rose-600",
+
+function RotatingWord({ words, interval = 2600 }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const t = setInterval(() => setI((v) => (v + 1) % words.length), interval);
+    return () => clearInterval(t);
+  }, [words.length, interval]);
+  return (
+    <span
+      key={i}
+      style={{
+        display: "inline-block",
+        animation: prefersReducedMotion()
+          ? "none"
+          : `${i % 2 ? "wordInB" : "wordIn"} .5s cubic-bezier(.2,.7,.2,1) both`,
+      }}
+    >
+      {words[i]}
+    </span>
+  );
+}
+
+const HERO_ROWS = [
+  { initial: "S", title: "Senior Product Designer", meta: "Stripe · Remote (US)", score: 95 },
+  { initial: "A", title: "Machine Learning Engineer", meta: "Anthropic · San Francisco, CA (Hybrid)", score: 92 },
+  { initial: "V", title: "Frontend Engineer", meta: "Vercel · Remote (US)", score: 89 },
+];
+
+const PLACED_AT = [
+  "Stripe", "Anthropic", "Vercel", "Notion", "Snowflake",
+  "Cloudflare", "Okta", "Spotify", "Atlassian",
+];
+
+function HeroFeedCard({ t }) {
+  const [tilt, setTilt] = useState(null);
+  const onMove = (e) => {
+    if (prefersReducedMotion()) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setTilt({
+      x: ((e.clientY - r.top) / r.height - 0.5) * -7,
+      y: ((e.clientX - r.left) / r.width - 0.5) * 9,
+    });
   };
   return (
     <div
-      className={
-        "absolute rounded-2xl bg-white border border-slate-100 shadow-xl p-4 w-64 " +
-        className
-      }
-      style={style}
+      onMouseMove={onMove}
+      onMouseLeave={() => setTilt(null)}
+      style={{
+        position: "relative",
+        perspective: 1100,
+        animation: "riseIn .9s cubic-bezier(.2,.7,.2,1) .15s both",
+      }}
     >
-      <div className="flex items-center gap-3">
+      <div
+        style={{
+          background: "#fff",
+          border: `1px solid ${V3.line}`,
+          borderRadius: 22,
+          boxShadow:
+            "0 1px 2px rgba(15,23,42,.04),0 30px 70px -40px rgba(15,23,42,.3)",
+          overflow: "hidden",
+          transform: tilt
+            ? `rotateX(${tilt.x.toFixed(2)}deg) rotateY(${tilt.y.toFixed(2)}deg) translateZ(0)`
+            : "none",
+          transition: tilt
+            ? "transform .12s ease-out"
+            : "transform .5s cubic-bezier(.2,.7,.2,1)",
+        }}
+      >
         <div
-          className={
-            "flex h-10 w-10 items-center justify-center rounded-xl " + map[tint]
-          }
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "16px 20px",
+            borderBottom: `1px solid ${V3.lineSoft}`,
+          }}
         >
-          <Icon size={20} />
+          <span style={{ ...v3Kicker(V3.faint), letterSpacing: ".14em" }}>
+            Live match feed
+          </span>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontFamily: V3.mono,
+              fontSize: 11,
+              fontWeight: 700,
+              color: V3.brand,
+            }}
+          >
+            resume parsed ✓
+          </span>
         </div>
-        <div>
-          <div className="font-bold text-slate-900 text-sm">{t}</div>
-          <div className="text-xs text-slate-500">{d}</div>
+
+        <div style={{ padding: 8 }}>
+          {HERO_ROWS.map((row) => (
+            <div
+              key={row.title}
+              className="v3-feedrow"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: "15px 14px",
+                borderRadius: 15,
+              }}
+            >
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: "#F3F6FD",
+                  border: `1px solid ${V3.line}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: V3.display,
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: V3.ink,
+                  flexShrink: 0,
+                }}
+              >
+                {row.initial}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: V3.ink,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.title}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: V3.muted,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {row.meta}
+                </div>
+              </div>
+              <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50%",
+                    background: `conic-gradient(${v3Score(row.score)} ${(
+                      row.score * 3.6 * t
+                    ).toFixed(1)}deg, ${V3.track} 0)`,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 5,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: V3.mono,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "-.02em",
+                    color: v3Score(row.score),
+                  }}
+                >
+                  {Math.round(row.score * t)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 20px",
+            borderTop: `1px solid ${V3.lineSoft}`,
+            background: "#FBFCFF",
+          }}
+        >
+          <span style={{ fontSize: 12.5, color: V3.muted }}>
+            Ranked against 12 signals from your resume
+          </span>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontFamily: V3.mono,
+              fontSize: 11,
+              fontWeight: 700,
+              color: V3.ink,
+            }}
+          >
+            +128 more
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="v3-narrowhide"
+        style={{
+          position: "absolute",
+          right: 22,
+          top: -24,
+          background: V3.ink,
+          color: V3.page,
+          borderRadius: 14,
+          padding: "12px 18px",
+          boxShadow: "0 20px 40px -22px rgba(15,23,42,.5)",
+          animation: "floaty 6.5s ease-in-out infinite",
+          zIndex: 2,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: V3.mono,
+            fontSize: 9.5,
+            fontWeight: 700,
+            letterSpacing: ".14em",
+            textTransform: "uppercase",
+            color: "#A8B3C4",
+          }}
+        >
+          ATS score
+        </div>
+        <div
+          style={{
+            fontFamily: V3.mono,
+            fontSize: 26,
+            fontWeight: 700,
+            lineHeight: 1.1,
+          }}
+        >
+          88%
         </div>
       </div>
     </div>
   );
 }
+
 function Marketing({ enter, go }) {
   const [faq, setFaq] = useState(0);
+  const t = useRamp();
+  const scroll = useScrollProgress();
+  const featuresRef = useRevealChildren("flip");
+  const stepsRef = useRevealChildren("stagger");
+  const faqRef = useRevealChildren("stagger");
+
   const FOOTER_ROUTES = {
     "About Us": "about",
     "Innovation Labs": "innovation",
@@ -728,158 +1279,396 @@ function Marketing({ enter, go }) {
     "Privacy Policy": "privacy",
     "Terms & Conditions": "terms",
   };
+
+  const FEATURE_CARDS = [
+    { icon: Target, color: V3.brand, t: "Smart Job Matching", d: "AI finds the most relevant jobs based on your skills, experience, and career goals." },
+    { icon: FileText, color: V3.ochre, t: "Resume Optimization", d: "Get AI-powered suggestions to improve your resume and pass ATS scans." },
+    { icon: MessageSquare, color: V3.clay, t: "Interview Preparation", d: "Practice with role-specific questions and get expert AI feedback." },
+    { icon: Zap, color: "#334155", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
+  ];
+
+  const STEP_CARDS = [
+    { t: "Create Your Profile", d: "Add your experience and career preferences." },
+    { t: "AI Finds Best Matches", d: "We scan thousands of jobs to find the perfect ones for you." },
+    { t: "Optimize & Apply", d: "AI optimizes your resume and creates tailored applications." },
+    { t: "Get Interviews", d: "Stand out, get noticed, and land more interviews." },
+  ];
+
+  const FOOTER_COLS = [
+    { title: "Company", links: ["About Us", "Innovation Labs", "Case Studies", "Careers"] },
+    { title: "Solutions", links: ["Services", "Products", "AIFAG Suite", "LifeOS"] },
+    { title: "Connect", links: ["Contact", "Collaborate", "Partners", "Privacy Policy", "Terms & Conditions"] },
+  ];
+
+  const h2Style = {
+    fontFamily: V3.display,
+    fontSize: "clamp(30px,3.6vw,46px)",
+    lineHeight: 1.05,
+    letterSpacing: "-.035em",
+    fontWeight: 700,
+    margin: "16px 0 0",
+  };
+
   return (
-    <div className="font-body text-slate-800">
+    <div className="font-body" style={{ background: V3.page, color: V3.ink }}>
+      {/* Scroll progress */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          zIndex: 60,
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${(scroll * 100).toFixed(2)}%`,
+            background: `linear-gradient(90deg,${V3.brand},${V3.ochre})`,
+            transition: "width .1s linear",
+          }}
+        />
+      </div>
+
       <MarketingNav enter={enter} />
-      {/* HERO */}
-      <section className="hero-bg">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
-          <div className="fadeUp">
+
+      {/* ---------------- HERO ---------------- */}
+      <section style={{ position: "relative", overflow: "hidden" }}>
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -120,
+            right: -80,
+            width: 520,
+            height: 520,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle at 50% 50%,rgba(109,74,255,.16),rgba(109,74,255,0) 68%)",
+            animation: "drift 22s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            bottom: -160,
+            left: -120,
+            width: 460,
+            height: 460,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle at 50% 50%,rgba(168,121,42,.14),rgba(168,121,42,0) 68%)",
+            animation: "drift 28s ease-in-out -8s infinite",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(44px,6vw,86px) 24px clamp(40px,5vw,64px)",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(330px,1fr))",
+            gap: "clamp(36px,5vw,64px)",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ animation: "riseIn .8s cubic-bezier(.2,.7,.2,1) both" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 22 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: V3.brand,
+                  animation: "blink 2.4s ease-in-out infinite",
+                }}
+              />
+              <span style={v3Kicker(V3.muted)}>AI career engine</span>
+            </div>
+
             <h1
-              className="font-display text-4xl md:text-6xl font-extrabold text-slate-900"
-              style={{ lineHeight: 1.05 }}
+              style={{
+                fontFamily: V3.display,
+                fontSize: "clamp(42px,6.2vw,74px)",
+                lineHeight: 0.96,
+                letterSpacing: "-.04em",
+                fontWeight: 700,
+                margin: 0,
+                color: V3.ink,
+              }}
             >
               Stop Applying.
               <br />
-              <span className="brand">Start Getting Interviews.</span>
+              <span style={{ color: V3.brand, position: "relative", display: "inline-block" }}>
+                Start Getting{" "}
+                <RotatingWord words={["Interviews", "Offers", "Callbacks", "Hired"]} />.
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: ".06em",
+                    height: 5,
+                    background: V3.brand,
+                    opacity: 0.18,
+                    transformOrigin: "left",
+                    animation: "sweep 1s cubic-bezier(.2,.7,.2,1) .55s both",
+                  }}
+                />
+              </span>
             </h1>
-            <p className="mt-5 text-lg text-slate-500 max-w-md">
+
+            <p
+              style={{
+                margin: "24px 0 0",
+                fontSize: "clamp(16px,1.5vw,19px)",
+                lineHeight: 1.55,
+                color: V3.body,
+                maxWidth: "30em",
+              }}
+            >
               AIFAGen uses AI to find the right opportunities, optimize your
               profile, and help you move faster through the hiring process.
             </p>
-            <button
-              onClick={enter}
-              className={bBrand + " mt-7 text-base px-6 py-3.5"}
-            >
-              Get Your Career Plan <ArrowRight size={18} />
-            </button>
-            <div className="mt-7 flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {["#6d4aff", "#f43f5e", "#22c55e", "#0ea5e9"].map((c, i) => (
-                  <div
-                    key={i}
-                    className="h-8 w-8 rounded-full border-2 border-white"
-                    style={{ background: c }}
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
+              <button
+                onClick={enter}
+                className="v3-btn-dark v3-btn-hero"
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  whiteSpace: "nowrap",
+                  background: V3.ink,
+                  border: "none",
+                  borderRadius: 13,
+                  padding: "16px 26px",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: V3.page,
+                  cursor: "pointer",
+                  animation: "pulseRing 3.4s ease-out 1.4s infinite",
+                }}
+              >
+                Get Your Career Plan <span style={{ fontSize: 17 }}>→</span>
+              </button>
+              <a
+                href="#how-it-works"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  whiteSpace: "nowrap",
+                  background: "#fff",
+                  border: `1px solid ${V3.lineMid}`,
+                  borderRadius: 13,
+                  padding: "16px 24px",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: V3.ink,
+                }}
+              >
+                See how it works
+              </a>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 34 }}>
+              <div style={{ display: "flex" }}>
+                {[V3.brand, V3.clay, V3.ochre, V3.ink].map((c, i) => (
+                  <span
+                    key={c}
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: "50%",
+                      border: `2px solid ${V3.page}`,
+                      background: c,
+                      marginLeft: i === 0 ? 0 : -11,
+                    }}
                   />
                 ))}
               </div>
-              <div className="text-sm">
-                <div className="font-bold text-slate-900">
+              <div style={{ fontSize: 14, lineHeight: 1.4 }}>
+                <div style={{ fontWeight: 700, color: V3.ink }}>
                   Join 50,000+ job seekers
                 </div>
-                <div className="text-slate-500">
-                  who are getting hired faster
-                </div>
+                <div style={{ color: V3.muted }}>who are getting hired faster</div>
               </div>
             </div>
           </div>
-          {/* Mobile: simple stacked cards. Desktop: floating illustration. */}
-          <div className="grid gap-3 md:hidden">
-            {[
-              [
-                Briefcase,
-                "violet",
-                "AI Job Matching",
-                "Find roles that fit you best",
-              ],
-              [
-                FileText,
-                "emerald",
-                "Resume Optimization",
-                "Improve your chances",
-              ],
-              [
-                TrendingUp,
-                "rose",
-                "Interview Preparation",
-                "Practice and ace interviews",
-              ],
-            ].map((c, i) => {
-              const Icon = c[0];
-              const map = {
-                violet: "bg-brand-50 brand",
-                emerald: "bg-emerald-50 text-emerald-600",
-                rose: "bg-rose-50 text-rose-600",
-              };
-              return (
-                <div
-                  key={i}
-                  className="rounded-2xl bg-white border border-slate-100 shadow-sm p-4 flex items-center gap-3"
-                >
-                  <div
-                    className={
-                      "flex h-10 w-10 items-center justify-center rounded-xl shrink-0 " +
-                      map[c[1]]
-                    }
-                  >
-                    <Icon size={20} />
-                  </div>
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">
-                      {c[2]}
-                    </div>
-                    <div className="text-xs text-slate-500">{c[3]}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="relative h-96 hidden md:block">
-            <div className="absolute right-0 top-4 h-72 w-72 rounded-full bg-brand-50 opacity-70" />
-            <HeroCard
-              icon={Briefcase}
-              tint="violet"
-              t="AI Job Matching"
-              d="Find roles that fit you best"
-              className="floaty"
-              style={{ top: 0, right: 30, animationDelay: "0s" }}
-            />
-            <HeroCard
-              icon={FileText}
-              tint="emerald"
-              t="Resume Optimization"
-              d="Improve your chances"
-              className="floaty"
-              style={{ top: 120, right: 0, animationDelay: ".8s" }}
-            />
-            <HeroCard
-              icon={TrendingUp}
-              tint="rose"
-              t="Interview Preparation"
-              d="Practice and ace interviews"
-              className="floaty"
-              style={{ top: 240, right: 50, animationDelay: "1.4s" }}
-            />
-          </div>
+
+          <HeroFeedCard t={t} />
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" className="max-w-6xl mx-auto px-5 py-16 md:py-20">
-        <div className="text-center max-w-2xl mx-auto">
-          <p className="text-xs font-bold tracking-widest brand">
-            POWERED BY AI. BUILT FOR YOU.
-          </p>
-          <h2 className="font-display text-3xl md:text-4xl font-extrabold text-slate-900 mt-3">
+      {/* ---------------- MARQUEE ---------------- */}
+      <div
+        style={{
+          borderTop: `1px solid ${V3.line}`,
+          borderBottom: `1px solid ${V3.line}`,
+          background: "#F2F5FC",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "18px 24px",
+            display: "flex",
+            alignItems: "center",
+            gap: 26,
+          }}
+        >
+          <span
+            style={{
+              flexShrink: 0,
+              ...v3Kicker(V3.faint),
+              letterSpacing: ".14em",
+            }}
+          >
+            Candidates placed at
+          </span>
+          <div
+            style={{
+              position: "relative",
+              flex: 1,
+              minWidth: 0,
+              overflow: "hidden",
+              maskImage:
+                "linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)",
+              WebkitMaskImage:
+                "linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                width: "max-content",
+                gap: 44,
+                animation: "marquee 26s linear infinite",
+              }}
+            >
+              {[...PLACED_AT, ...PLACED_AT].map((name, i) => (
+                <span
+                  key={`${name}-${i}`}
+                  style={{
+                    fontFamily: V3.display,
+                    fontSize: 17,
+                    fontWeight: 600,
+                    letterSpacing: "-.02em",
+                    color: V3.body,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------------- FEATURES ---------------- */}
+      <section
+        id="features"
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto",
+          padding: "clamp(56px,7vw,96px) 24px",
+        }}
+      >
+        <div style={{ maxWidth: "34em" }}>
+          <span style={v3Kicker(V3.brand)}>Powered by AI. Built for you.</span>
+          <h2 style={{ ...h2Style, color: V3.ink }}>
             Everything you need to stand out and land your dream role.
           </h2>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
-          {FEATURES.map((f, i) => {
-            const Icon = f.icon,
-              t = STAT_TINT[f.tint];
+        <div
+          ref={featuresRef}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(238px,1fr))",
+            gap: 1,
+            marginTop: 52,
+            background: V3.line,
+            border: `1px solid ${V3.line}`,
+            borderRadius: 20,
+            overflow: "hidden",
+            perspective: 1200,
+          }}
+        >
+          {FEATURE_CARDS.map((f, i) => {
+            const Icon = f.icon;
             return (
-              <div key={i} className="text-center lift">
+              <div
+                key={f.t}
+                data-feature-card="1"
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  background: "#fff",
+                  padding: "30px 26px 34px",
+                  transformStyle: "preserve-3d",
+                }}
+              >
                 <div
-                  className={
-                    "inline-flex h-14 w-14 items-center justify-center rounded-2xl " +
-                    t.bg
-                  }
+                  style={{
+                    fontFamily: V3.mono,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: V3.faint,
+                  }}
                 >
-                  <Icon size={26} className={t.fg} />
+                  {String(i + 1).padStart(2, "0")}
                 </div>
-                <h3 className="font-bold text-slate-900 mt-4">{f.t}</h3>
-                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                <div
+                  data-feature-chip="1"
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    marginTop: 20,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "transform .5s cubic-bezier(.34,1.4,.4,1)",
+                    background: f.color,
+                    opacity: 0.92,
+                  }}
+                >
+                  <Icon size={18} color="#fff" strokeWidth={2} />
+                </div>
+                <h3
+                  style={{
+                    fontFamily: V3.display,
+                    fontSize: 19,
+                    fontWeight: 700,
+                    letterSpacing: "-.02em",
+                    margin: "20px 0 0",
+                    color: V3.ink,
+                  }}
+                >
+                  {f.t}
+                </h3>
+                <p
+                  style={{
+                    margin: "9px 0 0",
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: V3.muted,
+                  }}
+                >
                   {f.d}
                 </p>
               </div>
@@ -888,189 +1677,337 @@ function Marketing({ enter, go }) {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className="bg-brand-50">
-        <div className="max-w-6xl mx-auto px-5 py-16 md:py-20">
-          <div className="text-center">
-            <p className="text-xs font-bold tracking-widest brand">
-              SIMPLE. FAST. EFFECTIVE.
-            </p>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold text-slate-900 mt-3">
-              How AIFAGen Works
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <div key={i} className="text-center relative">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-md relative">
-                    <Icon size={28} className="brand" />
-                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-brand text-white text-xs font-bold">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-slate-900 mt-5">{s.t}</h3>
-                  <p className="text-sm text-slate-500 mt-2">{s.d}</p>
+      {/* ---------------- HOW IT WORKS ---------------- */}
+      <section
+        id="how-it-works"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          background: V3.ink,
+          color: V3.page,
+        }}
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "-30%",
+            left: "-10%",
+            width: "60%",
+            height: "150%",
+            background:
+              "radial-gradient(ellipse at center,rgba(109,74,255,.5),rgba(109,74,255,0) 62%)",
+            filter: "blur(22px)",
+            animation: "auroraA 18s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            bottom: "-40%",
+            right: "-8%",
+            width: "55%",
+            height: "150%",
+            background:
+              "radial-gradient(ellipse at center,rgba(168,121,42,.38),rgba(168,121,42,0) 62%)",
+            filter: "blur(26px)",
+            animation: "auroraB 24s ease-in-out -6s infinite",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(56px,7vw,96px) 24px",
+          }}
+        >
+          <span style={v3Kicker(V3.faint)}>Simple. Fast. Effective.</span>
+          <h2 style={{ ...h2Style, maxWidth: "22em" }}>How AIFAGen Works</h2>
+          <div
+            ref={stepsRef}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+              gap: 34,
+              marginTop: 56,
+            }}
+          >
+            {STEP_CARDS.map((s, i) => (
+              <div key={s.t}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                  <span
+                    style={{
+                      fontFamily: V3.mono,
+                      fontSize: 40,
+                      fontWeight: 700,
+                      color: V3.page,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background: `linear-gradient(90deg,${V3.brand},#1E293B)`,
+                      transformOrigin: "left",
+                      animation: "lineDraw 1.1s cubic-bezier(.2,.7,.2,1) both",
+                    }}
+                  />
                 </div>
-              );
-            })}
+                <h3
+                  style={{
+                    fontFamily: V3.display,
+                    fontSize: 19,
+                    fontWeight: 700,
+                    letterSpacing: "-.02em",
+                    margin: "22px 0 0",
+                  }}
+                >
+                  {s.t}
+                </h3>
+                <p
+                  style={{
+                    margin: "9px 0 0",
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    color: V3.faint,
+                  }}
+                >
+                  {s.d}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="resources" className="max-w-6xl mx-auto px-5 py-16 md:py-24">
-        {/* FAQ */}
-        <div className="max-w-2xl mx-auto mt-16">
-          <h3 className="font-display text-2xl font-extrabold text-slate-900 text-center mb-6">
-            Frequently Asked Questions
-          </h3>
+      {/* ---------------- FAQ ---------------- */}
+      <section
+        id="faq"
+        style={{
+          maxWidth: 760,
+          margin: "0 auto",
+          padding: "clamp(56px,7vw,96px) 24px",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: V3.display,
+            fontSize: "clamp(28px,3.2vw,40px)",
+            lineHeight: 1.05,
+            letterSpacing: "-.035em",
+            fontWeight: 700,
+            margin: 0,
+            color: V3.ink,
+          }}
+        >
+          Frequently asked questions
+        </h2>
+        <div
+          ref={faqRef}
+          style={{ marginTop: 34, borderTop: `1px solid ${V3.line}` }}
+        >
           {FAQS.map((f, i) => (
-            <div key={i} className="border-b border-slate-100">
+            <div key={f.q} style={{ borderBottom: `1px solid ${V3.line}` }}>
               <button
-                onClick={() => setFaq(faq === i ? -1 : i)}
-                className="w-full flex items-center gap-3 py-4 text-left"
+                onClick={() => setFaq((p) => (p === i ? -1 : i))}
+                aria-expanded={faq === i}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "22px 4px",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
               >
-                <Plus
-                  size={18}
-                  className={
-                    "brand transition " + (faq === i ? "rotate-45" : "")
-                  }
-                />
-                <span className="font-semibold text-slate-800">{f.q}</span>
-                <ChevronDown
-                  size={18}
-                  className={
-                    "ml-auto text-slate-400 transition " +
-                    (faq === i ? "rotate-180" : "")
-                  }
-                />
+                <span
+                  style={{
+                    flex: 1,
+                    fontFamily: V3.display,
+                    fontSize: 17,
+                    fontWeight: 600,
+                    letterSpacing: "-.02em",
+                    color: V3.ink,
+                  }}
+                >
+                  {f.q}
+                </span>
+                <span
+                  style={{
+                    fontFamily: V3.mono,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: V3.brand,
+                    transition: "transform .3s cubic-bezier(.2,.7,.2,1)",
+                    transform: faq === i ? "rotate(45deg)" : "none",
+                  }}
+                >
+                  +
+                </span>
               </button>
               {faq === i && (
-                <p className="text-sm text-slate-500 pb-4 pl-8">{f.a}</p>
+                <p
+                  style={{
+                    margin: 0,
+                    padding: "0 44px 24px 4px",
+                    fontSize: 14.5,
+                    lineHeight: 1.65,
+                    color: V3.muted,
+                    animation: "v3FadeIn .3s ease both",
+                  }}
+                >
+                  {f.a}
+                </p>
               )}
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-6xl mx-auto px-5 pb-16">
-        <div className="rounded-3xl bg-brand-grad px-8 py-10 flex flex-col md:flex-row md:items-center gap-6 text-white">
-          <div>
-            <h3 className="font-display text-2xl md:text-3xl font-extrabold">
+      {/* ---------------- CTA ---------------- */}
+      <section
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto",
+          padding: "0 24px clamp(56px,7vw,96px)",
+        }}
+      >
+        <div
+          style={{
+            background: V3.brand,
+            color: V3.page,
+            borderRadius: 24,
+            padding: "clamp(34px,4vw,56px)",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 26,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 280 }}>
+            <h3
+              style={{
+                fontFamily: V3.display,
+                fontSize: "clamp(26px,3vw,38px)",
+                lineHeight: 1.06,
+                letterSpacing: "-.035em",
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
               Your dream role is closer than you think.
             </h3>
-            <p className="text-white/85 mt-2">
+            <p
+              style={{
+                margin: "14px 0 0",
+                fontSize: 16,
+                lineHeight: 1.55,
+                color: "rgba(248,249,254,.82)",
+                maxWidth: "34em",
+              }}
+            >
               Join AIFAGen today and take the first step toward the career you
               deserve.
             </p>
           </div>
           <button
             onClick={enter}
-            className="md:ml-auto shrink-0 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold brand hover:bg-white/90"
+            className="v3-btn-light"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              background: V3.page,
+              border: "none",
+              borderRadius: 13,
+              padding: "17px 27px",
+              fontSize: 15,
+              fontWeight: 700,
+              color: V3.ink,
+              cursor: "pointer",
+            }}
           >
-            Get Your Career Plan <ArrowRight size={18} />
+            Get Your Career Plan <span style={{ fontSize: 17 }}>→</span>
           </button>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-200">
-        {/* Newsletter band */}
-        <div className="border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row md:items-center gap-6">
-            <div>
-              <h3 className="font-display text-2xl font-extrabold text-slate-900">
-                Stay ahead with AI insights
-              </h3>
-              <p className="text-slate-500 mt-2">
-                Get the latest on AI innovations delivered to your inbox.
-              </p>
-            </div>
-            <div className="md:ml-auto flex w-full max-w-md gap-3">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-brand transition"
-              />
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-brand-grad px-6 py-3 text-sm font-bold text-white hover:opacity-90 transition"
-              >
-                Subscribe <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Main columns */}
-        <div className="max-w-6xl mx-auto px-5 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* ---------------- FOOTER ---------------- */}
+      <footer style={{ background: "#fff", borderTop: `1px solid ${V3.line}` }}>
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "44px 24px",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
+            gap: 36,
+          }}
+        >
           <div>
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="AIFAGen Labs" className="h-8 w-8" />
-              <span className="font-display font-extrabold text-slate-900">
-                AIFAGen <span className="brand">Labs</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <img
+                src="/logo.png"
+                alt="AIFAGen Labs"
+                style={{ height: 32, width: 32, objectFit: "contain" }}
+              />
+              <span
+                style={{
+                  fontFamily: V3.display,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  letterSpacing: "-.02em",
+                  color: V3.ink,
+                }}
+              >
+                AIFAGen <span style={{ color: V3.brand }}>Labs</span>
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-3 max-w-xs">
+            <p
+              style={{
+                margin: "14px 0 0",
+                fontSize: 13.5,
+                lineHeight: 1.6,
+                color: V3.muted,
+                maxWidth: "24em",
+              }}
+            >
               Building Intelligent Ecosystems for the Future. AI for All
               Generations.
             </p>
-            <div className="flex items-center gap-3 mt-5">
-              {[
-                [
-                  Linkedin,
-                  "LinkedIn",
-                  "https://www.linkedin.com/company/aifagenlabs/",
-                ],
-                [Twitter, "Twitter", "https://x.com/aifagenlabs"],
-                [
-                  Instagram,
-                  "Instagram",
-                  "https://www.instagram.com/aifagen_labs?igsh=Y3hqcWJoZWgxMDU0",
-                ],
-                [Mail, "Email", "mailto:pmo@aifagenlabs.com"],
-              ].map(([Icon, label, href], i) => (
-                <a
-                  key={i}
-                  href={href}
-                  aria-label={label}
-                  target={href.startsWith("http") ? "_blank" : undefined}
-                  rel={
-                    href.startsWith("http") ? "noopener noreferrer" : undefined
-                  }
-                  onClick={href === "#" ? (e) => e.preventDefault() : undefined}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-[#6d4aff] transition"
-                >
-                  <Icon size={17} />
-                </a>
-              ))}
-            </div>
           </div>
 
-          {[
-            [
-              "Company",
-              ["About Us", "Innovation Labs", "Case Studies", "Careers"],
-            ],
-            ["Solutions", ["Services", "Products", "AIFAG Suite", "LifeOS"]],
-            [
-              "Connect",
-              [
-                "Contact",
-                "Collaborate",
-                "Partners",
-                "Privacy Policy",
-                "Terms & Conditions",
-              ],
-            ],
-          ].map((col, i) => (
-            <div key={i}>
-              <div className="font-bold text-slate-900 text-sm">{col[0]}</div>
-              <ul className="mt-3 space-y-2">
-                {col[1].map((l) => (
+          {FOOTER_COLS.map((col) => (
+            <div key={col.title}>
+              <div
+                style={{
+                  ...v3Kicker(V3.faint),
+                  letterSpacing: ".14em",
+                }}
+              >
+                {col.title}
+              </div>
+              <ul
+                style={{
+                  listStyle: "none",
+                  margin: "16px 0 0",
+                  padding: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                {col.links.map((l) => (
                   <li key={l}>
                     <a
                       href="#"
@@ -1079,7 +2016,8 @@ function Marketing({ enter, go }) {
                         const p = FOOTER_ROUTES[l];
                         if (p) go?.(p);
                       }}
-                      className="text-sm text-slate-500 hover:text-slate-800"
+                      className="v3-footlink"
+                      style={{ fontSize: 13.5, color: V3.body }}
                     >
                       {l}
                     </a>
@@ -1090,51 +2028,34 @@ function Marketing({ enter, go }) {
           ))}
         </div>
 
-        {/* Contact + locations bar */}
-        <div className="border-t border-slate-200">
-          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col lg:flex-row lg:items-start gap-4">
-            <div className="text-sm text-slate-500 space-y-2">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                <span className="inline-flex items-center gap-2">
-                  <Globe size={15} className="text-slate-400" />
-                  Global Operations
-                </span>
-                <a
-                  href="mailto:pmo@aifagenlabs.com"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Mail size={15} className="text-slate-400" />
-                  pmo@aifagenlabs.com
-                </a>
-                <a
-                  href="tel:+919390693114"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +91 93906 93114
-                </a>
-                <a
-                  href="tel:+14752240417"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +1 (475) 224-0417
-                </a>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={15} className="text-slate-400" />
-                  Hyderabad, India
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={15} className="text-slate-400" />
-                  USA: New Jersey
-                </span>
-              </div>
-            </div>
-            <div className="text-xs text-slate-400 lg:ml-auto lg:text-right lg:pt-1">
+        <div style={{ borderTop: `1px solid ${V3.line}` }}>
+          <div
+            style={{
+              maxWidth: 1180,
+              margin: "0 auto",
+              padding: "20px 24px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px 26px",
+              fontSize: 13,
+              color: V3.muted,
+            }}
+          >
+            <span>Global Operations</span>
+            <a href="mailto:pmo@aifagenlabs.com" className="v3-footlink" style={{ color: V3.muted }}>
+              pmo@aifagenlabs.com
+            </a>
+            <a href="tel:+919390693114" className="v3-footlink" style={{ color: V3.muted }}>
+              +91 93906 93114
+            </a>
+            <a href="tel:+14752240417" className="v3-footlink" style={{ color: V3.muted }}>
+              +1 (475) 224-0417
+            </a>
+            <span>Hyderabad, India</span>
+            <span>USA: New Jersey</span>
+            <span style={{ marginLeft: "auto", color: V3.faint }}>
               © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
-            </div>
+            </span>
           </div>
         </div>
       </footer>

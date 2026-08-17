@@ -1,136 +1,276 @@
-import { NAV } from "../../data/constants";
-import { bBrandSm } from "../../styles/buttonStyles";
-import { PLAN_LABEL, isPaidPlan } from "../../utils/plan";
-import { CreditCard, HelpCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { NAV } from "../../data/constants";
+import { PLAN_LABEL, isPaidPlan } from "../../utils/plan";
 
-export default function Sidebar({ open, setOpen, exit, plan }) {
-  const paid = isPaidPlan(plan);
+/* Exact port of the "AIFAGen v3" app sidebar. The spec drops icons in favour
+   of a status dot per item, an active state that inverts to the ink pill, and
+   a mono count on the right. Static properties are inline; hover, and the
+   below-1024px slide-over behaviour, live in the v3 CSS block in AIFAGen.jsx. */
+
+const C = {
+  brand: "#6D4AFF",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+export default function Sidebar({ open, setOpen, exit, plan, counts = {} }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const paid = isPaidPlan(plan);
 
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm lg:hidden"
+          className="v3-scrim"
           onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            background: "rgba(15,23,42,.3)",
+            backdropFilter: "blur(2px)",
+          }}
         />
       )}
 
       <aside
-        className={
-          "fixed z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col transition-transform lg:static lg:translate-x-0 " +
-          (open ? "translate-x-0" : "-translate-x-full")
-        }
+        className="v3-sidebar"
+        data-open={open ? "1" : "0"}
+        style={{
+          width: 270,
+          flexShrink: 0,
+          background: "#fff",
+          borderRight: `1px solid ${C.line}`,
+          display: "flex",
+          flexDirection: "column",
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+        }}
       >
-        {/* Logo */}
         <button
           onClick={exit}
-          className="flex items-center gap-3 px-5 h-16 border-b border-slate-100 shrink-0"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 11,
+            height: 74,
+            padding: "0 22px",
+            background: "transparent",
+            border: "none",
+            borderBottom: `1px solid ${C.lineSoft}`,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
         >
-          <img src="/logo.png" alt="AIFAGen" className="h-10 w-10 object-contain" />
-          <span className="font-display text-xl font-extrabold text-slate-900">AIFAGen</span>
+          <img
+            src="/logo.png"
+            alt="AIFAGen"
+            style={{ height: 32, width: 32, objectFit: "contain" }}
+          />
+          <span
+            style={{
+              fontFamily: C.display,
+              fontSize: 21,
+              fontWeight: 700,
+              letterSpacing: "-.03em",
+              color: C.ink,
+            }}
+          >
+            AIFAGen
+          </span>
         </button>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto scroll px-3 py-4 space-y-1">
+        <nav
+          className="scroll"
+          style={{
+            position: "relative",
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: C.mono,
+              fontSize: 9.5,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: C.faint,
+              padding: "0 10px 10px",
+            }}
+          >
+            Workspace
+          </div>
+
           {NAV.map((n) => {
-            const Icon = n.icon;
             const active = location.pathname === `/${n.id}`;
+            const count = counts[n.id];
             return (
               <button
                 key={n.id}
+                className="v3-navbtn"
+                data-active-nav={active ? "1" : "0"}
                 onClick={() => {
-  navigate(`/${n.id}`);
-  setOpen(false);
-}}
-                className={
-                  "w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition " +
-                  (active ? "bg-brand-50 brand" : "text-slate-500 hover:bg-slate-50")
-                }
+                  navigate(`/${n.id}`);
+                  setOpen(false);
+                }}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  width: "100%",
+                  padding: "11px 12px",
+                  border: "none",
+                  borderRadius: 12,
+                  background: active ? C.ink : "transparent",
+                  color: active ? C.page : C.body,
+                  fontSize: 14,
+                  fontWeight: active ? 700 : 600,
+                  cursor: "pointer",
+                }}
               >
-                <Icon size={18} className={active ? "brand" : "text-slate-400"} />
-                {n.label}
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: active ? C.brand : C.lineMid,
+                    transition: "background .2s",
+                  }}
+                />
+                <span style={{ flex: 1, textAlign: "left" }}>{n.label}</span>
+                <span
+                  style={{
+                    fontFamily: C.mono,
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: active ? "#A8B3C4" : C.faint,
+                  }}
+                >
+                  {count == null || count === 0 ? "" : count}
+                </span>
               </button>
             );
           })}
-{/*
-<button
-  onClick={() => {
-    navigate("/billing");
-    setOpen(false);
-  }}
-  className={
-    "w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition " +
-    (
-      location.pathname === "/billing"
-        ? "bg-brand-50 brand"
-        : "text-slate-500 hover:bg-slate-50"
-    )
-  }
->
-  <CreditCard
-    size={18}
-    className={
-      location.pathname === "/billing"
-        ? "brand"
-        : "text-slate-400"
-    }
-  />
-  Billing
-</button>
-*/}
-        <div className="pt-2 mt-2 border-t border-slate-100">
-          <button className="w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
-            <HelpCircle size={18} className="text-slate-400" />
-            Help & Support
+
+          <div
+            style={{ height: 1, background: C.lineSoft, margin: "14px 10px" }}
+          />
+
+          <button
+            className="v3-softbtn"
+            onClick={() => {
+              navigate("/settings");
+              setOpen(false);
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              width: "100%",
+              padding: "11px 12px",
+              background: "transparent",
+              border: "none",
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.muted,
+              cursor: "pointer",
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: C.lineMid,
+              }}
+            />
+            <span style={{ flex: 1, textAlign: "left" }}>Help &amp; Support</span>
           </button>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Plan card */}
-      <div className="p-3 shrink-0">
-        <div className="rounded-2xl bg-brand-50 p-4">
-          <div className="text-xs font-bold brand">Current plan</div>
-
-          <div className="font-display font-extrabold brand">
-            {PLAN_LABEL[plan] || "Free"}
+        <div style={{ padding: 14, flexShrink: 0 }}>
+          <div style={{ background: C.ink, borderRadius: 17, padding: 19 }}>
+            <div
+              style={{
+                fontFamily: C.mono,
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: ".14em",
+                textTransform: "uppercase",
+                color: C.faint,
+              }}
+            >
+              Current plan
+            </div>
+            <div
+              style={{
+                fontFamily: C.display,
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                color: C.page,
+                marginTop: 4,
+              }}
+            >
+              {PLAN_LABEL[plan] || "Free"}
+            </div>
+            <p
+              style={{
+                margin: "9px 0 0",
+                fontSize: 12.5,
+                lineHeight: 1.55,
+                color: C.faint,
+              }}
+            >
+              {paid
+                ? "Manage your subscription and invoices."
+                : "Unlock unlimited AI matching, resume optimization and more."}
+            </p>
+            {!paid && (
+              <button
+                className="v3-btn-light"
+                onClick={() => {
+                  navigate("/pricing");
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: 15,
+                  background: C.page,
+                  border: "none",
+                  borderRadius: 11,
+                  padding: 11,
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  color: C.ink,
+                  cursor: "pointer",
+                }}
+              >
+                Upgrade now
+              </button>
+            )}
           </div>
-
-          {paid ? (
-            <>
-              <p className="text-xs text-slate-500 mt-1">
-                Manage your subscription and invoices.
-              </p>
-
-              {/* OPTIONAL: comment this too if you want NO billing access */}
-              {/*
-              <button
-                onClick={() => navigate("/billing")}
-                className={bBrandSm + " w-full mt-3"}
-              >
-                Manage plan
-              </button>
-              */}
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-slate-500 mt-1">
-                Unlock unlimited AI, resume optimization and more.
-              </p>
-
-              <button
-                onClick={() => navigate("/pricing")}
-                className={bBrandSm + " w-full mt-3"}
-              >
-                Upgrade Now
-              </button>
-            </>
-          )}
         </div>
-      </div>
-    </aside>
-  </>
-);
+      </aside>
+    </>
+  );
 }

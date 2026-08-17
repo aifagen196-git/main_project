@@ -45,15 +45,26 @@ export default function AppShell({ profile, refresh, exit }) {
   const plan = profile?.plan || "free";
 
   return (
-    <div className="page-bg font-body min-h-screen text-slate-800">
-      <div className="flex min-h-screen">
-        <Sidebar open={open} setOpen={setOpen} exit={exit} plan={plan} />
+    <div className="font-body" style={{ background: "#F8F9FE", color: "#0F172A" }}>
+      <div style={{ display: "flex", minHeight: "100vh" }}>
+        <Sidebar
+          open={open}
+          setOpen={setOpen}
+          exit={exit}
+          plan={plan}
+          counts={{ saved: saved.length }}
+        />
 
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <Topbar profile={profile} setOpen={setOpen} exit={exit} />
 
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-6xl mx-auto">
+          <main
+            style={{
+              flex: 1,
+              padding: "clamp(22px,3.4vw,40px) clamp(16px,3vw,32px)",
+            }}
+          >
+            <div style={{ maxWidth: 1180, margin: "0 auto" }}>
               <Suspense
                 fallback={
                   <div className="flex justify-center py-20">
