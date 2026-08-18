@@ -1,11 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 
-import Card from "../components/common/Card";
-import Ring from "../components/common/Ring";
-import SectionTitle from "../components/common/SectionTitle";
-import Bar from "../components/ui/Bar";
-import Pill from "../components/ui/Pill";
-
 import {
   uploadResume,
   validateResumeFile,
@@ -13,17 +7,25 @@ import {
   improveResume,
   downloadFullResume,
 } from "../services/resume";
+import { matchHex } from "../utils/matchHex";
 
-import { bBrand, bOutline } from "../styles/buttonStyles";
+/* Exact port of the "AIFAGen v3" resume screen. Upload, analysis, improve and
+   download all still run through the existing services. */
 
-import {
-  Upload,
-  Download,
-  Sparkles,
-  CheckCircle2,
-  Loader2,
-  Wand2,
-} from "lucide-react";
+const R = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  track: "#EDF0F8",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  lineMid: "#DDE3EE",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
 
 export default function Resume() {
   const [tab, setTab] = useState("Strengths");
@@ -142,308 +144,505 @@ export default function Resume() {
 
   const analysis = selectedResume?.ai_analysis || {};
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-1">
-          <h2 className="font-display text-3xl font-extrabold text-slate-900">
-            Resume Analysis
-          </h2>
+  const resumeScore = Number(analysis.resume_score ?? 0);
+  const atsScore = Number(analysis.ats_score ?? analysis.resume_score ?? 0);
+  const hasResume = Boolean(selectedResume);
+  const skillsFound = analysis.skills_found || [];
+  const skillsMissing = analysis.skills_missing || [];
+  const parsePct = busy ? 60 : hasResume ? 100 : 0;
 
-          <p className="text-slate-500 mt-1">
+  const atsLabel =
+    atsScore >= 85
+      ? "Highly compatible"
+      : atsScore >= 70
+        ? "Compatible"
+        : atsScore >= 50
+          ? "Needs work"
+          : "Poorly parsed";
+
+  const kicker = {
+    fontFamily: R.mono,
+    fontSize: 9.5,
+    fontWeight: 700,
+    letterSpacing: ".14em",
+    textTransform: "uppercase",
+    color: R.faint,
+  };
+
+  const cardStyle = (delay) => ({
+    minWidth: 0,
+    background: "#fff",
+    border: `1px solid ${R.line}`,
+    borderRadius: 20,
+    padding: 26,
+    boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+    animation: `riseIn .6s cubic-bezier(.2,.7,.2,1) ${delay}ms both`,
+  });
+
+  return (
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          gap: 16,
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <div style={{ ...kicker, fontSize: 10, letterSpacing: ".16em" }}>Resume</div>
+          <h1
+            style={{
+              fontFamily: R.display,
+              fontSize: "clamp(28px,3.4vw,40px)",
+              lineHeight: 1.04,
+              letterSpacing: "-.035em",
+              fontWeight: 700,
+              margin: "12px 0 0",
+              color: R.ink,
+            }}
+          >
+            What recruiters will see.
+          </h1>
+          <p style={{ margin: "9px 0 0", fontSize: 15, color: R.muted }}>
             AI-powered feedback to help you create a resume that gets you
             interviews.
           </p>
         </div>
-
-        <div className="flex gap-2">
-          <button
-            className={bOutline}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload size={16} />
-            Replace Resume
-          </button>
-
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.docx"
-            className="hidden"
+            accept=".pdf,.doc,.docx"
             onChange={handleResumeUpload}
+            style={{ display: "none" }}
           />
-
-          {!out ? (
-            <button
-              onClick={improve}
-              disabled={busy || !selectedResume}
-              className={bBrand}
-            >
-              {busy ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Working...
-                </>
-              ) : (
-                <>
-                  <Wand2 size={16} />
-                  Improve Resume
-                </>
-              )}
-            </button>
-          ) : (
-            <button onClick={download} disabled={downloading} className={bBrand}>
-              {downloading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Preparing...
-                </>
-              ) : (
-                <>
-                  <Download size={16} />
-                  Download Improved Resume
-                </>
-              )}
-            </button>
-          )}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+            className="v3-btn-outline"
+            style={{
+              background: "#fff",
+              border: `1px solid ${R.lineMid}`,
+              borderRadius: 12,
+              padding: "13px 19px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: R.ink,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.65 : 1,
+            }}
+          >
+            {hasResume ? "Replace resume" : "Upload resume"}
+          </button>
+          <button
+            onClick={improve}
+            disabled={busy || !hasResume}
+            className="v3-btn-dark"
+            style={{
+              background: R.ink,
+              border: "none",
+              borderRadius: 12,
+              padding: "13px 19px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: R.page,
+              cursor: busy || !hasResume ? "default" : "pointer",
+              opacity: busy || !hasResume ? 0.65 : 1,
+            }}
+          >
+            {busy ? "Working…" : "Improve resume"}
+          </button>
         </div>
       </div>
 
       {improveError && (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div
+          style={{
+            marginTop: 20,
+            background: "#FFFBEB",
+            border: "1px solid #FDE68A",
+            borderRadius: 14,
+            padding: "12px 14px",
+            fontSize: 13.5,
+            color: "#92400E",
+          }}
+        >
           {improveError}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="text-center">
-              <div className="text-xs font-semibold text-slate-400 mb-2">
-                Resume Score
-              </div>
+      {!hasResume ? (
+        <div
+          style={{
+            background: "#fff",
+            border: `1px dashed ${R.lineMid}`,
+            borderRadius: 20,
+            padding: "64px 24px",
+            textAlign: "center",
+            marginTop: 26,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: R.display,
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: "-.02em",
+              color: R.ink,
+            }}
+          >
+            No resume yet
+          </div>
+          <p style={{ margin: "8px 0 0", fontSize: 14, color: R.muted }}>
+            Upload a PDF or Word file and the analysis appears here.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ---------------- SCORE + ATS ---------------- */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 16,
+              marginTop: 26,
+            }}
+          >
+            <div data-r="wide" className="v3-settings-wide" style={cardStyle(80)}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 28 }}>
+                <div style={{ position: "relative", width: 150, height: 150, flexShrink: 0 }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "50%",
+                      background: `conic-gradient(${matchHex(resumeScore)} ${(resumeScore * 3.6).toFixed(1)}deg, ${R.track} 0)`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 15,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: R.mono,
+                        fontSize: 38,
+                        fontWeight: 700,
+                        color: R.ink,
+                        lineHeight: 1,
+                        letterSpacing: "-.03em",
+                      }}
+                    >
+                      {resumeScore || "—"}
+                    </span>
+                    <span style={{ ...kicker, marginTop: 5 }}>/ 100</span>
+                  </div>
+                </div>
 
-              <Ring
-                value={analysis.resume_score || 0}
-                size={150}
-                stroke={14}
-                label={String(analysis.resume_score || "--")}
-                sub="/100"
-              />
-            </div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={kicker}>
+                    {busy ? "Analyzing" : analysis.experience_level || "Analyzed"}
+                  </div>
+                  <h2
+                    style={{
+                      fontFamily: R.display,
+                      fontSize: 19,
+                      fontWeight: 700,
+                      letterSpacing: "-.02em",
+                      margin: "10px 0 0",
+                      color: R.ink,
+                    }}
+                  >
+                    {selectedResume?.file_name || "Your resume"}
+                  </h2>
+                  <p
+                    style={{
+                      margin: "9px 0 0",
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                      color: R.muted,
+                    }}
+                  >
+                    {analysis.summary ||
+                      "Analysis is not available for this resume yet."}
+                  </p>
 
-            <div className="flex-1 w-full">
-              <div className="font-bold text-slate-900">
-                {analysis.summary ? "AI Resume Analysis" : "Upload a resume"}
-              </div>
-
-              <p className="text-sm text-slate-500 mt-1 mb-4">
-                {analysis.summary || "Upload a resume to receive AI insights."}
-              </p>
-
-              <div className="space-y-2">
-                <div className="text-sm">
-                  Experience:
-                  <span className="font-semibold ml-2">
-                    {analysis.experience_level || "--"}
-                  </span>
+                  <div style={{ marginTop: 18 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 12.5,
+                        color: R.muted,
+                      }}
+                    >
+                      <span style={kicker}>Parse progress</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontFamily: R.mono,
+                          fontWeight: 700,
+                          color: R.ink,
+                        }}
+                      >
+                        {parsePct}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 7,
+                        borderRadius: 20,
+                        background: R.lineSoft,
+                        marginTop: 9,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${parsePct}%`,
+                          borderRadius: 20,
+                          background: R.brand,
+                          transformOrigin: "left",
+                          animation: "sweep .6s cubic-bezier(.2,.7,.2,1) both",
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Card>
 
-        <Card className="p-6">
-          <SectionTitle title="ATS Compatibility" />
-
-          <div className="num text-4xl font-extrabold text-emerald-600">
-            {analysis.ats_score || "--"}%
-          </div>
-
-          <div className="font-bold text-emerald-600">
-            {analysis.ats_score >= 80
-              ? "Highly Compatible"
-              : analysis.ats_score >= 60
-                ? "Moderately Compatible"
-                : "Needs Improvement"}
-          </div>
-
-          <p className="text-sm text-slate-500 mt-1">
-            Your resume is optimized for most ATS systems.
-          </p>
-
-          <div className="mt-3">
-            <Bar value={analysis.ats_score || 0} color="bg-emerald-500" />
-          </div>
-
-          <div className="mt-4 rounded-xl bg-emerald-50 p-3 flex items-center gap-2 text-sm">
-            <CheckCircle2 size={16} className="text-emerald-600" />
-
-            <span className="font-semibold text-emerald-700">
-              Your resume is ATS-friendly.
-            </span>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6">
-          <div className="flex gap-5 border-b border-slate-100 mb-4">
-            {["Strengths", "Improvements", "Keywords", "ATS Optimization"].map(
-              (t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={
-                    "pb-3 text-sm font-semibold border-b-2 -mb-px transition " +
-                    (tab === t
-                      ? "brand border-brand"
-                      : "text-slate-400 border-transparent")
-                  }
-                >
-                  {t}
-                </button>
-              ),
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {(tabs[tab] || []).map((item, index) => (
-              <div key={`${item}-${index}`} className="flex items-start gap-3">
-                <CheckCircle2 size={20} className="text-emerald-500 shrink-0" />
-
-                <div className="text-sm ">{item}</div>
+            <div style={cardStyle(160)}>
+              <div style={kicker}>ATS compatibility</div>
+              <div
+                style={{
+                  fontFamily: R.mono,
+                  fontSize: 46,
+                  fontWeight: 700,
+                  letterSpacing: "-.04em",
+                  color: R.brand,
+                  lineHeight: 1,
+                  marginTop: 14,
+                }}
+              >
+                {atsScore || "—"}
               </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <SectionTitle
-            title="Top Skills Found"
-            action={
-              <button className="text-sm font-semibold brand">Edit</button>
-            }
-          />
-
-          <div className="flex flex-wrap gap-1.5">
-            {analysis.skills_found?.map((s) => (
-              <span
-                key={s}
-                className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-medium brand"
+              <div style={{ fontSize: 14, fontWeight: 700, color: R.brand, marginTop: 6 }}>
+                {atsLabel}
+              </div>
+              <div
+                style={{
+                  height: 7,
+                  borderRadius: 20,
+                  background: R.lineSoft,
+                  marginTop: 16,
+                  overflow: "hidden",
+                }}
               >
-                {s}
-              </span>
-            ))}
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${atsScore}%`,
+                    borderRadius: 20,
+                    background: R.brand,
+                    transformOrigin: "left",
+                    animation: "sweep .6s cubic-bezier(.2,.7,.2,1) 120ms both",
+                  }}
+                />
+              </div>
+              <p style={{ margin: "16px 0 0", fontSize: 13, lineHeight: 1.6, color: R.muted }}>
+                Clean single-column structure, standard section headings, no
+                tables. Parsers will read every line.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-5 text-sm font-bold text-slate-700 mb-2">
-            Skills to Add
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {analysis.skills_missing?.map((s) => (
-              <span
-                key={s}
-                className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700"
+          {/* ---------------- TABS + SKILLS ---------------- */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 16,
+              marginTop: 16,
+            }}
+          >
+            <div data-r="wide" className="v3-settings-wide" style={cardStyle(240)}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  borderBottom: `1px solid ${R.lineSoft}`,
+                  paddingBottom: 2,
+                }}
               >
-                {s}
-              </span>
-            ))}
-          </div>
-        </Card>
-      </div>
-      {out && (
-        <Card className="p-6">
-          <h3 className="text-2xl font-bold text-slate-900 mb-6">
-            AI Resume Improvements
-          </h3>
+                {Object.keys(tabs).map((t) => {
+                  const on = tab === t;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        borderBottom: `2px solid ${on ? R.brand : "transparent"}`,
+                        borderRadius: 0,
+                        padding: "10px 12px",
+                        fontSize: 13.5,
+                        fontFamily: "inherit",
+                        fontWeight: on ? 700 : 600,
+                        color: on ? R.ink : R.muted,
+                        cursor: "pointer",
+                        transition: "color .18s,border-color .18s",
+                      }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
 
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">
-                Improved Professional Summary
-              </h4>
-
-              <div className="rounded-xl bg-slate-50 p-4 text-slate-700">
-                {out.improved_summary}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 18 }}>
+                {(tabs[tab] || []).length === 0 ? (
+                  <p style={{ margin: "10px 4px", fontSize: 14, color: R.muted }}>
+                    Nothing recorded under {tab.toLowerCase()} for this resume.
+                  </p>
+                ) : (
+                  (tabs[tab] || []).map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        gap: 14,
+                        padding: "14px 4px",
+                        borderBottom: `1px solid ${R.page}`,
+                        animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${index * 55}ms both`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: R.mono,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: R.faint,
+                          flexShrink: 0,
+                          paddingTop: 2,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span style={{ fontSize: 14, lineHeight: 1.6, color: "#334155" }}>
+                        {typeof item === "string" ? item : JSON.stringify(item)}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">
-                Rewritten Resume Bullets
-              </h4>
-
-              <div className="space-y-3">
-                {out.rewritten_bullets?.map((bullet, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-3 rounded-xl bg-emerald-50 p-4"
-                  >
-                    <CheckCircle2
-                      size={18}
-                      className="text-emerald-600 mt-1 shrink-0"
-                    />
-
-                    <span className="text-slate-700">{bullet}</span>
-                  </div>
-                ))}
+            <div style={cardStyle(320)}>
+              <div style={kicker}>Skills found</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+                {skillsFound.length === 0 ? (
+                  <span style={{ fontSize: 13, color: R.muted }}>None extracted yet.</span>
+                ) : (
+                  skillsFound.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: R.brand,
+                        background: "#F0EDFF",
+                        borderRadius: 8,
+                        padding: "6px 11px",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))
+                )}
               </div>
-            </div>
 
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">
-                Recommended ATS Keywords
-              </h4>
-
-              <div className="flex flex-wrap gap-2">
-                {out.keywords_to_add?.map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium brand"
-                  >
-                    {keyword}
+              <div style={{ ...kicker, marginTop: 26 }}>Worth adding</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
+                {skillsMissing.length === 0 ? (
+                  <span style={{ fontSize: 13, color: R.muted }}>
+                    No gaps flagged against your target roles.
                   </span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">
-                Recruiter Feedback
-              </h4>
-
-              <div className="space-y-2">
-                {out.recruiter_feedback?.map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl bg-blue-50 p-3 text-slate-700"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-slate-900 mb-2">
-                ATS Improvements
-              </h4>
-
-              <div className="space-y-2">
-                {out.ats_improvements?.map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl bg-amber-50 p-3 text-slate-700"
-                  >
-                    {item}
-                  </div>
-                ))}
+                ) : (
+                  skillsMissing.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: R.clay,
+                        background: "#FFF0F3",
+                        borderRadius: 8,
+                        padding: "6px 11px",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
           </div>
-        </Card>
+
+          {/* ---------------- IMPROVED OUTPUT ---------------- */}
+          {out && (
+            <div style={{ ...cardStyle(0), marginTop: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={kicker}>Improved draft</div>
+                <button
+                  onClick={download}
+                  disabled={downloading}
+                  style={{
+                    marginLeft: "auto",
+                    background: R.ink,
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "9px 15px",
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: R.page,
+                    cursor: downloading ? "default" : "pointer",
+                    opacity: downloading ? 0.65 : 1,
+                  }}
+                >
+                  {downloading ? "Preparing…" : "Download .docx"}
+                </button>
+              </div>
+              <pre
+                style={{
+                  margin: "16px 0 0",
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "inherit",
+                  fontSize: 14,
+                  lineHeight: 1.65,
+                  color: "#334155",
+                }}
+              >
+                {out}
+              </pre>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
