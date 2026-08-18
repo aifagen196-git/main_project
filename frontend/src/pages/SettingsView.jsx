@@ -1,28 +1,30 @@
 import { useState } from "react";
-import Card from "../components/common/Card";
-import SectionTitle from "../components/common/SectionTitle";
-import Pill from "../components/ui/Pill";
+import { useNavigate } from "react-router-dom";
+
 import { signOut } from "../services/auth";
 import { updateProfile } from "../services/profile";
 import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
 
-import {
-  Crown,
-  LogOut,
-  Check,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+/* Exact port of the "AIFAGen v3" settings screen.
+ *
+ * Two deviations from the mockup, both because the backing data doesn't exist:
+ * the spec's "Match preferences" toggles (remote / relocate / alerts / share)
+ * have no columns on `profiles` and no endpoint, and its "Delete account"
+ * action has no route — shipping either would mean controls that silently do
+ * nothing. The danger-zone treatment is kept and carries log-out, which is
+ * real. Restore both here once the backend supports them. */
 
-const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-brand transition";
-
-const bOutlineSm =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-60";
-
-const bBrandSm =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-60";
+const T = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
 
 export default function SettingsView({ profile }) {
   const navigate = useNavigate();
@@ -72,101 +74,301 @@ export default function SettingsView({ profile }) {
   const plan = profile?.plan || "free";
   const paid = isPaidPlan(plan);
 
+  const fieldLabel = {
+    fontFamily: T.mono,
+    fontSize: 9.5,
+    fontWeight: 700,
+    letterSpacing: ".14em",
+    textTransform: "uppercase",
+    color: T.faint,
+  };
+
+  const fieldInput = {
+    width: "100%",
+    marginTop: 8,
+    background: T.page,
+    border: `1px solid ${T.line}`,
+    borderRadius: 11,
+    padding: "12px 13px",
+    fontSize: 14,
+    color: T.ink,
+    outline: "none",
+    transition: "background .2s,border-color .2s",
+  };
+
+  const h2Style = {
+    fontFamily: T.display,
+    fontSize: 19,
+    fontWeight: 700,
+    letterSpacing: "-.02em",
+    margin: 0,
+    color: T.ink,
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="font-display text-3xl font-extrabold text-slate-900">Settings</h2>
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div style={{ animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both" }}>
+        <div
+          style={{
+            fontFamily: T.mono,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: ".16em",
+            textTransform: "uppercase",
+            color: T.faint,
+          }}
+        >
+          Settings
+        </div>
+        <h1
+          style={{
+            fontFamily: T.display,
+            fontSize: "clamp(28px,3.4vw,40px)",
+            lineHeight: 1.04,
+            letterSpacing: "-.035em",
+            fontWeight: 700,
+            margin: "12px 0 0",
+            color: T.ink,
+          }}
+        >
+          Your account
+        </h1>
+        <p style={{ margin: "9px 0 0", fontSize: 15, color: T.muted }}>
+          Details here shape which jobs the matcher shows you.
+        </p>
+      </div>
 
-      <div className="space-y-5">
-        <Card className="p-6">
-          <SectionTitle
-            title="Profile Settings"
-            sub="Manage your personal information and public profile."
-          />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+          gap: 16,
+          marginTop: 26,
+        }}
+      >
+        {/* ---------------- PROFILE ---------------- */}
+        <div
+          data-r="wide"
+          className="v3-settings-wide"
+          style={{
+            minWidth: 0,
+            background: "#fff",
+            border: `1px solid ${T.line}`,
+            borderRadius: 20,
+            padding: 26,
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .08s both",
+          }}
+        >
+          <h2 style={h2Style}>Profile</h2>
 
-          <div className="flex items-center gap-4 mb-5">
-            <div className="h-16 w-16 rounded-full bg-brand-grad flex items-center justify-center text-white text-xl font-bold shrink-0">
-              {initials}
-            </div>
-            <div>
-              <div className="font-bold text-slate-900">{profile?.full_name || "User"}</div>
-              <div className="text-sm text-slate-500">{PLAN_LABEL[plan]} Plan</div>
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Full Name</label>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
+              gap: 16,
+              marginTop: 20,
+            }}
+          >
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Full name</span>
               <input
-                className={inputCls + " mt-1.5"}
                 value={form.full_name}
                 onChange={(e) => upd("full_name", e.target.value)}
+                className="v3-field"
+                style={fieldInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Email</label>
-              <input className={inputCls + " mt-1.5"} defaultValue={profile?.email || ""} disabled />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Location</label>
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Headline</span>
               <input
-                className={inputCls + " mt-1.5"}
-                placeholder="Enter location"
-                value={form.location}
-                onChange={(e) => upd("location", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Headline</label>
-              <input
-                className={inputCls + " mt-1.5"}
-                placeholder="Enter professional headline"
                 value={form.headline}
                 onChange={(e) => upd("headline", e.target.value)}
+                placeholder="Senior Product Designer"
+                className="v3-field"
+                style={fieldInput}
               />
-            </div>
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Location</span>
+              <input
+                value={form.location}
+                onChange={(e) => upd("location", e.target.value)}
+                placeholder="Hyderabad, India"
+                className="v3-field"
+                style={fieldInput}
+              />
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Email</span>
+              <input
+                value={profile?.email || ""}
+                readOnly
+                title="Your email is managed by your login and can't be changed here."
+                className="v3-field"
+                style={{ ...fieldInput, color: T.muted, cursor: "not-allowed" }}
+              />
+            </label>
           </div>
 
-          {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
-
-          <div className="flex justify-end items-center gap-3 mt-5">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 12,
+              marginTop: 22,
+            }}
+          >
+            <button
+              onClick={save}
+              disabled={saving}
+              className="v3-btn-dark"
+              style={{
+                background: T.ink,
+                border: "none",
+                borderRadius: 11,
+                padding: "12px 20px",
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: T.page,
+                cursor: saving ? "default" : "pointer",
+                opacity: saving ? 0.65 : 1,
+              }}
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
             {saved && (
-              <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
-                <Check size={15} /> Saved
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.brand }}>
+                Saved ✓
               </span>
             )}
-            <button onClick={save} disabled={saving} className={bBrandSm}>
-              {saving ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-              Save Changes
-            </button>
+            {err && (
+              <span style={{ fontSize: 13, color: T.clay }}>{err}</span>
+            )}
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-6">
-          <SectionTitle title="Subscription" />
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Crown size={20} className={paid ? "text-amber-500" : "text-slate-400"} />
-            <div className="flex-1">
-              <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                {PLAN_LABEL[plan]} Plan
-                <Pill className="bg-emerald-50 text-emerald-700">
-                  {profile?.subscription_status || "active"}
-                </Pill>
-              </div>
-              <div className="text-xs text-slate-500">Current subscription plan</div>
-            </div>
-            <button onClick={() => setView(paid ? "billing" : "pricing")} className={bBrandSm}>
-              {paid ? "Manage" : "Upgrade"} <ArrowRight size={14} />
-            </button>
-          </div>
-        </Card>
-
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
+        {/* ---------------- RAIL ---------------- */}
+        <div
+          style={{
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .16s both",
+          }}
         >
-          <LogOut size={16} />
-          Sign out
-        </button>
+          <div style={{ background: T.ink, borderRadius: 20, padding: 26, color: T.page }}>
+            <div
+              style={{
+                fontFamily: T.mono,
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: ".14em",
+                textTransform: "uppercase",
+                color: T.faint,
+              }}
+            >
+              Plan
+            </div>
+            <div
+              style={{
+                fontFamily: T.display,
+                fontSize: 26,
+                fontWeight: 700,
+                letterSpacing: "-.03em",
+                marginTop: 8,
+              }}
+            >
+              {PLAN_LABEL[plan] || "Free"}
+            </div>
+            <p
+              style={{
+                margin: "10px 0 0",
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: T.faint,
+              }}
+            >
+              {paid
+                ? "Unlimited matching, resume optimization and cover letters are active on your account."
+                : "5 AI matches a day. Upgrade for unlimited matching, resume optimization and cover letters."}
+            </p>
+            <button
+              onClick={() => setView(paid ? "billing" : "pricing")}
+              className="v3-btn-light"
+              style={{
+                width: "100%",
+                marginTop: 18,
+                background: T.page,
+                border: "none",
+                borderRadius: 11,
+                padding: 12,
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: T.ink,
+                cursor: "pointer",
+              }}
+            >
+              {paid ? "Manage billing" : "See plans"}
+            </button>
+          </div>
+
+          <div
+            style={{
+              background: "#fff",
+              border: `1px solid ${T.line}`,
+              borderRadius: 20,
+              padding: 26,
+              boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: T.mono,
+                fontSize: 9.5,
+                fontWeight: 700,
+                letterSpacing: ".14em",
+                textTransform: "uppercase",
+                color: T.faint,
+              }}
+            >
+              Session
+            </div>
+            <p
+              style={{
+                margin: "12px 0 0",
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: T.muted,
+              }}
+            >
+              Signing out ends this session on this device. Your resume, matches
+              and application history are kept.
+            </p>
+            <button
+              onClick={handleLogout}
+              className="v3-dangerzone"
+              style={{
+                width: "100%",
+                marginTop: 16,
+                background: "#fff",
+                border: "1px solid #FFD3DB",
+                borderRadius: 11,
+                padding: 12,
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: T.clay,
+                cursor: "pointer",
+                transition: "background .2s",
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
