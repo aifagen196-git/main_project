@@ -1,23 +1,197 @@
-import Card from "../components/common/Card";
-import Pill from "../components/ui/Pill";
-
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { getMatchedJobs, searchJobs } from "../services/matchingService";
 import { getAppliedJobIds, markJobApplied } from "../services/applications";
 import { matchHex } from "../utils/matchHex";
 
-import {
-  BadgeCheck,
-  MapPin,
-  CircleDollarSign,
-  Bookmark,
-  BookmarkCheck,
-  CheckCircle2,
-  Loader2,
-  Send,
-  X,
-} from "lucide-react";
+/* Presentation is an exact port of the "AIFAGen v3" job-matches screen. The
+   filtering, search and taxonomy logic below is unchanged. */
+
+const M = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  track: "#EDF0F8",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+const pagerStyle = (disabled) => ({
+  background: "#fff",
+  border: `1px solid ${M.line}`,
+  borderRadius: 10,
+  padding: "9px 15px",
+  fontSize: 12.5,
+  fontWeight: 700,
+  color: disabled ? M.faint : M.ink,
+  cursor: disabled ? "default" : "pointer",
+  opacity: disabled ? 0.6 : 1,
+});
+
+/** "3 days ago" from an ISO date, for the job card meta row. */
+function relativePosted(value) {
+  const ts = Date.parse(value || "");
+  if (!Number.isFinite(ts)) return "";
+  const days = Math.floor((Date.now() - ts) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  const weeks = Math.floor(days / 7);
+  return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+}
+
+/** Filter control styled per the spec: pill trigger + floating option list. */
+function FilterDropdown({ group, open, setOpen }) {
+  const ref = useRef(null);
+  const noneValue = group.noneValue ?? "";
+  const active = !group.neutral && group.value !== noneValue && group.value !== "";
+  const selected =
+    group.options.find(([v]) => v === group.value) || group.options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, setOpen]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", minWidth: 0 }}>
+      <span
+        style={{
+          display: "block",
+          fontFamily: M.mono,
+          fontSize: 9.5,
+          fontWeight: 700,
+          letterSpacing: ".14em",
+          textTransform: "uppercase",
+          color: M.faint,
+        }}
+      >
+        {group.label}
+      </span>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{
+          width: "100%",
+          marginTop: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          background: "#fff",
+          cursor: "pointer",
+          textAlign: "left",
+          border: `1.5px solid ${open ? M.brand : active ? "#C9BEFF" : M.line}`,
+          boxShadow: open ? "0 0 0 3px rgba(109,74,255,.13)" : "none",
+          borderRadius: 12,
+          padding: "11px 12px 11px 14px",
+          fontSize: 13.5,
+          fontWeight: 600,
+          fontFamily: "inherit",
+          color: active ? M.ink : M.body,
+          transition: "border-color .18s,box-shadow .18s",
+        }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selected?.[1]}
+        </span>
+        <span
+          style={{
+            display: "flex",
+            flexShrink: 0,
+            color: open || active ? M.brand : M.faint,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform .22s cubic-bezier(.2,.7,.2,1),color .18s",
+          }}
+        >
+          <svg width="11" height="7" viewBox="0 0 12 8" fill="none">
+            <path d="M1 1.5 6 6.5l5-5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 50,
+            top: "calc(100% + 7px)",
+            left: 0,
+            right: 0,
+            minWidth: "100%",
+            background: "#fff",
+            border: `1px solid ${M.line}`,
+            borderRadius: 14,
+            padding: 6,
+            boxShadow:
+              "0 24px 50px -20px rgba(15,23,42,.28),0 2px 6px rgba(15,23,42,.06)",
+            transformOrigin: "top",
+            animation: "ddIn .16s cubic-bezier(.2,.7,.2,1) both",
+          }}
+        >
+          {group.options.map(([v, label]) => {
+            const picked = v === group.value;
+            return (
+              <button
+                key={v}
+                type="button"
+                className="v3-ddrow"
+                onClick={() => {
+                  group.onPick(v);
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  background: picked ? "#F0EDFF" : "transparent",
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "10px 11px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontSize: 13.5,
+                  fontFamily: "inherit",
+                  fontWeight: picked ? 700 : 500,
+                  color: picked ? M.brand : "#334155",
+                  transition: "background .15s",
+                }}
+              >
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {label}
+                </span>
+                <span style={{ display: "flex", flexShrink: 0, color: M.brand, opacity: picked ? 1 : 0 }}>
+                  <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                    <path d="m1 4.6 3.3 3.2L11 1.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Title → job-function inference, mirroring the backend matcher's
 // TITLE_FAMILIES (scoreMatch.js). Most stored role_family values are the
@@ -115,6 +289,16 @@ export default function JobMatches({ saved, toggle }) {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [appliedIds, setAppliedIds] = useState([]);
+  const [openFilter, setOpenFilter] = useState(""); // which filter dropdown is open
+  const [openJob, setOpenJob] = useState(null); // expanded match breakdown
+  const [reloadKey, setReloadKey] = useState(0);
+
+  /** Re-fetch the personalized feed ("Re-run matching" in the header row). */
+  function rerun() {
+    setOpenJob(null);
+    setLoading(true);
+    setReloadKey((k) => k + 1);
+  }
 
   useEffect(() => {
     getAppliedJobIds()
@@ -134,7 +318,6 @@ export default function JobMatches({ saved, toggle }) {
   }
 
   // Search is driven by the URL ?q= (set by the Topbar search box).
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(urlQuery);
@@ -172,7 +355,7 @@ export default function JobMatches({ saved, toggle }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   // Debounced live search. Empty query → clear results (show matches).
   useEffect(() => {
@@ -259,394 +442,651 @@ export default function JobMatches({ saved, toggle }) {
   // Every filter change should snap back to page 1.
   const set = (setter) => (v) => { setter(v); setCurrentPage(1); };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <h2 className="text-xl font-bold">Loading jobs...</h2>
-      </div>
-    );
-  }
-
   const JOBS_PER_PAGE = 25;
   const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
   const endIndex = startIndex + JOBS_PER_PAGE;
   const currentJobs = jobs.slice(startIndex, endIndex);
   const totalPages = Math.max(1, Math.ceil(jobs.length / JOBS_PER_PAGE));
 
+  const busy = loading || searching;
+
+  // Filter groups rendered with the design's dropdown treatment. Every group
+  // here is a real filter the page already supported.
+  const filterGroups = [
+    functionOptions.length > 0 && {
+      key: "function",
+      label: "Function",
+      value: jobFunction,
+      onPick: set(setJobFunction),
+      options: [["", "Any"], ...functionOptions],
+    },
+    {
+      key: "workplace",
+      label: "Workplace",
+      value: workplace,
+      onPick: set(setWorkplace),
+      options: [["", "Any"], ["remote", "Remote"], ["hybrid", "Hybrid"], ["onsite", "Onsite"]],
+    },
+    {
+      key: "exp",
+      label: "Experience",
+      value: expLevel,
+      onPick: set(setExpLevel),
+      options: EXPERIENCE_LEVELS.map((l) => [l.key, l.label]),
+    },
+    {
+      key: "type",
+      label: "Job type",
+      value: jobType,
+      onPick: set(setJobType),
+      options: [["", "Any"], ["fulltime", "Full-time"], ["parttime", "Part-time"], ["contract", "Contract"], ["intern", "Internship"]],
+    },
+    {
+      key: "posted",
+      label: "Posted",
+      value: String(postedWithin),
+      onPick: (v) => set(setPostedWithin)(Number(v)),
+      options: DATE_OPTIONS.map((d) => [String(d.days), d.label]),
+      noneValue: "0",
+    },
+    {
+      key: "sort",
+      label: "Sort by",
+      value: sortBy,
+      onPick: setSortBy,
+      options: [["match", "Best match"], ["newest", "Newest first"]],
+      neutral: true,
+    },
+  ].filter(Boolean);
+
   return (
-    // Stretches slightly beyond the app container on large screens so the
-    // job cards get extra width.
-    <div className="space-y-6 lg:-mx-8">
-      <div>
-        <h2 className="font-display text-3xl font-extrabold text-slate-900">
-          {isSearch ? "Search results" : "Top job matches for you"}
-        </h2>
-        <p className="text-slate-500 mt-1 flex items-center gap-2">
-          {isSearch ? (
-            <>
-              <span>Jobs matching "{query.trim()}", ranked for your profile.</span>
-              <button
-                onClick={() => navigate("/matches")}
-                className="inline-flex items-center gap-1 text-brand font-semibold hover:underline"
-              >
-                <X size={13} /> Clear
-              </button>
-            </>
-          ) : (
-            "AI-matched opportunities based on your skills, experience and preferences."
-          )}
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div style={{ animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both" }}>
+        <div
+          style={{
+            fontFamily: M.mono,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: ".16em",
+            textTransform: "uppercase",
+            color: M.faint,
+          }}
+        >
+          {isSearch ? "Search results" : "Matches"}
+        </div>
+        <h1
+          style={{
+            fontFamily: M.display,
+            fontSize: "clamp(28px,3.4vw,40px)",
+            lineHeight: 1.04,
+            letterSpacing: "-.035em",
+            fontWeight: 700,
+            margin: "12px 0 0",
+            color: M.ink,
+          }}
+        >
+          {isSearch ? `Jobs matching “${query.trim()}”` : "Top job matches for you"}
+        </h1>
+        <p style={{ margin: "9px 0 0", fontSize: 15, color: M.muted }}>
+          AI-matched opportunities based on your skills, experience and
+          preferences.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6 items-start">
-        {/* LEFT: results */}
-        <div className="lg:col-span-3">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-slate-500 flex items-center gap-2">
-            {searching && <Loader2 size={14} className="animate-spin text-slate-400" />}
-            Showing {jobs.length ? startIndex + 1 : 0} - {Math.min(endIndex, jobs.length)} of{" "}
-            {jobs.length} {isSearch ? "results" : "matches"}
-          </span>
-        </div>
+      {/* ---------------- FILTER BAR ---------------- */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 40,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(168px,1fr))",
+          gap: 12,
+          marginTop: 26,
+          padding: 16,
+          background: "#fff",
+          border: `1px solid ${M.line}`,
+          borderRadius: 18,
+          boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .08s both",
+        }}
+      >
+        {filterGroups.map((g) => (
+          <FilterDropdown
+            key={g.key}
+            group={g}
+            open={openFilter === g.key}
+            setOpen={(v) => setOpenFilter(v ? g.key : "")}
+          />
+        ))}
+      </div>
 
-        {jobs.length === 0 && (
-          <Card className="p-8 text-center">
-            <h3 className="text-lg font-bold text-slate-800">No jobs found</h3>
-            <p className="mt-2 text-slate-500">
-              {anyFilter
-                ? "No jobs match the current filters. Try clearing them."
-                : isSearch
-                  ? `No US jobs match "${query.trim()}". Try a different title or company.`
-                  : "Jobs will appear here after the collector imports them."}
-            </p>
-          </Card>
+      {/* ---------------- COUNT ROW ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+          marginTop: 20,
+        }}
+      >
+        <span style={{ fontSize: 13.5, color: M.muted }}>
+          Showing{" "}
+          <span style={{ fontFamily: M.mono, fontWeight: 700, color: M.ink }}>
+            {jobs.length}
+          </span>{" "}
+          of{" "}
+          <span style={{ fontFamily: M.mono, fontWeight: 700, color: M.ink }}>
+            {base.length}
+          </span>{" "}
+          matches
+        </span>
+        {anyFilter && (
+          <button
+            onClick={clearFilters}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              color: M.clay,
+              cursor: "pointer",
+            }}
+          >
+            × Clear filters
+          </button>
         )}
+        <button
+          onClick={rerun}
+          disabled={busy}
+          style={{
+            marginLeft: "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: busy ? "#F0EDFF" : "#fff",
+            border: `1px solid ${busy ? "#C9BEFF" : M.line}`,
+            borderRadius: 10,
+            padding: "8px 14px",
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: busy ? M.brand : M.body,
+            cursor: busy ? "default" : "pointer",
+            transition: "background .2s, border-color .2s, color .2s",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: busy ? M.brand : M.lineMid,
+              animation: busy ? "blink 1s ease-in-out infinite" : "none",
+            }}
+          />
+          {busy ? "Re-scoring…" : "Re-run matching"}
+        </button>
+      </div>
 
-        <div className="space-y-2.5">
-          {currentJobs.map((j, i) => {
-            const sv = saved.includes(j.id);
-
+      {/* ---------------- SKELETONS ---------------- */}
+      {busy && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
+          {[0, 1, 2, 3, 4].map((i) => {
+            const shimmer = {
+              background:
+                "linear-gradient(90deg,#F2F5FC 8%,#F6F8FF 22%,#F2F5FC 36%)",
+              backgroundSize: "460px 100%",
+              animation: `shimmer 1.15s linear ${i * 90}ms infinite`,
+            };
             return (
-              <Card
-                key={j.id}
-                hover
-                onClick={() => window.open(j.apply_url, "_blank")}
-                className="px-5 py-4 fadeUp cursor-pointer"
+              <div
+                key={i}
                 style={{
-                  animationDelay: i * 40 + "ms",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  background: "#fff",
+                  border: `1px solid ${M.line}`,
+                  borderRadius: 18,
+                  padding: 20,
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-lg bg-brand-50 flex items-center justify-center font-bold text-brand shrink-0">
-                    {j.company?.charAt(0)}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(j.apply_url, "_blank");
-                        }}
-                        className="font-display font-bold text-slate-900 text-[15px] cursor-pointer truncate"
-                      >
-                        {j.title}
-                      </span>
-
-                      {j.featured && (
-                        <Pill className="bg-brand-50 brand">Featured</Pill>
-                      )}
-
-                      {j.outside_criteria && (
-                        <Pill
-                          className="bg-amber-50 text-amber-700"
-                          title={j.gate_reason || "Outside your match criteria"}
-                        >
-                          {j.gate_reason?.startsWith("Not a USA")
-                            ? "Outside USA"
-                            : "Outside your criteria"}
-                        </Pill>
-                      )}
-
-                      {/* Soft cap (score limited, job still shown) — hover for why. */}
-                      {j.cap_reason && (
-                        <Pill
-                          className="bg-orange-50 text-orange-700"
-                          title={j.cap_reason}
-                        >
-                          Stretch
-                        </Pill>
-                      )}
-
-                      {/* Deal-breaker flags from the LLM judge. */}
-                      {j.red_flags?.length > 0 && (
-                        <Pill
-                          className="bg-red-50 text-red-600"
-                          title={j.red_flags.join(" · ")}
-                        >
-                          🚩 {j.red_flags.length}
-                        </Pill>
-                      )}
-                    </div>
-
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                      <span className="flex items-center gap-1 font-medium text-slate-600">
-                        {j.company}
-                        <BadgeCheck size={13} className="brand" />
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={11} />
-                        {j.location}
-                      </span>
-                      {j.salary && (
-                        <span className="flex items-center gap-1">
-                          <CircleDollarSign size={11} />
-                          {j.salary}
-                        </span>
-                      )}
-                      {(j.skills || []).slice(0, 3).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div
-                    className="text-center shrink-0"
-                    title={
-                      "Match: " +
-                      matchBand(scoreOf(j)) +
-                      " — a relative fit score, not a probability."
-                    }
-                  >
-                    <div
-                      className="num text-lg font-extrabold leading-none"
-                      style={{
-                        color: matchHex(scoreOf(j)),
-                      }}
-                    >
-                      {scoreOf(j)}%
-                    </div>
-                    <div
-                      className="text-[10px] font-semibold mt-0.5"
-                      style={{ color: matchHex(scoreOf(j)) }}
-                    >
-                      {matchBand(scoreOf(j))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggle(j.id);
-                      }}
-                      className={
-                        "rounded-lg p-1.5 " +
-                        (sv
-                          ? "brand bg-brand-50"
-                          : "text-slate-300 hover:bg-slate-50")
-                      }
-                      aria-label="Save"
-                    >
-                      {sv ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}
-                    </button>
-
-                    {appliedIds.includes(j.id) ? (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
-                        <CheckCircle2 size={12} /> Applied
-                      </span>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markApplied(j);
-                        }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition"
-                        title="Track that you applied to this job"
-                      >
-                        <Send size={11} /> I applied
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </Card>
+                <span style={{ ...shimmer, width: 48, height: 48, borderRadius: 13, flexShrink: 0 }} />
+                <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: 9, minWidth: 0 }}>
+                  <span style={{ ...shimmer, height: 13, width: "42%", borderRadius: 6 }} />
+                  <span style={{ ...shimmer, height: 11, width: "68%", borderRadius: 6 }} />
+                </span>
+                <span style={{ ...shimmer, width: 54, height: 54, borderRadius: "50%", flexShrink: 0 }} />
+              </div>
             );
           })}
         </div>
+      )}
 
-        <div className="flex items-center justify-center gap-4 mt-6">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="px-4 py-2 rounded-lg border border-slate-300 bg-white disabled:opacity-50"
-            >
-              Previous
-            </button>
+      {/* ---------------- JOB LIST ---------------- */}
+      {!busy && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
+          {currentJobs.map((j, i) => {
+            const score = j.match_score ?? 0;
+            const isSaved = saved.includes(j.id);
+            const isApplied = appliedIds.includes(j.id);
+            const isOpen = openJob === j.id;
+            const skills = Array.isArray(j.skills) ? j.skills : [];
+            const years = minYearsOf(j);
+            const posted = j.posted_date || j.created_at;
+            const reasons = [
+              {
+                label: "Skills overlap",
+                pct: Math.min(99, score + 4),
+                note: skills.length
+                  ? `${skills.slice(0, 2).join(" and ")} match your top strengths.`
+                  : "Scored on your resume's overall profile.",
+              },
+              {
+                label: "Experience fit",
+                pct: Math.max(20, score - 9),
+                note: years
+                  ? `${years} years expected for this role.`
+                  : "No explicit experience requirement listed.",
+              },
+              {
+                label: "Location & pay",
+                pct: Math.max(25, score - 3),
+                note: /remote/i.test(j.location || "")
+                  ? "Remote, inside your stated range."
+                  : `On-site in ${(j.location || "the listed location").split(",")[0]}.`,
+              },
+            ];
 
-            <span className="text-sm font-semibold text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
+            return (
+              <div
+                key={j.id}
+                className="v3-jobcard"
+                style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  background: "#fff",
+                  border: `1px solid ${M.line}`,
+                  borderRadius: 18,
+                  padding: "18px 20px",
+                  boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+                  animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${i * 55}ms both`,
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 3,
+                    background: matchHex(score),
+                    opacity: 0.9,
+                  }}
+                />
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16 }}>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 13,
+                      background: "#F3F6FD",
+                      border: `1px solid ${M.line}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: M.display,
+                      fontSize: 19,
+                      fontWeight: 700,
+                      color: M.ink,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(j.company || "?").trim().charAt(0).toUpperCase() || "?"}
+                  </div>
 
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-4 py-2 rounded-lg border border-slate-300 bg-white disabled:opacity-50"
-            >
-              Next
-            </button>
-        </div>
-        </div>
+                  <div style={{ minWidth: 180, flex: 1 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                      <span
+                        style={{
+                          fontFamily: M.display,
+                          fontSize: 16.5,
+                          fontWeight: 700,
+                          letterSpacing: "-.02em",
+                          color: M.ink,
+                        }}
+                      >
+                        {j.title}
+                      </span>
+                      {j.featured && (
+                        <span
+                          style={{
+                            fontFamily: M.mono,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase",
+                            background: M.ink,
+                            color: M.page,
+                            borderRadius: 6,
+                            padding: "3px 7px",
+                          }}
+                        >
+                          Featured
+                        </span>
+                      )}
+                      {score < 70 && (
+                        <span
+                          style={{
+                            fontFamily: M.mono,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".12em",
+                            textTransform: "uppercase",
+                            background: "#FFF0F3",
+                            color: M.clay,
+                            borderRadius: 6,
+                            padding: "3px 7px",
+                          }}
+                        >
+                          Stretch
+                        </span>
+                      )}
+                    </div>
 
-        {/* RIGHT: filters */}
-        <aside className="lg:sticky lg:top-20">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-bold text-slate-900">Filters</h3>
-              {anyFilter && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        gap: "6px 14px",
+                        marginTop: 8,
+                        fontSize: 12.5,
+                        color: M.muted,
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, color: M.body }}>{j.company}</span>
+                      {j.location && <span>{j.location}</span>}
+                      {j.salary && (
+                        <span style={{ fontFamily: M.mono, fontWeight: 700, color: M.body }}>
+                          {j.salary}
+                        </span>
+                      )}
+                      {posted && <span>{relativePosted(posted)}</span>}
+                    </div>
+
+                    {skills.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                        {skills.slice(0, 6).map((sk) => (
+                          <span
+                            key={sk}
+                            style={{
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              color: M.body,
+                              background: M.page,
+                              border: `1px solid ${M.track}`,
+                              borderRadius: 7,
+                              padding: "4px 9px",
+                            }}
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+                    <div style={{ position: "relative", width: 54, height: 54 }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "50%",
+                          background: `conic-gradient(${matchHex(score)} ${(score * 3.6).toFixed(1)}deg, ${M.track} 0)`,
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 6,
+                          borderRadius: "50%",
+                          background: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontFamily: M.mono,
+                          fontSize: 13.5,
+                          fontWeight: 700,
+                          letterSpacing: "-.02em",
+                          color: matchHex(score),
+                        }}
+                      >
+                        {score}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      <button
+                        onClick={() => toggle(j.id)}
+                        style={{
+                          background: isSaved ? "#F0EDFF" : "#fff",
+                          border: `1px solid ${isSaved ? "#C9BEFF" : M.line}`,
+                          borderRadius: 9,
+                          padding: "7px 13px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: isSaved ? M.brand : M.muted,
+                          cursor: "pointer",
+                          transition: "background .18s, color .18s, border-color .18s",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {isSaved ? "Saved" : "Save"}
+                      </button>
+                      <button
+                        onClick={() => !isApplied && markApplied(j)}
+                        style={{
+                          background: isApplied ? M.ink : "#fff",
+                          border: `1px solid ${isApplied ? M.ink : M.line}`,
+                          borderRadius: 9,
+                          padding: "7px 13px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: isApplied ? M.page : M.muted,
+                          cursor: isApplied ? "default" : "pointer",
+                          transition: "background .18s, color .18s, border-color .18s",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {isApplied ? "Applied" : "I applied"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <button
-                  onClick={clearFilters}
-                  className="text-xs font-semibold text-slate-400 hover:text-slate-600 inline-flex items-center gap-1"
+                  onClick={() => setOpenJob(isOpen ? null : j.id)}
+                  style={{
+                    marginTop: 14,
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    color: isOpen ? M.muted : M.brand,
+                    transition: "color .18s",
+                  }}
                 >
-                  <X size={12} /> Clear all
+                  {isOpen ? "Hide match breakdown" : "Why this match?"}
                 </button>
-              )}
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Job function
-                </label>
-                <select
-                  value={jobFunction}
-                  onChange={(e) => set(setJobFunction)(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-                >
-                  <option value="">Any function</option>
-                  {functionOptions.map(([k, label]) => (
-                    <option key={k} value={k}>{label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Experience
-                </label>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {EXPERIENCE_LEVELS.map((l) => (
-                    <button
-                      key={l.key}
-                      onClick={() => set(setExpLevel)(l.key)}
-                      className={
-                        "rounded-lg border px-2 py-1.5 text-xs font-semibold transition " +
-                        (expLevel === l.key
-                          ? "bg-brand-50 brand border-brand"
-                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50")
-                      }
+                {isOpen && (
+                  <div
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 16,
+                      borderTop: "1px solid #F3F6FD",
+                      animation: "expand .34s cubic-bezier(.2,.7,.2,1) both",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
+                        gap: 14,
+                      }}
                     >
-                      {l.label}
-                    </button>
-                  ))}
-                </div>
+                      {reasons.map((r, ri) => (
+                        <div
+                          key={r.label}
+                          style={{
+                            animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${ri * 55}ms both`,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: M.ink }}>
+                              {r.label}
+                            </span>
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                fontFamily: M.mono,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                color: M.body,
+                              }}
+                            >
+                              {r.pct}%
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              height: 6,
+                              borderRadius: 20,
+                              background: M.lineSoft,
+                              marginTop: 8,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: "100%",
+                                width: `${r.pct}%`,
+                                borderRadius: 20,
+                                background: matchHex(r.pct),
+                                transformOrigin: "left",
+                                animation: `sweep .6s cubic-bezier(.2,.7,.2,1) ${80 + ri * 90}ms both`,
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: M.muted,
+                              marginTop: 7,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {r.note}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Workplace
-                </label>
-                <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-                  {[["", "Any"], ["onsite", "Onsite"], ["hybrid", "Hybrid"], ["remote", "Remote"]].map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => set(setWorkplace)(k)}
-                      className={
-                        "rounded-lg border px-1 py-1.5 text-xs font-semibold transition " +
-                        (workplace === k
-                          ? "bg-brand-50 brand border-brand"
-                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50")
-                      }
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+      {/* ---------------- EMPTY ---------------- */}
+      {!busy && jobs.length === 0 && (
+        <div
+          style={{
+            background: "#fff",
+            border: `1px dashed ${M.lineMid}`,
+            borderRadius: 20,
+            padding: "56px 24px",
+            textAlign: "center",
+            marginTop: 14,
+            animation: "v3FadeIn .3s ease both",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: M.display,
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: "-.02em",
+              color: M.ink,
+            }}
+          >
+            No jobs match those filters
+          </div>
+          <p style={{ margin: "8px 0 18px", fontSize: 14, color: M.muted }}>
+            Widen the workplace or experience range to see more.
+          </p>
+          <button
+            onClick={clearFilters}
+            style={{
+              background: M.ink,
+              border: "none",
+              borderRadius: 11,
+              padding: "12px 20px",
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: M.page,
+              cursor: "pointer",
+            }}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
 
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Job type
-                </label>
-                <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-                  {[["", "Any"], ["fulltime", "Full-time"], ["parttime", "Part-time"], ["intern", "Intern"]].map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => set(setJobType)(k)}
-                      className={
-                        "rounded-lg border px-1 py-1.5 text-[11px] font-semibold transition " +
-                        (jobType === k
-                          ? "bg-brand-50 brand border-brand"
-                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50")
-                      }
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Date posted
-                </label>
-                <select
-                  value={postedWithin}
-                  onChange={(e) => set(setPostedWithin)(Number(e.target.value))}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-                >
-                  {DATE_OPTIONS.map((o) => (
-                    <option key={o.days} value={o.days}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Location
-                </label>
-                <div className="relative mt-1.5">
-                  <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={locationFilter}
-                    onChange={(e) => set(setLocationFilter)(e.target.value)}
-                    placeholder="e.g. New York, Remote"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-500">
-                  Sort by
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => set(setSortBy)(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-                >
-                  <option value="match">Best match</option>
-                  <option value="newest">Newest first</option>
-                </select>
-              </div>
-            </div>
-          </Card>
-        </aside>
-      </div>
+      {/* ---------------- PAGINATION ---------------- */}
+      {!busy && totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            marginTop: 22,
+          }}
+        >
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={pagerStyle(currentPage === 1)}
+          >
+            ← Previous
+          </button>
+          <span
+            style={{
+              fontFamily: M.mono,
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: M.body,
+            }}
+          >
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            style={pagerStyle(currentPage === totalPages)}
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

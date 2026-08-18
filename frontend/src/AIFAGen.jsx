@@ -164,6 +164,13 @@ const CSS = `
 .v3-matchrow:hover{border-color:#DDE3EE;background:#FBFCFF;transform:translateX(3px)}
 .v3-trackerbtn{transition:background .2s,border-color .2s}
 .v3-trackerbtn:hover{background:#fff;border-color:#0F172A}
+.v3-jobcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s,border-color .24s}
+.v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:#DDE3EE}
+.v3-ddrow:hover{background:#F3F6FD!important}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px) scaleY(.96)}to{opacity:1;transform:translateY(0) scaleY(1)}}
+@keyframes expand{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:-460px 0}100%{background-position:460px 0}}
+@keyframes barGrow{from{transform:scaleY(.06)}to{transform:scaleY(1)}}
 
 /* Dashboard grids. Stats stay two-up, the main row splits to a wide primary
    column plus a rail at 1180px, and suggestions go 1 → 2 → 3 across. */
