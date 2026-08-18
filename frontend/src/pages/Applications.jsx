@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import Card from "../components/common/Card";
-import SectionTitle from "../components/common/SectionTitle";
+import { Loader2, Trash2 } from "lucide-react";
 
 import { matchHex } from "../utils/matchHex";
 import {
@@ -11,18 +10,43 @@ import {
   APPLICATION_STATUSES,
 } from "../services/applications";
 
-import { Plus, Loader2, Trash2 } from "lucide-react";
+/* Presentation is an exact port of the "AIFAGen v3" tracker screen. The status
+   dot and colour the spec computes per row are surfaced here alongside the
+   status control, since this page — unlike the mockup — actually manages
+   application state. */
+
+const A = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
 
 const COLS = [
-  { k: "applied", label: "Applied", dot: "bg-brand", hex: "#6d4aff" },
-  { k: "interviewing", label: "Interviewing", dot: "bg-amber-400", hex: "#f59e0b" },
-  { k: "assessment", label: "Assessment", dot: "bg-sky-400", hex: "#0ea5e9" },
-  { k: "offer", label: "Offer", dot: "bg-emerald-500", hex: "#22c55e" },
-  { k: "rejected", label: "Rejected", dot: "bg-rose-500", hex: "#ef4444" },
+  { k: "applied", label: "Applied", hex: A.brand },
+  { k: "interviewing", label: "Interviewing", hex: "#F59E0B" },
+  { k: "assessment", label: "Assessment", hex: "#334155" },
+  { k: "offer", label: "Offer", hex: A.clay },
+  { k: "rejected", label: "Closed", hex: A.faint },
 ];
 
-const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-brand transition";
+/** "12 Aug 2026" for the tracker's date column. */
+function formatWhen(value) {
+  const ts = Date.parse(value || "");
+  if (!Number.isFinite(ts)) return "—";
+  return new Date(ts).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function Applications() {
   const [apps, setApps] = useState([]);
@@ -31,6 +55,7 @@ export default function Applications() {
   const [form, setForm] = useState({ company: "", role: "", status: "applied" });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     getApplications()
@@ -79,55 +104,155 @@ export default function Applications() {
 
   const byStatus = (s) => apps.filter((a) => a.status === s);
 
+  const visible = statusFilter ? apps.filter((a) => a.status === statusFilter) : apps;
+
+  const chipStyle = (active) => ({
+    background: active ? A.ink : A.page,
+    border: `1px solid ${active ? A.ink : A.line}`,
+    borderRadius: 9,
+    padding: "7px 13px",
+    fontSize: 12.5,
+    fontWeight: 700,
+    color: active ? A.page : A.body,
+    cursor: "pointer",
+    transition: "background .18s, color .18s, border-color .18s",
+    whiteSpace: "nowrap",
+  });
+
+  const fieldLabel = {
+    fontFamily: A.mono,
+    fontSize: 9.5,
+    fontWeight: 700,
+    letterSpacing: ".14em",
+    textTransform: "uppercase",
+    color: A.faint,
+  };
+
+  const fieldInput = {
+    width: "100%",
+    marginTop: 8,
+    background: A.page,
+    border: `1px solid ${A.line}`,
+    borderRadius: 11,
+    padding: "12px 13px",
+    fontSize: 14,
+    color: A.ink,
+    outline: "none",
+    transition: "background .2s,border-color .2s",
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-3xl font-extrabold text-slate-900">
-            Application Tracker
-          </h2>
-          <p className="text-slate-500 mt-1">
-            <span className="font-semibold text-slate-700">
-              Track every application.
-            </span>{" "}
-            Stay organized. Get more offers.
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          gap: 16,
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              fontFamily: A.mono,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: A.faint,
+            }}
+          >
+            Tracker
+          </div>
+          <h1
+            style={{
+              fontFamily: A.display,
+              fontSize: "clamp(28px,3.4vw,40px)",
+              lineHeight: 1.04,
+              letterSpacing: "-.035em",
+              fontWeight: 700,
+              margin: "12px 0 0",
+              color: A.ink,
+            }}
+          >
+            Every application in one place.
+          </h1>
+          <p style={{ margin: "9px 0 0", fontSize: 15, color: A.muted }}>
+            A running list of everything you have applied to.
           </p>
         </div>
         <button
           onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
+          className="v3-btn-dark"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 9,
+            background: A.ink,
+            border: "none",
+            borderRadius: 12,
+            padding: "13px 20px",
+            fontSize: 14,
+            fontWeight: 700,
+            color: A.page,
+            cursor: "pointer",
+          }}
         >
-          <Plus size={16} /> Add Application
+          + Add application
         </button>
       </div>
 
+      {/* ---------------- ADD FORM ---------------- */}
       {showAdd && (
-        <Card className="p-5">
-          <form onSubmit={handleAdd} className="grid sm:grid-cols-4 gap-3 items-end">
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Company</label>
+        <form
+          onSubmit={handleAdd}
+          style={{
+            marginTop: 22,
+            background: "#fff",
+            border: `1px solid ${A.line}`,
+            borderRadius: 18,
+            padding: 20,
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            animation: "riseIn .3s cubic-bezier(.2,.7,.2,1) both",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
+              gap: 14,
+              alignItems: "end",
+            }}
+          >
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Company</span>
               <input
-                className={inputCls + " mt-1.5"}
+                placeholder="Acme Inc."
                 value={form.company}
                 onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                placeholder="Acme Inc."
+                className="v3-field"
+                style={fieldInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Role</label>
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Role</span>
               <input
-                className={inputCls + " mt-1.5"}
+                placeholder="Backend Engineer"
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                placeholder="Backend Engineer"
+                className="v3-field"
+                style={fieldInput}
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600">Status</label>
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Status</span>
               <select
-                className={inputCls + " mt-1.5"}
                 value={form.status}
                 onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                className="v3-field"
+                style={fieldInput}
               >
                 {APPLICATION_STATUSES.map((s) => (
                   <option key={s} value={s}>
@@ -135,108 +260,288 @@ export default function Applications() {
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
+              style={{
+                background: A.brand,
+                border: "none",
+                borderRadius: 11,
+                padding: 13,
+                fontSize: 14,
+                fontWeight: 700,
+                color: A.page,
+                cursor: saving ? "default" : "pointer",
+                opacity: saving ? 0.65 : 1,
+              }}
             >
-              {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-              Add
+              {saving ? "Adding…" : "Add"}
             </button>
-          </form>
-          {err && <p className="text-sm text-rose-600 mt-2">{err}</p>}
-        </Card>
+          </div>
+          {err && (
+            <div style={{ marginTop: 12, fontSize: 13, color: A.clay }}>{err}</div>
+          )}
+        </form>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {COLS.map((col) => (
-          <Card key={col.k} className="p-4 text-center">
-            <div className="num text-2xl font-extrabold" style={{ color: col.hex }}>
-              {byStatus(col.k).length}
-            </div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">{col.label}</div>
-          </Card>
-        ))}
+      {/* ---------------- COUNT ---------------- */}
+      <div
+        style={{
+          marginTop: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          background: "#fff",
+          border: `1px solid ${A.line}`,
+          borderRadius: 18,
+          padding: "20px 22px",
+          boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+          animation: "riseIn .5s cubic-bezier(.2,.7,.2,1) .08s both",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: A.mono,
+            fontSize: 40,
+            fontWeight: 700,
+            letterSpacing: "-.03em",
+            color: A.ink,
+            lineHeight: 1,
+          }}
+        >
+          {loading ? "—" : apps.length}
+        </div>
+        <div
+          style={{
+            fontFamily: A.mono,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: ".16em",
+            textTransform: "uppercase",
+            color: A.faint,
+          }}
+        >
+          Applications
+          <br />
+          submitted
+        </div>
       </div>
 
-      {loading ? (
-        <Card className="p-12 text-center">
-          <Loader2 size={28} className="mx-auto animate-spin text-slate-400" />
-        </Card>
-      ) : apps.length === 0 ? (
-        <Card className="p-12 text-center">
-          <p className="font-semibold text-slate-700">No applications yet</p>
-          <p className="text-sm text-slate-500 mt-1">
-            Add your first application to start tracking.
-          </p>
-        </Card>
-      ) : (
-        <div className="flex gap-4 overflow-x-auto scroll pb-2">
-          {COLS.map((col) => (
-            <div key={col.k} className="w-72 shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className={"h-2.5 w-2.5 rounded-full " + col.dot} />
-                  <span className="font-semibold text-slate-700 text-sm">
-                    {col.label}
-                  </span>
-                </div>
-                <span className="num text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">
-                  {byStatus(col.k).length}
-                </span>
-              </div>
+      {/* ---------------- STATUS FILTER ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          marginTop: 18,
+        }}
+      >
+        <button onClick={() => setStatusFilter("")} style={chipStyle(!statusFilter)}>
+          All {apps.length}
+        </button>
+        {COLS.map((c) => {
+          const n = apps.filter((a) => a.status === c.k).length;
+          const active = statusFilter === c.k;
+          return (
+            <button
+              key={c.k}
+              onClick={() => setStatusFilter(active ? "" : c.k)}
+              style={{
+                ...chipStyle(active),
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: c.hex,
+                  flexShrink: 0,
+                }}
+              />
+              {c.label} {n}
+            </button>
+          );
+        })}
+      </div>
 
-              <div className="space-y-3">
-                {byStatus(col.k).map((a) => (
-                  <Card key={a.id} hover className="p-4 group">
-                    <div className="flex items-start gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-brand-50 flex items-center justify-center font-bold text-brand text-xs shrink-0">
-                        {a.company?.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-slate-900 text-sm leading-snug">
-                          {a.role}
-                        </div>
-                        <div className="text-xs text-slate-500">{a.company}</div>
-                      </div>
-                      <button
-                        onClick={() => remove(a.id)}
-                        className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition"
-                        aria-label="Delete application"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      <select
-                        value={a.status}
-                        onChange={(e) => moveStatus(a.id, e.target.value)}
-                        className="text-xs rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-600 outline-none focus:border-brand"
-                      >
-                        {APPLICATION_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                      {a.match_score > 0 && (
-                        <span
-                          className="num text-xs font-bold"
-                          style={{ color: matchHex(a.match_score) }}
-                        >
-                          {a.match_score}%
-                        </span>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
+      {/* ---------------- LIST ---------------- */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+        {loading ? (
+          <div
+            style={{
+              background: "#fff",
+              border: `1px solid ${A.line}`,
+              borderRadius: 16,
+              padding: 40,
+              textAlign: "center",
+              color: A.faint,
+            }}
+          >
+            <Loader2 size={20} className="animate-spin" style={{ margin: "0 auto" }} />
+          </div>
+        ) : visible.length === 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              border: `1px dashed ${A.lineMid}`,
+              borderRadius: 20,
+              padding: "56px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: A.display,
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                color: A.ink,
+              }}
+            >
+              {statusFilter ? "Nothing at this stage" : "No applications tracked yet"}
             </div>
-          ))}
-        </div>
-      )}
+            <p style={{ margin: "8px 0 0", fontSize: 14, color: A.muted }}>
+              {statusFilter
+                ? "Pick another stage, or clear the filter."
+                : "Add one above, or mark a job as applied from your matches."}
+            </p>
+          </div>
+        ) : (
+          visible.map((a, i) => {
+            const col = COLS.find((c) => c.k === a.status);
+            const score = a.match_score;
+            return (
+              <div
+                key={a.id}
+                className="v3-approw"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  flexWrap: "wrap",
+                  background: "#fff",
+                  border: `1px solid ${A.line}`,
+                  borderRadius: 16,
+                  padding: "15px 18px",
+                  boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+                  animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${i * 55}ms both`,
+                }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: "#F3F6FD",
+                    border: `1px solid ${A.line}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: A.display,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: A.ink,
+                    flexShrink: 0,
+                  }}
+                >
+                  {(a.company || "?").trim().charAt(0).toUpperCase() || "?"}
+                </div>
+
+                <div style={{ minWidth: 150, flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: A.ink }}>
+                    {a.role}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: A.muted, marginTop: 2 }}>
+                    {a.company}
+                  </div>
+                </div>
+
+                <span
+                  style={{
+                    fontFamily: A.mono,
+                    fontSize: 12,
+                    color: A.muted,
+                    minWidth: 104,
+                  }}
+                >
+                  {formatWhen(a.applied_at || a.created_at)}
+                </span>
+
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: col?.hex || A.faint,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <select
+                    value={a.status}
+                    onChange={(e) => moveStatus(a.id, e.target.value)}
+                    aria-label={`Status for ${a.role}`}
+                    style={{
+                      background: A.page,
+                      border: `1px solid ${A.line}`,
+                      borderRadius: 9,
+                      padding: "6px 9px",
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      fontFamily: "inherit",
+                      color: A.body,
+                      cursor: "pointer",
+                      outline: "none",
+                    }}
+                  >
+                    {APPLICATION_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <span
+                  style={{
+                    fontFamily: A.mono,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: score ? matchHex(score) : A.faint,
+                    minWidth: 40,
+                    textAlign: "right",
+                  }}
+                >
+                  {score ? `${score}%` : "—"}
+                </span>
+
+                <button
+                  onClick={() => remove(a.id)}
+                  aria-label={`Remove ${a.role}`}
+                  className="v3-removebtn"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    borderRadius: 9,
+                    padding: 7,
+                    cursor: "pointer",
+                    color: A.faint,
+                    display: "inline-flex",
+                    transition: "background .18s,color .18s",
+                  }}
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

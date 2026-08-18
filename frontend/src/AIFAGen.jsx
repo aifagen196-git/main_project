@@ -167,6 +167,10 @@ const CSS = `
 .v3-jobcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s,border-color .24s}
 .v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:#DDE3EE}
 .v3-ddrow:hover{background:#F3F6FD!important}
+.v3-approw{transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s}
+.v3-approw:hover{transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(15,23,42,.3)}
+.v3-removebtn:hover{background:#FFF0F3;color:#F43F5E}
+.v3-field:focus{background:#fff!important;border-color:#6D4AFF!important}
 @keyframes ddIn{from{opacity:0;transform:translateY(-6px) scaleY(.96)}to{opacity:1;transform:translateY(0) scaleY(1)}}
 @keyframes expand{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @keyframes shimmer{0%{background-position:-460px 0}100%{background-position:460px 0}}
