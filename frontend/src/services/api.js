@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { DEV_PREVIEW, previewApi } from "../devPreview";
 
 // Base URL of the Express backend. Configure per environment via VITE_API_URL.
 // Default: same host the page was opened from, port 5000 — so localhost stays
@@ -54,6 +55,13 @@ async function handle(res) {
 
 /** JSON request helper. `path` starts with "/api/...". */
 export async function apiRequest(path, { method = "GET", body, _retried } = {}) {
+  // Dev preview: answer from fixtures so the signed-in UI renders with no
+  // backend and no Supabase session. Compiled out of production builds.
+  if (DEV_PREVIEW) {
+    const stub = await previewApi(path, method, body);
+    if (stub !== undefined) return stub;
+  }
+
   const headers = { ...(await authHeader()) };
   if (body !== undefined) headers["Content-Type"] = "application/json";
 

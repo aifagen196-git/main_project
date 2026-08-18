@@ -3,6 +3,7 @@ import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
 import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
+import { DEV_PREVIEW } from "./devPreview";
 import AppShell from "./components/layout/AppShell";
 import Card from "./components/common/Card";
 import Pricing from "./pages/Pricing";
@@ -2065,8 +2066,9 @@ function Marketing({ enter, go }) {
 
 /* ===================== ROOT ===================== */
 export default function AIFAGen() {
-  const [mode, setMode] = useState(
-    () => localStorage.getItem("mode") || "marketing",
+  const [mode, setMode] = useState(() =>
+    // ?preview opens straight into the signed-in app (see src/devPreview.js).
+    DEV_PREVIEW ? "app" : localStorage.getItem("mode") || "marketing",
   );
   const [marketingPage, setMarketingPage] = useState("home");
 
