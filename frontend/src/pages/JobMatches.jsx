@@ -317,7 +317,8 @@ export default function JobMatches({ saved, toggle }) {
     }
   }
 
-  // Search is driven by the URL ?q= (set by the Topbar search box).
+  // Search is driven by the on-page search input below, and by ?q= in the URL
+  // (kept so a link or bookmark carrying a query still lands on results).
   const [searchParams] = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(urlQuery);
@@ -334,7 +335,7 @@ export default function JobMatches({ saved, toggle }) {
   const [locationFilter, setLocationFilter] = useState("");
   const [sortBy, setSortBy] = useState("match"); // "match" | "newest"
 
-  // Keep local query in sync when the URL ?q= changes (e.g. Topbar search).
+  // Keep local query in sync when the URL ?q= changes (an inbound link).
   useEffect(() => {
     setQuery(urlQuery);
   }, [urlQuery]);

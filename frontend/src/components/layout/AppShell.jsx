@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
 
 import JobMatches from "../../pages/JobMatches";
 import Applications from "../../pages/Applications";
@@ -53,13 +52,44 @@ export default function AppShell({ profile, refresh, exit }) {
           setOpen={setOpen}
           exit={exit}
           plan={plan}
+          profile={profile}
           counts={{ saved: saved.length }}
         />
 
         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-          <Topbar profile={profile} setOpen={setOpen} exit={exit} />
+          {/* The topbar used to carry the only control that opened the sidebar
+              drawer below 1024px. With it gone, this floating button takes that
+              job — it is hidden at >=1024px, where the sidebar is a static
+              column (see .v3-burger in the v3 CSS block). */}
+          <button
+            className="v3-burger"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            style={{
+              position: "fixed",
+              top: 14,
+              left: 14,
+              zIndex: 50,
+              display: "inline-flex",
+              flexDirection: "column",
+              gap: 4,
+              background: "rgba(255,255,255,.92)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              border: "1px solid #DDE3EE",
+              borderRadius: 12,
+              padding: 11,
+              cursor: "pointer",
+              boxShadow: "0 8px 24px -12px rgba(15,23,42,.28)",
+            }}
+          >
+            <span style={{ display: "block", width: 16, height: 1.8, background: "#0F172A" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: "#0F172A" }} />
+            <span style={{ display: "block", width: 11, height: 1.8, background: "#0F172A" }} />
+          </button>
 
           <main
+            className="v3-main"
             style={{
               flex: 1,
               padding: "clamp(22px,3.4vw,40px) clamp(16px,3vw,32px)",

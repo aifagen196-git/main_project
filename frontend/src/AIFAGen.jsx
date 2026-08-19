@@ -214,6 +214,11 @@ const CSS = `
 @media (min-width:1024px){
   .v3-burger{display:none!important}
 }
+/* Below 1024px the floating menu button is fixed over the page, so the main
+   column needs to start clear of it. */
+@media (max-width:1023px){
+  .v3-main{padding-top:70px!important}
+}
 @media (max-width:480px){
   .v3-hdrbtns{gap:6px!important}
   .v3-hdrbtns button{padding:9px 12px!important;font-size:12.5px!important}
