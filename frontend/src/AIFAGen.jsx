@@ -664,25 +664,11 @@ const NAV = [
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
-console.log("AIFAGen rendered");
-async function callClaude(prompt, system) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      ...(system ? { system } : {}),
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!res.ok) throw new Error("api");
-  const data = await res.json();
-  return (data.content || [])
-    .map((b) => (b.type === "text" ? b.text : ""))
-    .join("")
-    .trim();
-}
+// NOTE: a `callClaude()` helper used to live here that POSTed straight to
+// api.anthropic.com from the browser. It was dead code and unauthenticated, so
+// it always failed — but leaving it invited someone to "fix" it by adding an
+// API key, which would ship that key in the public JS bundle. All model calls
+// belong on the backend (backend/src/services/ai/*), which holds the keys.
 
 function Mark({ size = 26 }) {
   return (

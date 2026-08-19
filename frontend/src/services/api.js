@@ -1,14 +1,24 @@
 import { supabase } from "../lib/supabase";
 import { DEV_PREVIEW, previewApi } from "../devPreview";
 
-// Base URL of the Express backend. Configure per environment via VITE_API_URL.
-// Default: same host the page was opened from, port 5000 — so localhost stays
-// localhost, and opening the app from a phone via the machine's LAN IP hits
-// the backend on that same IP. (A hardcoded LAN IP in .env broke the whole
-// app when DHCP reassigned the address — avoid pinning IPs here.)
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:5000`;
+// Base URL of the Express backend, resolved per environment.
+//
+//  1. VITE_API_URL wins when set — use it to point a deployed frontend at a
+//     backend on a different host (e.g. https://api.aifagenlabs.com).
+//  2. In dev, fall back to the page's own host on port 5000, so localhost
+//     stays localhost and opening the app from a phone on the LAN hits the
+//     backend on that same IP. (A hardcoded LAN IP in .env broke the whole app
+//     when DHCP reassigned the address — never pin IPs here.)
+//  3. In a production build with no VITE_API_URL, fall back to SAME-ORIGIN
+//     (empty base → requests go to "/api/..."), which is what a reverse proxy
+//     or platform rewrite serves. The previous code fell back to port 5000 in
+//     production too, so a deployed site would have called
+//     https://yourdomain.com:5000 and failed every request.
+const API_URL = import.meta.env.VITE_API_URL
+  ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, "")
+  : import.meta.env.DEV
+    ? `${window.location.protocol}//${window.location.hostname}:5000`
+    : "";
 
 async function authHeader() {
   const {
@@ -28,11 +38,18 @@ async function fetchWithTimeout(url, options, timeoutMs = DEFAULT_TIMEOUT_MS) {
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (e) {
+    // These strings are shown to end users verbatim (e.g. the "Couldn't load
+    // your account" screen), so they must read as product copy, not as a
+    // developer hint about a local dev server.
     if (e.name === "AbortError") {
-      throw new Error("The server took too long to respond. Is the backend running?");
+      throw new Error(
+        "This is taking longer than usual. Please try again in a moment.",
+      );
     }
-    // Network error (backend down / unreachable).
-    throw new Error("Could not reach the server. Is the backend running?");
+    // Network error (service down / unreachable / offline).
+    throw new Error(
+      "We couldn't reach AIFAGen. Check your connection and try again.",
+    );
   } finally {
     clearTimeout(timer);
   }
