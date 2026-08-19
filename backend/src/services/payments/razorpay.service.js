@@ -1,12 +1,18 @@
 import Razorpay from "razorpay";
 import crypto from "node:crypto";
 
-// Server-side source of truth for plan pricing (USD). Annual is billed once
-// per year at the discounted monthly rate × 12. Amounts are in the smallest
-// currency unit (cents) as Razorpay requires.
+// Server-side source of truth for plan pricing (USD). Amounts are in the
+// smallest currency unit (cents) as Razorpay requires. Each plan has exactly
+// one fixed price and billing period — there is no monthly/annual toggle, so
+// billingCycle is derived from the plan here rather than trusted from the
+// client (a request can't pay the "basic" amount and have it recorded, and
+// later billed, as "premium").
+//
+// MUST stay in sync with frontend/src/utils/plan.js's PLANS (display) and
+// supabase/migrations/0009_plan_tiers.sql's consume_ai_usage() (usage caps).
 const PRICING = {
-  professional: { monthly: 19, annual: 15 * 12 },
-  career_accelerator: { monthly: 49, annual: 39 * 12 },
+  basic: { amount: 210, billingCycle: "monthly" },
+  premium: { amount: 2499, billingCycle: "semiannual" },
 };
 
 const CURRENCY = process.env.RAZORPAY_CURRENCY || "USD";
@@ -22,15 +28,23 @@ function client() {
   return _client;
 }
 
-export function planAmount(plan, billingCycle) {
+export function planAmount(plan) {
   const p = PRICING[plan];
   if (!p) throw new Error("Unknown plan");
-  const dollars = billingCycle === "annual" ? p.annual : p.monthly;
-  return Math.round(dollars * 100); // cents
+  return Math.round(p.amount * 100); // cents
 }
 
-export async function createOrder({ plan, billingCycle, userId }) {
-  const amount = planAmount(plan, billingCycle);
+/** The plan's fixed billing period — the only value ever written to
+ *  profiles.billing_cycle, regardless of what a client sends. */
+export function planBillingCycle(plan) {
+  const p = PRICING[plan];
+  if (!p) throw new Error("Unknown plan");
+  return p.billingCycle;
+}
+
+export async function createOrder({ plan, userId }) {
+  const amount = planAmount(plan);
+  const billingCycle = planBillingCycle(plan);
   return client().orders.create({
     amount,
     currency: CURRENCY,

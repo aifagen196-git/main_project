@@ -104,7 +104,7 @@ export default function SettingsView({ profile }) {
       .slice(0, 2)
       .toUpperCase() || "U";
 
-  const plan = profile?.plan || "free";
+  const plan = profile?.plan || "none";
   const paid = isPaidPlan(plan);
 
   const fieldLabel = {
@@ -468,7 +468,7 @@ export default function SettingsView({ profile }) {
                 marginTop: 8,
               }}
             >
-              {PLAN_LABEL[plan] || "Free"}
+              {PLAN_LABEL[plan] || "No plan"}
             </div>
             <p
               style={{
@@ -478,9 +478,16 @@ export default function SettingsView({ profile }) {
                 color: T.faint,
               }}
             >
-              {paid
-                ? "Unlimited matching, resume optimization and cover letters are active on your account."
-                : "5 AI matches a day. Upgrade for unlimited matching, resume optimization and cover letters."}
+              {
+                // There's no free tier — the only way to land in the app shell
+                // with `paid` false is plan === 'none' (isSubscribed() in
+                // utils/plan.js should normally route that state to Pricing
+                // before this page is even reachable). Defensive copy, not
+                // the expected path.
+                paid
+                  ? "Unlimited matching, resume optimization and cover letters are active on your account."
+                  : "Choose a plan to unlock matching, resume optimization and cover letters."
+              }
             </p>
             <button
               onClick={() => setView(paid ? "billing" : "pricing")}

@@ -289,51 +289,6 @@ const STEPS = [
     d: "Stand out, get noticed, and land more interviews.",
   },
 ];
-const PLANS = [
-  {
-    name: "Free",
-    price: 0,
-    tagline: "Get started and explore AIFAGen.",
-    cta: "Get Started Free",
-    popular: false,
-    features: [
-      "AI Job Matching (5 / day)",
-      "Resume Analysis",
-      "Basic Interview Prep",
-      "Application Tracking",
-      "Career Insights",
-    ],
-  },
-  {
-    name: "Professional",
-    price: 19,
-    tagline: "Everything you need to get more interviews.",
-    cta: "Start 7-Day Free Trial",
-    popular: true,
-    features: [
-      "Unlimited AI Job Matches",
-      "AI Resume Optimization",
-      "Advanced Interview Prep",
-      "AI Cover Letter Generator",
-      "Application Tracking & Analytics",
-      "Priority Support",
-    ],
-  },
-  {
-    name: "Career Accelerator",
-    price: 49,
-    tagline: "For serious professionals who want faster results.",
-    cta: "Start 7-Day Free Trial",
-    popular: false,
-    features: [
-      "AI Application Automation",
-      "Personalized Career Roadmap",
-      "Salary Insights & Negotiation",
-      "Dedicated Career Coach (AI)",
-      "Early Access to New Features",
-    ],
-  },
-];
 const FAQS = [
   {
     q: "Can I change my plan later?",

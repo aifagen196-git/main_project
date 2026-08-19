@@ -16,19 +16,25 @@ export const DEV_PREVIEW =
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).has("preview");
 
+import { PLANS } from "./utils/plan";
+
 export const PREVIEW_USER = {
   id: "00000000-0000-4000-8000-000000000001",
   email: "preview@aifagenlabs.com",
   user_metadata: { full_name: "Aarav Mehta" },
 };
 
-// `?preview` signs in on the Professional plan so every page is reachable.
-// `?preview=free` exercises the in-app upgrade prompts (subscribed, but
-// without the paid-only features); `?preview=none` exercises the pick-a-plan
-// screen shown before the app shell is reachable at all.
+// `?preview` signs in on Premium so every page (including advanced-analytics
+// gated ones) is reachable. `?preview=basic` exercises the in-app upgrade
+// prompts — subscribed, but without the paid-only features Basic doesn't
+// unlock. `?preview=none` exercises the pick-a-plan screen shown before the
+// app shell is reachable at all — there's no free tier, so this is a real
+// pre-checkout state, not just a test fixture.
 const PREVIEW_PLAN = DEV_PREVIEW
-  ? new URLSearchParams(window.location.search).get("preview") || "professional"
-  : "professional";
+  ? new URLSearchParams(window.location.search).get("preview") || "premium"
+  : "premium";
+
+const planMeta = PLANS.find((p) => p.id === PREVIEW_PLAN);
 
 export const PREVIEW_PROFILE = {
   id: PREVIEW_USER.id,
@@ -37,16 +43,14 @@ export const PREVIEW_PROFILE = {
   headline: "Senior Product Designer",
   location: "Hyderabad, India",
   plan: PREVIEW_PLAN === "none" ? "none" : PREVIEW_PLAN,
-  // Matches production: POST /api/payments/free sets the free plan to
-  // subscription_status "active", so a free user IS subscribed and reaches
-  // the app shell — they're gated per-feature (see planLimits), not at the
-  // door. Only "none" (no plan chosen yet) is inactive and lands on Pricing.
+  // Matches production: only 'none' (no plan chosen yet, no free tier to fall
+  // back to) is inactive and lands on Pricing — basic/premium are both paid,
+  // active subscriptions, gated per-feature (see planLimits), not at the door.
   subscription_status: PREVIEW_PLAN === "none" ? "inactive" : "active",
-  billing_cycle: PREVIEW_PLAN === "professional" || PREVIEW_PLAN === "career_accelerator" ? "monthly" : null,
-  current_period_end:
-    PREVIEW_PLAN === "professional" || PREVIEW_PLAN === "career_accelerator"
-      ? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
-      : null,
+  billing_cycle: planMeta?.billingCycle ?? null,
+  current_period_end: planMeta
+    ? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
+    : null,
 };
 
 // Mirrors the sample set in the v3 design so the preview can be compared

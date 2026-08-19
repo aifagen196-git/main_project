@@ -16,15 +16,25 @@ function loadRazorpay() {
  * Starts Razorpay checkout for a paid plan. Creates an order on the backend,
  * opens the Razorpay modal, and verifies the payment server-side (which
  * activates the plan). Resolves once the plan is active.
- * @param {"professional"|"career_accelerator"} plan
- * @param {"monthly"|"annual"} billingCycle
+ *
+ * Each plan has exactly one fixed price and billing period — see
+ * utils/plan.js's PLANS — so there is no billingCycle argument here; the
+ * backend derives it from the plan id (razorpay.service.js) and won't trust
+ * one supplied by the client either way.
+ *
+ * NOTE ON THE "7-DAY FREE TRIAL" CTA COPY (utils/plan.js): this function
+ * charges the card immediately on checkout, exactly like before this pass.
+ * There is no delayed-first-charge / trial-period mechanism implemented —
+ * that would need Razorpay Subscriptions (recurring plans with a
+ * trial_period), a materially different integration from the one-time
+ * Orders flow this file wraps. Flagged, not silently built or silently
+ * dropped from the copy — ask before changing either.
+ *
+ * @param {"basic"|"premium"} plan
  */
-export async function startCheckout(plan, billingCycle = "monthly") {
+export async function startCheckout(plan) {
   const Razorpay = await loadRazorpay();
-  const { order, keyId } = await api.post("/api/payments/order", {
-    plan,
-    billingCycle,
-  });
+  const { order, keyId } = await api.post("/api/payments/order", { plan });
 
   return new Promise((resolve, reject) => {
     const rzp = new Razorpay({
@@ -33,7 +43,7 @@ export async function startCheckout(plan, billingCycle = "monthly") {
       amount: order.amount,
       currency: order.currency,
       name: "AIFAGen",
-      description: `${plan} (${billingCycle})`,
+      description: plan,
       handler: async (response) => {
         try {
           const result = await api.post("/api/payments/verify", {
@@ -41,7 +51,6 @@ export async function startCheckout(plan, billingCycle = "monthly") {
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
             plan,
-            billingCycle,
           });
           resolve(result.profile);
         } catch (e) {
@@ -57,10 +66,4 @@ export async function startCheckout(plan, billingCycle = "monthly") {
     );
     rzp.open();
   });
-}
-
-/** Activates the free plan for the current user (no payment). */
-export async function selectFreePlan() {
-  const { profile } = await api.post("/api/payments/free", {});
-  return profile;
 }

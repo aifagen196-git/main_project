@@ -42,7 +42,7 @@ export default function AppShell({ profile, refresh, exit }) {
     }
   };
 
-  const plan = profile?.plan || "free";
+  const plan = profile?.plan || "none";
 
   return (
     <div className="font-body" style={{ background: "#F8F9FE", color: "#0F172A" }}>

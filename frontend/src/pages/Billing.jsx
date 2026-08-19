@@ -43,6 +43,11 @@ const STATUS_META = {
   inactive: { label: "No active plan", color: B.faint },
 };
 
+const BILLING_CYCLE_LABEL = {
+  monthly: "Monthly",
+  semiannual: "Every 6 months",
+};
+
 const SUPPORT_EMAIL = "info@aifagenlabs.com";
 
 export default function Billing({ profile }) {
@@ -50,7 +55,7 @@ export default function Billing({ profile }) {
   const plan = profile?.plan || "none";
   const status = profile?.subscription_status || "inactive";
   const paid = isPaidPlan(plan);
-  const Icon = plan === "career_accelerator" ? Crown : plan === "professional" ? Rocket : Star;
+  const Icon = plan === "premium" ? Crown : plan === "basic" ? Rocket : Star;
   const meta = STATUS_META[status] || STATUS_META.inactive;
 
   const renew = profile?.current_period_end
@@ -175,11 +180,11 @@ export default function Billing({ profile }) {
               }}
             >
               <Icon size={24} />
-              {PLAN_LABEL[plan] || "Free"}
+              {PLAN_LABEL[plan] || "No plan"}
             </div>
             {profile?.billing_cycle && (
-              <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6", textTransform: "capitalize" }}>
-                {profile.billing_cycle} billing
+              <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6" }}>
+                {BILLING_CYCLE_LABEL[profile.billing_cycle] || profile.billing_cycle} billing
               </p>
             )}
           </div>

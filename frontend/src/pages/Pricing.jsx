@@ -1,24 +1,34 @@
 import { useState } from "react";
 import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lucide-react";
 
-import { PLANS, isPaidPlan } from "../utils/plan";
-import { startCheckout, selectFreePlan } from "../services/subscription";
+import { PLANS } from "../utils/plan";
+import { startCheckout } from "../services/subscription";
 import { signOut } from "../services/auth";
 
 /* Pricing screen in the "AIFAGen v3" design language.
  *
+ * Two plans, no free tier: Basic ($210/month) and Premium ($2499/6 months).
+ * Each has exactly one fixed price and billing period (utils/plan.js), so
+ * there's no monthly/annual toggle anymore — every plan card just shows its
+ * own price and period.
+ *
  * Two render modes, unchanged from before this pass:
  *  - onboarding: full-screen gate shown right after account creation, with
  *    its own header (no sidebar exists yet — the user hasn't picked a plan).
+ *    With no free tier, this is now the ONLY way into the app for a new
+ *    account: checkout must complete before subscription_status becomes
+ *    active/trialing (see isSubscribed in utils/plan.js).
  *  - in-app (/pricing route, inside AppShell): plain section, no header,
- *    reached from "Manage subscription" on Billing or an upgrade prompt
- *    elsewhere in the app.
+ *    reached from "Manage subscription" on Billing.
  *
- * Checkout logic is untouched: selectFreePlan() and startCheckout() (real
- * Razorpay order + verify flow, see services/subscription.js) are called
- * exactly as before. Only the presentation changed, plus one factual fix —
- * the trust strip previously said "Payments handled securely by Stripe",
- * but this app's payment processor is Razorpay; there is no Stripe
+ * Checkout itself (startCheckout — real Razorpay order + verify flow, see
+ * services/subscription.js) is unchanged: it still charges the card
+ * immediately. The "Start 7-Day Free Trial" CTA copy predates this pass and
+ * does not reflect a real delayed-charge trial — see the note in
+ * subscription.js before assuming otherwise.
+ *
+ * Trust strip corrected: it previously said "Payments handled securely by
+ * Stripe", but this app's payment processor is Razorpay; there is no Stripe
  * integration anywhere in the codebase.
  */
 
@@ -46,7 +56,6 @@ const kicker = {
 };
 
 export default function Pricing({ profile, refresh, onboarding = false }) {
-  const [cycle, setCycle] = useState("monthly");
   const [busy, setBusy] = useState(null); // plan id currently processing
   const [err, setErr] = useState("");
   const currentPlan = profile?.plan;
@@ -55,11 +64,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
     setErr("");
     setBusy(plan.id);
     try {
-      if (plan.id === "free") {
-        await selectFreePlan(profile.id);
-      } else {
-        await startCheckout(plan.id, cycle); // opens Razorpay, resolves on success
-      }
+      await startCheckout(plan.id); // opens Razorpay, resolves on success
       await refresh?.();
     } catch (e) {
       setErr(e.message || "Something went wrong. Please try again.");
@@ -94,65 +99,9 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           }}
         >
           {onboarding
-            ? "Pick a plan to unlock your dashboard. Paid plans include a 7-day free trial — cancel anytime."
-            : "Upgrade or downgrade anytime. Paid plans include a 7-day free trial."}
+            ? "Pick a plan to unlock your dashboard. Every plan includes a 7-day free trial."
+            : "Change plans anytime — every plan includes a 7-day free trial."}
         </p>
-      </div>
-
-      {/* ---- Billing cycle toggle ---- */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 26 }}>
-        <div
-          style={{
-            display: "inline-flex",
-            background: "#fff",
-            border: `1px solid ${P.line}`,
-            borderRadius: 13,
-            padding: 4,
-            gap: 2,
-          }}
-        >
-          {[
-            ["monthly", "Monthly"],
-            ["annual", "Annual"],
-          ].map(([id, label]) => {
-            const active = cycle === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setCycle(id)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 7,
-                  background: active ? P.ink : "transparent",
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "9px 17px",
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  fontFamily: "inherit",
-                  color: active ? P.page : P.muted,
-                  cursor: "pointer",
-                  transition: "background .18s,color .18s",
-                }}
-              >
-                {label}
-                {id === "annual" && (
-                  <span
-                    style={{
-                      fontFamily: P.mono,
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: active ? "#B9D8FF" : P.brand,
-                    }}
-                  >
-                    −20%
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {err && (
@@ -186,7 +135,6 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
         }}
       >
         {PLANS.map((p) => {
-          const price = cycle === "monthly" ? p.monthly : p.annual;
           const isCurrent = currentPlan === p.id;
           return (
             <div
@@ -257,15 +205,12 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                     lineHeight: 1,
                   }}
                 >
-                  ${price}
+                  ${p.price}
                 </span>
-                <span style={{ fontSize: 13.5, color: P.faint, paddingBottom: 4 }}>/month</span>
+                <span style={{ fontSize: 13.5, color: P.faint, paddingBottom: 4 }}>
+                  / {p.period}
+                </span>
               </div>
-              {cycle === "annual" && price > 0 && (
-                <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: P.brand }}>
-                  Billed ${price * 12}/year
-                </div>
-              )}
 
               <button
                 onClick={() => choose(p)}
@@ -295,10 +240,8 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   </>
                 ) : isCurrent ? (
                   "Current plan"
-                ) : isPaidPlan(p.id) ? (
-                  p.cta
                 ) : (
-                  "Get started free"
+                  p.cta
                 )}
               </button>
 

@@ -3,14 +3,22 @@ import { supabase } from "../config/supabase.js";
 import {
   createOrder,
   verifyPaymentSignature,
+  planBillingCycle,
 } from "../services/payments/razorpay.service.js";
 
 const router = express.Router();
 
-const PAID_PLANS = new Set(["professional", "career_accelerator"]);
+// Two paid tiers, one fixed price + billing period each — see
+// razorpay.service.js's PRICING for the amounts (source of truth) and
+// frontend/src/utils/plan.js for display copy. No free tier: profiles.plan
+// starts at 'none' and stays there until checkout completes.
+const PAID_PLANS = new Set(["basic", "premium"]);
 
-// Activate the free plan (no payment). Only from 'none'/'free', and never for
-// a user who already has a paid plan.
+// DEAD (UNREACHABLE FROM THE UI) — Pricing.jsx no longer offers a free plan,
+// so nothing calls this anymore. Left mounted (harmless, still auth-gated) in
+// case a free tier returns, and because any account that activated it while
+// it was live still legitimately holds plan='free' and this is the only
+// documented path that ever set that state.
 router.post("/free", async (req, res) => {
   const { data, error } = await supabase
     .from("profiles")
@@ -30,15 +38,17 @@ router.post("/free", async (req, res) => {
   return res.json({ success: true, profile: data });
 });
 
-// Create a Razorpay order for a paid plan. Amount is derived server-side.
+// Create a Razorpay order for a paid plan. Amount AND billing cycle are both
+// derived server-side from the plan id (razorpay.service.js) — a client
+// can't request "basic" pricing while claiming a "premium" billing cycle.
 router.post("/order", async (req, res) => {
-  const { plan, billingCycle = "monthly" } = req.body || {};
+  const { plan } = req.body || {};
   if (!PAID_PLANS.has(plan)) {
     return res.status(400).json({ success: false, message: "Invalid plan" });
   }
 
   try {
-    const order = await createOrder({ plan, billingCycle, userId: req.user.id });
+    const order = await createOrder({ plan, userId: req.user.id });
     return res.json({
       success: true,
       order,
@@ -58,7 +68,6 @@ router.post("/verify", async (req, res) => {
     razorpay_payment_id,
     razorpay_signature,
     plan,
-    billingCycle = "monthly",
   } = req.body || {};
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !PAID_PLANS.has(plan)) {
@@ -79,7 +88,9 @@ router.post("/verify", async (req, res) => {
     .update({
       plan,
       subscription_status: "active",
-      billing_cycle: billingCycle,
+      // Derived from the plan, same as /order — never trust a client-supplied
+      // billing cycle for what actually gets stored/billed.
+      billing_cycle: planBillingCycle(plan),
       razorpay_payment_id,
       razorpay_order_id,
     })
