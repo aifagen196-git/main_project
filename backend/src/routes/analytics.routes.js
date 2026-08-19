@@ -1,3 +1,13 @@
+// CURRENTLY UNUSED — no client calls this endpoint.
+//
+// The Analytics screen it backs is hidden (see frontend data/constants.js and
+// AppShell.jsx). Every figure below derives from self-reported status changes:
+// nothing in the product detects an employer reply, so the numbers are only as
+// current as the user's own tracker edits. `avgResponseDays` is the weakest of
+// them — see the note on that block.
+//
+// The route stays mounted (harmless, still auth-gated) so the feature can be
+// switched back on once application status can be captured reliably.
 import express from "express";
 import { supabase } from "../config/supabase.js";
 
@@ -78,9 +88,11 @@ router.get("/", async (req, res) => {
   const responded = countWhere(rows, (r) => RESPONDED.has(r.status));
 
   // ---- Average time to first response ------------------------------------
-  // updated_at only changes when the row is edited, so for a responded
-  // application it approximates when the status last moved. Good enough for
-  // an average; not exact per-row.
+  // WEAK METRIC. updated_at changes when the USER edits the row, not when the
+  // employer actually replied — nothing in the product observes the reply. So
+  // this really measures "how long until the user updated their tracker",
+  // which is noise if they batch their updates. Do not surface it as employer
+  // response time without first capturing an explicit "responded on" date.
   const responseDays = rows
     .filter((r) => RESPONDED.has(r.status))
     .map((r) => {

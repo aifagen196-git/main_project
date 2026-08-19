@@ -116,11 +116,17 @@ export const NAV = [
     label: "Resume",
     icon: FileText,
   },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-  },
+  // HIDDEN — Analytics is built and working (pages/Analytics.jsx against
+  // GET /api/analytics), but every figure derives from self-reported status
+  // updates: nothing detects an employer reply, so the numbers are only as
+  // current as the user's own tracker edits. Re-enable this entry, and the
+  // /analytics route in AppShell, once application status can be captured
+  // reliably (an explicit "responded on" field, or mailbox integration).
+  // {
+  //   id: "analytics",
+  //   label: "Analytics",
+  //   icon: BarChart3,
+  // },
   {
     id: "saved",
     label: "Saved Jobs",

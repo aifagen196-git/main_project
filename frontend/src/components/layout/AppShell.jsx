@@ -12,7 +12,9 @@ import SavedJobs from "../../pages/SavedJobs";
 
 // Recharts-heavy pages — lazy-loaded so recharts is split out of the main bundle.
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
-const Analytics = lazy(() => import("../../pages/Analytics"));
+// HIDDEN — kept out of the bundle entirely while the route is disabled.
+// Restore alongside the /analytics route below. See data/constants.js.
+// const Analytics = lazy(() => import("../../pages/Analytics"));
 import SettingsView from "../../pages/SettingsView";
 import Pricing from "../../pages/Pricing";
 import Billing from "../../pages/Billing";
@@ -96,7 +98,11 @@ export default function AppShell({ profile, refresh, exit }) {
                   element={<Resume profile={profile} plan={plan} />}
                 />
 
-                <Route path="/analytics" element={<Analytics plan={plan} />} />
+                {/* HIDDEN — see the note on the Analytics NAV entry in
+                    data/constants.js. The page and its endpoint still exist;
+                    without this route /analytics falls through to the
+                    catch-all below and redirects to the dashboard. */}
+                {/* <Route path="/analytics" element={<Analytics plan={plan} />} /> */}
 
                 <Route
                   path="/saved"
