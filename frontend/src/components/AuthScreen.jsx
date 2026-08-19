@@ -213,7 +213,7 @@ export default function AuthScreen({ onBack }) {
                 background: "transparent",
                 border: "none",
                 fontFamily: C.mono,
-                fontSize: 11,
+                fontSize: 12.5,
                 fontWeight: 700,
                 letterSpacing: ".1em",
                 textTransform: "uppercase",
