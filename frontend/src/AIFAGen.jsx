@@ -450,13 +450,6 @@ const DASH_STATS = [
   },
   { t: "Offers", v: "2", d: "Keep it up!", icon: BadgeCheck, tint: "sky" },
 ];
-const OUTCOME = [
-  { n: "Applied", v: 24, c: "#6d4aff" },
-  { n: "Interviewing", v: 8, c: "#f43f5e" },
-  { n: "Assessment", v: 5, c: "#f59e0b" },
-  { n: "Offered", v: 2, c: "#22c55e" },
-  { n: "Rejected", v: 10, c: "#cbd5e1" },
-];
 const TASKS = [
   {
     t: "Prepare for Google interview",
@@ -528,84 +521,6 @@ const APP_COLS = [
       { c: "Pinterest", lg: "A", r: "Product Designer", w: "Closed", m: 0 },
     ],
   },
-];
-const APP_STATS = [
-  {
-    t: "Applications",
-    v: "39",
-    d: "12 this month",
-    icon: FileText,
-    tint: "violet",
-  },
-  {
-    t: "Interviewing",
-    v: "8",
-    d: "3 this month",
-    icon: MessageSquare,
-    tint: "amber",
-  },
-  { t: "Offers", v: "2", d: "1 this month", icon: BadgeCheck, tint: "emerald" },
-  {
-    t: "Response Rate",
-    v: "26%",
-    d: "8% this month",
-    icon: TrendingUp,
-    tint: "sky",
-  },
-  {
-    t: "Avg. Response",
-    v: "6.4d",
-    d: "1.2d faster",
-    icon: Clock,
-    tint: "violet",
-  },
-];
-const TREND = [
-  { d: "May 1", a: 2, i: 1 },
-  { d: "May 6", a: 9, i: 2 },
-  { d: "May 11", a: 16, i: 4 },
-  { d: "May 16", a: 24, i: 6 },
-  { d: "May 21", a: 33, i: 9 },
-  { d: "May 26", a: 42, i: 11 },
-  { d: "May 31", a: 48, i: 12 },
-];
-const ANA_STATS = [
-  {
-    t: "Applications",
-    v: "48",
-    d: "20% vs last",
-    icon: FileText,
-    tint: "violet",
-  },
-  {
-    t: "Response Rate",
-    v: "27%",
-    d: "6% vs last",
-    icon: Mail,
-    tint: "emerald",
-  },
-  { t: "Interviews", v: "12", d: "33% vs last", icon: Calendar, tint: "amber" },
-  { t: "Offers", v: "3", d: "50% vs last", icon: BadgeCheck, tint: "sky" },
-  {
-    t: "Avg. Response",
-    v: "6.4d",
-    d: "1.2d faster",
-    icon: Clock,
-    tint: "violet",
-  },
-];
-const SOURCES = [
-  ["AIFAGen Matches", 42],
-  ["LinkedIn", 25],
-  ["Careers Page", 15],
-  ["Referral", 10],
-  ["Other", 8],
-];
-const CATS = [
-  ["Product Design", 5],
-  ["UX/UI Design", 4],
-  ["Product Management", 2],
-  ["User Research", 1],
 ];
 const RESUME_BREAK = [
   ["Impact", 85],

@@ -22,8 +22,10 @@ export const PREVIEW_USER = {
   user_metadata: { full_name: "Aarav Mehta" },
 };
 
-// `?preview` signs in as a subscribed user so every page is reachable.
-// `?preview=free` / `?preview=none` instead exercises the paywalled state.
+// `?preview` signs in on the Professional plan so every page is reachable.
+// `?preview=free` exercises the in-app upgrade prompts (subscribed, but
+// without the paid-only features); `?preview=none` exercises the pick-a-plan
+// screen shown before the app shell is reachable at all.
 const PREVIEW_PLAN = DEV_PREVIEW
   ? new URLSearchParams(window.location.search).get("preview") || "professional"
   : "professional";
@@ -35,8 +37,11 @@ export const PREVIEW_PROFILE = {
   headline: "Senior Product Designer",
   location: "Hyderabad, India",
   plan: PREVIEW_PLAN === "none" ? "none" : PREVIEW_PLAN,
-  subscription_status:
-    PREVIEW_PLAN === "none" || PREVIEW_PLAN === "free" ? "inactive" : "active",
+  // Matches production: POST /api/payments/free sets the free plan to
+  // subscription_status "active", so a free user IS subscribed and reaches
+  // the app shell — they're gated per-feature (see planLimits), not at the
+  // door. Only "none" (no plan chosen yet) is inactive and lands on Pricing.
+  subscription_status: PREVIEW_PLAN === "none" ? "inactive" : "active",
 };
 
 // Mirrors the sample set in the v3 design so the preview can be compared
@@ -83,19 +88,92 @@ const RESUME = {
 const state = {
   saved: ["job-3", "job-5"],
   applications: [
-    { id: "app-1", company: "Stripe", role: "Senior Product Designer", status: "applied", match_score: 95, applied_at: "2026-08-12T10:00:00Z", job_id: "job-1" },
-    { id: "app-2", company: "Anthropic", role: "Machine Learning Engineer", status: "applied", match_score: 92, applied_at: "2026-08-09T10:00:00Z", job_id: "job-2" },
-    { id: "app-3", company: "Vercel", role: "Frontend Engineer", status: "applied", match_score: 89, applied_at: "2026-08-07T10:00:00Z", job_id: "job-3" },
-    { id: "app-4", company: "Notion", role: "Product Manager", status: "interviewing", match_score: 74, applied_at: "2026-08-12T10:00:00Z", job_id: "job-6" },
-    { id: "app-5", company: "Snowflake", role: "Data Engineer", status: "interviewing", match_score: 81, applied_at: "2026-08-10T10:00:00Z", job_id: "job-5" },
-    { id: "app-6", company: "Cloudflare", role: "Site Reliability Engineer", status: "assessment", match_score: 68, applied_at: "2026-08-08T10:00:00Z", job_id: "job-7" },
-    { id: "app-7", company: "Okta", role: "Security Engineer", status: "assessment", match_score: 61, applied_at: "2026-08-06T10:00:00Z", job_id: "job-8" },
-    { id: "app-8", company: "Nestlé", role: "Supply Chain Analyst", status: "offer", match_score: 84, applied_at: "2026-08-03T10:00:00Z", job_id: "job-4" },
-    { id: "app-9", company: "Spotify", role: "UX Researcher", status: "rejected", match_score: 52, applied_at: "2026-07-28T10:00:00Z", job_id: "job-9" },
+    { id: "app-1", company: "Stripe", role: "Senior Product Designer", status: "applied", match_score: 95, applied_at: "2026-08-12T10:00:00Z", updated_at: "2026-08-12T10:00:00Z", job_id: "job-1" },
+    { id: "app-2", company: "Anthropic", role: "Machine Learning Engineer", status: "applied", match_score: 92, applied_at: "2026-08-09T10:00:00Z", updated_at: "2026-08-09T10:00:00Z", job_id: "job-2" },
+    { id: "app-3", company: "Vercel", role: "Frontend Engineer", status: "applied", match_score: 89, applied_at: "2026-08-07T10:00:00Z", updated_at: "2026-08-07T10:00:00Z", job_id: "job-3" },
+    { id: "app-4", company: "Notion", role: "Product Manager", status: "interviewing", match_score: 74, applied_at: "2026-08-12T10:00:00Z", updated_at: "2026-08-17T10:00:00Z", job_id: "job-6" },
+    { id: "app-5", company: "Snowflake", role: "Data Engineer", status: "interviewing", match_score: 81, applied_at: "2026-08-10T10:00:00Z", updated_at: "2026-08-16T10:00:00Z", job_id: "job-5" },
+    { id: "app-6", company: "Cloudflare", role: "Site Reliability Engineer", status: "assessment", match_score: 68, applied_at: "2026-08-08T10:00:00Z", updated_at: "2026-08-15T10:00:00Z", job_id: "job-7" },
+    { id: "app-7", company: "Okta", role: "Security Engineer", status: "assessment", match_score: 61, applied_at: "2026-08-06T10:00:00Z", updated_at: "2026-08-14T10:00:00Z", job_id: "job-8" },
+    { id: "app-8", company: "Nestlé", role: "Supply Chain Analyst", status: "offer", match_score: 84, applied_at: "2026-08-03T10:00:00Z", updated_at: "2026-08-13T10:00:00Z", job_id: "job-4" },
+    { id: "app-9", company: "Spotify", role: "UX Researcher", status: "rejected", match_score: 52, applied_at: "2026-07-28T10:00:00Z", updated_at: "2026-08-02T10:00:00Z", job_id: "job-9" },
+    // Added by hand in the tracker rather than from a match — exercises the
+    // "Added manually" source split (job_id: null).
+    { id: "app-10", company: "Figma", role: "Design Systems Lead", status: "applied", match_score: null, applied_at: "2026-07-20T10:00:00Z", updated_at: "2026-07-20T10:00:00Z", job_id: null },
   ],
 };
 
 const delay = (ms = 220) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Mirrors backend/src/routes/analytics.routes.js against the fixture
+ * applications above, so the Analytics screen can be exercised without a
+ * backend. Kept deliberately simple — if the real aggregation changes shape,
+ * this needs the same change.
+ */
+function previewAnalytics() {
+  const DAY = 24 * 60 * 60 * 1000;
+  const STATUSES = ["applied", "interviewing", "assessment", "offer", "rejected"];
+  const RESPONDED = new Set(["interviewing", "assessment", "offer", "rejected"]);
+  const STAGE = new Set(["interviewing", "assessment"]);
+
+  const rows = state.applications;
+  const now = Date.now();
+  const at = (r) => Date.parse(r.applied_at || "");
+
+  const byStatus = Object.fromEntries(STATUSES.map((s) => [s, 0]));
+  for (const r of rows) if (r.status in byStatus) byStatus[r.status] += 1;
+
+  const responded = rows.filter((r) => RESPONDED.has(r.status));
+  const spans = responded
+    .map((r) => (Date.parse(r.updated_at || "") - at(r)) / DAY)
+    .filter((d) => Number.isFinite(d) && d >= 0);
+  const avg = spans.length ? spans.reduce((a, b) => a + b, 0) / spans.length : null;
+
+  const trend = [];
+  for (let i = 7; i >= 0; i--) {
+    const cutoff = now - i * 7 * DAY;
+    const upTo = rows.filter((r) => at(r) <= cutoff);
+    trend.push({
+      d: new Date(cutoff).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      a: upTo.length,
+      i: upTo.filter((r) => STAGE.has(r.status)).length,
+    });
+  }
+
+  const counts = new Map();
+  for (const r of rows) {
+    const n = (r.company || "").trim();
+    if (n) counts.set(n, (counts.get(n) || 0) + 1);
+  }
+
+  const fromMatches = rows.filter((r) => r.job_id).length;
+
+  return {
+    totals: {
+      applications: rows.length,
+      interviews: rows.filter((r) => STAGE.has(r.status)).length,
+      offers: byStatus.offer,
+      responded: responded.length,
+      responseRate: rows.length
+        ? Math.round((responded.length / rows.length) * 100)
+        : 0,
+      avgResponseDays: avg === null ? null : Math.round(avg * 10) / 10,
+    },
+    deltas: { applications: 20, interviews: 33, offers: null },
+    recentCount: rows.filter((r) => at(r) >= now - 30 * DAY).length,
+    funnel: STATUSES.map((s) => ({ status: s, count: byStatus[s] })),
+    trend,
+    topCompanies: [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count })),
+    sources: [
+      { name: "From matches", count: fromMatches },
+      { name: "Added manually", count: rows.length - fromMatches },
+    ],
+  };
+}
 
 /**
  * Answers an apiRequest() call from fixtures. Returns `undefined` for paths
@@ -139,6 +217,10 @@ export async function previewApi(path, method = "GET", body) {
     const id = route.split("/").pop();
     state.saved = state.saved.filter((x) => x !== id);
     return { saved: false };
+  }
+
+  if (route === "/api/analytics") {
+    return { analytics: previewAnalytics() };
   }
 
   if (route === "/api/applications") {

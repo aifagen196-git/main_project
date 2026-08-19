@@ -13,6 +13,7 @@ import savedJobsRoutes from "./routes/savedJobs.routes.js";
 import applicationsRoutes from "./routes/applications.routes.js";
 import resumesRoutes from "./routes/resumes.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
 
@@ -86,6 +87,7 @@ app.use("/api/saved-jobs", requireAuth, savedJobsRoutes);
 app.use("/api/applications", requireAuth, applicationsRoutes);
 app.use("/api/resumes", requireAuth, resumesRoutes);
 app.use("/api/ai", requireAuth, aiRoutes);
+app.use("/api/analytics", requireAuth, analyticsRoutes);
 app.use("/api/payments", requireAuth, paymentsRoutes);
 
 // =============================

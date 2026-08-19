@@ -116,11 +116,11 @@ export const NAV = [
     label: "Resume",
     icon: FileText,
   },
-  // {
-  //   id: "analytics",
-  //   label: "Analytics",
-  //   icon: BarChart3,
-  // },
+  {
+    id: "analytics",
+    label: "Analytics",
+    icon: BarChart3,
+  },
   {
     id: "saved",
     label: "Saved Jobs",
