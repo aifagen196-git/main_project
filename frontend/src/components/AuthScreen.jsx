@@ -199,6 +199,33 @@ export default function AuthScreen({ onBack }) {
             animation: "riseIn .7s cubic-bezier(.2,.7,.2,1) both",
           }}
         >
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="v3-backlink"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                margin: "0 0 22px",
+                padding: 0,
+                background: "transparent",
+                border: "none",
+                fontFamily: C.mono,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: ".1em",
+                textTransform: "uppercase",
+                color: C.faint,
+                cursor: "pointer",
+                transition: "color .18s",
+              }}
+            >
+              <span aria-hidden="true">←</span> Back to home
+            </button>
+          )}
+
           <h1
             style={{
               fontFamily: C.display,
@@ -321,20 +348,6 @@ export default function AuthScreen({ onBack }) {
             </a>
           </p>
 
-          {onBack && (
-            <p style={{ margin: "14px 0 0", fontSize: 13.5, color: C.muted }}>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onBack();
-                }}
-                style={{ fontWeight: 700, color: C.muted }}
-              >
-                ← Back to home
-              </a>
-            </p>
-          )}
         </div>
       </div>
     </div>

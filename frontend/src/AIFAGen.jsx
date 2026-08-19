@@ -176,6 +176,7 @@ const CSS = `
 .v3-applybtn:hover{background:#6D4AFF!important}
 .v3-removecard:hover{border-color:#F43F5E!important;color:#F43F5E!important}
 .v3-dangerzone:hover{background:#FFF0F3!important}
+.v3-backlink:hover{color:#0F172A!important}
 /* Settings: the profile card spans both rail columns once there's room. */
 @media (min-width:760px){.v3-settings-wide{grid-column:span 2}}
 @media (max-width:759px){.v3-settings-wide{grid-column:auto!important}}
