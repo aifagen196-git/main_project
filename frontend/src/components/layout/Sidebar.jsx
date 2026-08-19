@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { NAV } from "../../data/constants";
-import { PLAN_LABEL, isPaidPlan } from "../../utils/plan";
-import { signOut } from "../../services/auth";
 import HelpPanel from "./HelpPanel";
 
 /* Port of the "AIFAGen v3" app sidebar. The spec drops icons in favour of a
@@ -13,7 +11,13 @@ import HelpPanel from "./HelpPanel";
    The account block at the bottom came from the spec's topbar. That bar was
    removed — once search moved onto the pages that own it, the only things
    left were this menu and a decorative bell, which did not justify 74px of
-   permanent vertical space on every screen. */
+   permanent vertical space on every screen.
+
+   It's a direct link to Settings rather than its own dropdown: account
+   details, plan and log out already live on that screen, and "Settings" is
+   no longer a separate sidebar entry — this button replaces it (see NAV in
+   data/constants.js). The plan summary that used to sit above this button
+   is also gone; it doesn't need to be visible on every single screen. */
 
 const C = {
   brand: "#6D4AFF",
@@ -29,48 +33,11 @@ const C = {
   mono: "'JetBrains Mono',monospace",
 };
 
-const acctItem = {
-  width: "100%",
-  textAlign: "left",
-  background: "transparent",
-  border: "none",
-  borderRadius: 11,
-  padding: "10px 12px",
-  fontSize: 13.5,
-  fontWeight: 600,
-  color: C.body,
-  cursor: "pointer",
-};
-
 export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {} }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const paid = isPaidPlan(plan);
 
-  const [acctOpen, setAcctOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const acctRef = useRef(null);
-
-  // Close the account menu on click-outside or Escape.
-  useEffect(() => {
-    if (!acctOpen) return;
-    const onDown = (e) => {
-      if (acctRef.current && !acctRef.current.contains(e.target)) setAcctOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setAcctOpen(false);
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [acctOpen]);
-
-  const goto = (path) => {
-    setAcctOpen(false);
-    setOpen(false);
-    navigate(path);
-  };
 
   const initials =
     profile?.full_name
@@ -262,137 +229,25 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
           </button>
         </nav>
 
-        <div style={{ padding: 14, flexShrink: 0 }}>
-          <div style={{ background: C.ink, borderRadius: 17, padding: 19 }}>
-            <div
-              style={{
-                fontFamily: C.mono,
-                fontSize: 9.5,
-                fontWeight: 700,
-                letterSpacing: ".14em",
-                textTransform: "uppercase",
-                color: C.faint,
-              }}
-            >
-              Current plan
-            </div>
-            <div
-              style={{
-                fontFamily: C.display,
-                fontSize: 20,
-                fontWeight: 700,
-                letterSpacing: "-.02em",
-                color: C.page,
-                marginTop: 4,
-              }}
-            >
-              {PLAN_LABEL[plan] || "Free"}
-            </div>
-            <p
-              style={{
-                margin: "9px 0 0",
-                fontSize: 12.5,
-                lineHeight: 1.55,
-                color: C.faint,
-              }}
-            >
-              {paid
-                ? "Manage your subscription and invoices."
-                : "Unlock unlimited AI matching, resume optimization and more."}
-            </p>
-            {!paid && (
-              <button
-                className="v3-btn-light"
-                onClick={() => {
-                  navigate("/pricing");
-                  setOpen(false);
-                }}
-                style={{
-                  width: "100%",
-                  marginTop: 15,
-                  background: C.page,
-                  border: "none",
-                  borderRadius: 11,
-                  padding: 11,
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  color: C.ink,
-                  cursor: "pointer",
-                }}
-              >
-                Upgrade now
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* ---------------- ACCOUNT ---------------- */}
-        <div
-          ref={acctRef}
-          style={{
-            position: "relative",
-            padding: "0 14px 14px",
-            flexShrink: 0,
-          }}
-        >
-          {acctOpen && (
-            <div
-              style={{
-                position: "absolute",
-                // Sits clear above the trigger. The container's bottom padding
-                // is inside its box, so anchor past 100% rather than short of
-                // it — otherwise the menu overlaps the button it opened from.
-                bottom: "calc(100% + 6px)",
-                left: 14,
-                right: 14,
-                background: "#fff",
-                border: `1px solid ${C.line}`,
-                borderRadius: 15,
-                boxShadow: "0 24px 54px -28px rgba(15,23,42,.32)",
-                padding: 8,
-                zIndex: 50,
-                animation: "riseIn .2s cubic-bezier(.2,.7,.2,1) both",
-              }}
-            >
-              <button
-                className="v3-softbtn"
-                onClick={() => goto("/settings")}
-                style={acctItem}
-              >
-                Profile &amp; settings
-              </button>
-              <button
-                className="v3-softbtn"
-                onClick={() => goto("/resume")}
-                style={acctItem}
-              >
-                My resume
-              </button>
-              <button
-                className="v3-dangerbtn"
-                onClick={() => {
-                  setAcctOpen(false);
-                  signOut().catch(() => {});
-                }}
-                style={{ ...acctItem, color: C.clay }}
-              >
-                Log out
-              </button>
-            </div>
-          )}
-
+        {/* Clicking this goes straight to Settings — the account details and
+            plan management already live there, so a dropdown that only ever
+            offered "Profile & settings" as one of three options was a step
+            most people didn't need. */}
+        <div style={{ padding: "0 14px 14px", flexShrink: 0 }}>
           <button
             className="v3-softbtn"
-            onClick={() => setAcctOpen((v) => !v)}
-            aria-label="Account menu"
-            aria-expanded={acctOpen}
+            onClick={() => {
+              navigate("/settings");
+              setOpen(false);
+            }}
             style={{
               width: "100%",
               display: "flex",
               alignItems: "center",
               gap: 11,
-              background: acctOpen ? C.page : "transparent",
-              border: `1px solid ${acctOpen ? C.lineMid : C.line}`,
+              background: "transparent",
+              border: `1px solid ${C.line}`,
               borderRadius: 14,
               padding: 10,
               cursor: "pointer",
@@ -444,17 +299,8 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                 {profile?.email || ""}
               </span>
             </span>
-            <span
-              aria-hidden="true"
-              style={{
-                flexShrink: 0,
-                fontSize: 10,
-                color: C.faint,
-                transform: acctOpen ? "rotate(180deg)" : "none",
-                transition: "transform .2s",
-              }}
-            >
-              ▲
+            <span aria-hidden="true" style={{ flexShrink: 0, fontSize: 15, color: C.faint }}>
+              ›
             </span>
           </button>
         </div>
