@@ -304,41 +304,6 @@ export default function AuthScreen({ onBack }) {
                   ? "Create account"
                   : "Log in"}
             </button>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span style={{ flex: 1, height: 1, background: C.line }} />
-              <span
-                style={{
-                  fontFamily: C.mono,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: ".14em",
-                  textTransform: "uppercase",
-                  color: C.faint,
-                }}
-              >
-                or
-              </span>
-              <span style={{ flex: 1, height: 1, background: C.line }} />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setError("Google sign-in is coming soon.")}
-              className="v3-btn-outline"
-              style={{
-                background: "#fff",
-                border: `1px solid ${C.lineMid}`,
-                borderRadius: 12,
-                padding: 14,
-                fontSize: 14.5,
-                fontWeight: 700,
-                color: C.ink,
-                cursor: "pointer",
-              }}
-            >
-              Continue with Google
-            </button>
           </form>
 
           <p style={{ margin: "26px 0 0", fontSize: 13.5, color: C.muted }}>
