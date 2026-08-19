@@ -65,7 +65,7 @@ export async function startCheckout(plan, billingCycle = "monthly") {
  */
 export async function openBillingPortal() {
   throw new Error(
-    "To manage or cancel your subscription, please contact support@aifagenlabs.com.",
+    "To manage or cancel your subscription, please contact info@aifagenlabs.com.",
   );
 }
 
