@@ -27,8 +27,8 @@ const H = {
 };
 
 const SUPPORT_EMAIL = "info@aifagenlabs.com";
-const SUPPORT_PHONE = "+91 93906 93114";
-const SUPPORT_PHONE_HREF = "+919390693114";
+const SUPPORT_PHONE = "+1 (475) 224-0417";
+const SUPPORT_PHONE_HREF = "+14752240417";
 
 // Answers describe how the product actually behaves today.
 const FAQS = [

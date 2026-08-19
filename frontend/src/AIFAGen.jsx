@@ -1957,9 +1957,6 @@ function Marketing({ enter, go }) {
             <a href="mailto:pmo@aifagenlabs.com" className="v3-footlink" style={{ color: V3.muted }}>
               pmo@aifagenlabs.com
             </a>
-            <a href="tel:+919390693114" className="v3-footlink" style={{ color: V3.muted }}>
-              +91 93906 93114
-            </a>
             <a href="tel:+14752240417" className="v3-footlink" style={{ color: V3.muted }}>
               +1 (475) 224-0417
             </a>

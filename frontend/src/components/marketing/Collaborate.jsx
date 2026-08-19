@@ -314,13 +314,6 @@ export default function Collaborate({ home, enter, go }) {
                   pmo@aifagenlabs.com
                 </a>
                 <a
-                  href="tel:+919390693114"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +91 93906 93114
-                </a>
-                <a
                   href="tel:+14752240417"
                   className="inline-flex items-center gap-2 hover:text-slate-800 transition"
                 >

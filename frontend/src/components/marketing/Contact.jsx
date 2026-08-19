@@ -16,7 +16,8 @@ const OFFICES = [
     "Hyderabad",
     "India \u2022 Headquarters",
     "Info@aifagenlabs.com",
-    "+91 93906 93114",
+    // No separate India line \u2014 the US number below is the only published one.
+    "",
   ],
   [
     "New Jersey",
@@ -215,10 +216,12 @@ export default function Contact({ home, enter, go }) {
                     <Mail size={16} className="text-slate-400" />
                     {email}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Phone size={16} className="text-slate-400" />
-                    {phone}
-                  </div>
+                  {phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone size={16} className="text-slate-400" />
+                      {phone}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -464,13 +467,6 @@ export default function Contact({ home, enter, go }) {
                 >
                   <Mail size={15} className="text-slate-400" />
                   pmo@aifagenlabs.com
-                </a>
-                <a
-                  href="tel:+919390693114"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +91 93906 93114
                 </a>
                 <a
                   href="tel:+14752240417"
