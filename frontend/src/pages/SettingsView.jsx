@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { signOut } from "../services/auth";
+import { signOut, updatePassword } from "../services/auth";
 import { updateProfile } from "../services/profile";
 import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
 
-/* Exact port of the "AIFAGen v3" settings screen.
+/* Port of the "AIFAGen v3" settings screen, redesigned from the original
+ * exact port: an identity strip (avatar, name, email) heads the Profile
+ * card instead of a bare "Profile" label over a form, and a Security card
+ * fills what used to be dead space under Save changes — real, since
+ * supabase.auth.updateUser() needs no backend route (see services/auth.js).
  *
- * Two deviations from the mockup, both because the backing data doesn't exist:
- * the spec's "Match preferences" toggles (remote / relocate / alerts / share)
- * have no columns on `profiles` and no endpoint, and its "Delete account"
- * action has no route — shipping either would mean controls that silently do
- * nothing. The danger-zone treatment is kept and carries log-out, which is
- * real. Restore both here once the backend supports them. */
+ * Two things from the original v3 mockup are still deliberately absent,
+ * both because the backing data doesn't exist: the spec's "Match
+ * preferences" toggles (remote / relocate / alerts / share) have no columns
+ * on `profiles` and no endpoint, and its "Delete account" action has no
+ * route — shipping either would mean controls that silently do nothing.
+ * The danger-zone treatment is kept and carries log-out, which is real.
+ * Restore both once the backend supports them. */
 
 const T = {
   brand: "#6D4AFF",
@@ -20,6 +25,7 @@ const T = {
   ink: "#0F172A",
   page: "#F8F9FE",
   line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
   muted: "#64748B",
   faint: "#94A3B8",
   display: "'Bricolage Grotesque',sans-serif",
@@ -37,6 +43,11 @@ export default function SettingsView({ profile }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState("");
+
+  const [pw, setPw] = useState({ next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwErr, setPwErr] = useState("");
 
   const upd = (k, v) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -61,6 +72,28 @@ export default function SettingsView({ profile }) {
       setErr(e.message || "Could not save changes.");
     }
     setSaving(false);
+  }
+
+  async function savePassword() {
+    setPwErr("");
+    setPwSaved(false);
+    if (pw.next.length < 8) {
+      setPwErr("Password must be at least 8 characters.");
+      return;
+    }
+    if (pw.next !== pw.confirm) {
+      setPwErr("Passwords don't match.");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await updatePassword(pw.next);
+      setPwSaved(true);
+      setPw({ next: "", confirm: "" });
+    } catch (e) {
+      setPwErr(e.message || "Could not update password.");
+    }
+    setPwSaving(false);
   }
 
   const initials =
@@ -147,10 +180,18 @@ export default function SettingsView({ profile }) {
           marginTop: 26,
         }}
       >
-        {/* ---------------- PROFILE ---------------- */}
+        {/* ---------------- PROFILE + SECURITY (wide column) ---------------- */}
         <div
           data-r="wide"
           className="v3-settings-wide"
+          style={{
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+        <div
           style={{
             minWidth: 0,
             background: "#fff",
@@ -161,6 +202,56 @@ export default function SettingsView({ profile }) {
             animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .08s both",
           }}
         >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                background: T.brand,
+                color: T.page,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: T.display,
+                fontSize: 18,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {initials}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: T.display,
+                  fontSize: 17,
+                  fontWeight: 700,
+                  letterSpacing: "-.02em",
+                  color: T.ink,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {profile?.full_name || "Your account"}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: T.muted,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {profile?.email || ""}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: T.lineSoft, margin: "22px 0" }} />
+
           <h2 style={h2Style}>Profile</h2>
 
           <div
@@ -248,6 +339,101 @@ export default function SettingsView({ profile }) {
               <span style={{ fontSize: 13, color: T.clay }}>{err}</span>
             )}
           </div>
+        </div>
+
+        {/* ---------------- SECURITY ---------------- */}
+        <div
+          style={{
+            minWidth: 0,
+            background: "#fff",
+            border: `1px solid ${T.line}`,
+            borderRadius: 20,
+            padding: 26,
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .12s both",
+          }}
+        >
+          <h2 style={h2Style}>Security</h2>
+          <p style={{ margin: "6px 0 0", fontSize: 13.5, color: T.muted }}>
+            Choose a new password for your account.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
+              gap: 16,
+              marginTop: 20,
+            }}
+          >
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>New password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={pw.next}
+                onChange={(e) => {
+                  setPw((p) => ({ ...p, next: e.target.value }));
+                  setPwSaved(false);
+                }}
+                placeholder="At least 8 characters"
+                className="v3-field"
+                style={fieldInput}
+              />
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Confirm new password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={pw.confirm}
+                onChange={(e) => {
+                  setPw((p) => ({ ...p, confirm: e.target.value }));
+                  setPwSaved(false);
+                }}
+                className="v3-field"
+                style={fieldInput}
+              />
+            </label>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 12,
+              marginTop: 22,
+            }}
+          >
+            <button
+              onClick={savePassword}
+              disabled={pwSaving || !pw.next || !pw.confirm}
+              className="v3-btn-dark"
+              style={{
+                background: T.ink,
+                border: "none",
+                borderRadius: 11,
+                padding: "12px 20px",
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: T.page,
+                cursor: pwSaving ? "default" : "pointer",
+                opacity: pwSaving || !pw.next || !pw.confirm ? 0.65 : 1,
+              }}
+            >
+              {pwSaving ? "Updating…" : "Update password"}
+            </button>
+            {pwSaved && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.brand }}>
+                Password updated ✓
+              </span>
+            )}
+            {pwErr && (
+              <span style={{ fontSize: 13, color: T.clay }}>{pwErr}</span>
+            )}
+          </div>
+        </div>
         </div>
 
         {/* ---------------- RAIL ---------------- */}
