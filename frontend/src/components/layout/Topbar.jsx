@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "../../services/auth";
 
-/* Exact port of the "AIFAGen v3" app topbar. The spec draws the search
-   magnifier and the notification glyph from bare spans rather than an icon
-   set, so those are reproduced here as-is. Hover and focus states live in the
-   v3 CSS block in AIFAGen.jsx. */
+/* Port of the "AIFAGen v3" app topbar. The spec draws the notification glyph
+   from bare spans rather than an icon set, so that is reproduced here as-is.
+   Hover and focus states live in the v3 CSS block in AIFAGen.jsx.
+
+   The spec's global search box lived here but has been moved: searching is
+   now per-page (Job Matches searches the job pool, Applications filters the
+   tracker), so each page owns an input scoped to what it actually shows. */
 
 const C = {
   brand: "#6D4AFF",
@@ -34,7 +37,6 @@ const menuItem = {
 
 export default function Topbar({ profile, setOpen }) {
   const navigate = useNavigate();
-  const [term, setTerm] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -54,12 +56,6 @@ export default function Topbar({ profile, setOpen }) {
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
-
-  function submitSearch(e) {
-    e.preventDefault();
-    const q = term.trim();
-    navigate(q ? `/matches?q=${encodeURIComponent(q)}` : "/matches");
-  }
 
   function go(path) {
     setMenuOpen(false);
@@ -111,56 +107,6 @@ export default function Topbar({ profile, setOpen }) {
         <span style={{ display: "block", width: 16, height: 1.8, background: C.ink }} />
         <span style={{ display: "block", width: 11, height: 1.8, background: C.ink }} />
       </button>
-
-      <form
-        onSubmit={submitSearch}
-        style={{ position: "relative", flex: 1, maxWidth: 420 }}
-      >
-        <input
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          placeholder="Search jobs, companies, skills…"
-          className="v3-search"
-          style={{
-            width: "100%",
-            background: C.page,
-            border: `1px solid ${C.line}`,
-            borderRadius: 12,
-            padding: "11px 14px 11px 38px",
-            fontSize: 14,
-            color: C.ink,
-            outline: "none",
-            transition: "background .2s,border-color .2s,box-shadow .2s",
-          }}
-        />
-        <span
-          style={{
-            position: "absolute",
-            left: 13,
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: 11,
-            height: 11,
-            border: `1.8px solid ${C.faint}`,
-            borderRadius: "50%",
-            pointerEvents: "none",
-          }}
-        />
-        <span
-          style={{
-            position: "absolute",
-            left: 22,
-            top: "calc(50% + 4px)",
-            width: 6,
-            height: 1.8,
-            background: C.faint,
-            transform: "rotate(45deg)",
-            transformOrigin: "left center",
-            borderRadius: 2,
-            pointerEvents: "none",
-          }}
-        />
-      </form>
 
       <div
         style={{

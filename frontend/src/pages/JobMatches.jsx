@@ -534,6 +534,87 @@ export default function JobMatches({ saved, toggle }) {
         </p>
       </div>
 
+      {/* ---------------- SEARCH ---------------- */}
+      {/* Bound to the same `query` state the URL ?q= syncs into, so the
+          debounced job-pool search below is unchanged — this just gives it a
+          visible control on the page that owns the results. */}
+      <div style={{ position: "relative", marginTop: 26 }}>
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+          placeholder="Search jobs, companies, skills…"
+          aria-label="Search jobs"
+          className="v3-search"
+          style={{
+            width: "100%",
+            background: "#fff",
+            border: `1px solid ${M.line}`,
+            borderRadius: 14,
+            padding: "14px 44px 14px 42px",
+            fontSize: 14.5,
+            color: M.ink,
+            outline: "none",
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            transition: "background .2s,border-color .2s,box-shadow .2s",
+          }}
+        />
+        {/* Magnifier drawn from bare spans, matching the v3 spec's treatment. */}
+        <span
+          style={{
+            position: "absolute",
+            left: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 11,
+            height: 11,
+            border: `1.8px solid ${M.faint}`,
+            borderRadius: "50%",
+            pointerEvents: "none",
+          }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            left: 25,
+            top: "calc(50% + 4px)",
+            width: 6,
+            height: 1.8,
+            background: M.faint,
+            transform: "rotate(45deg)",
+            transformOrigin: "left center",
+            borderRadius: 2,
+            pointerEvents: "none",
+          }}
+        />
+        {query && (
+          <button
+            onClick={() => {
+              setQuery("");
+              setCurrentPage(1);
+            }}
+            aria-label="Clear search"
+            style={{
+              position: "absolute",
+              right: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              padding: 6,
+              fontSize: 15,
+              lineHeight: 1,
+              color: M.faint,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {/* ---------------- FILTER BAR ---------------- */}
       <div
         style={{
@@ -542,7 +623,7 @@ export default function JobMatches({ saved, toggle }) {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(168px,1fr))",
           gap: 12,
-          marginTop: 26,
+          marginTop: 14,
           padding: 16,
           background: "#fff",
           border: `1px solid ${M.line}`,

@@ -56,6 +56,7 @@ export default function Applications() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     getApplications()
@@ -104,7 +105,17 @@ export default function Applications() {
 
   const byStatus = (s) => apps.filter((a) => a.status === s);
 
-  const visible = statusFilter ? apps.filter((a) => a.status === statusFilter) : apps;
+  // Search filters the tracker itself (company + role), not the job pool —
+  // this page only ever shows applications the user has already logged.
+  const term = search.trim().toLowerCase();
+  const visible = apps.filter((a) => {
+    if (statusFilter && a.status !== statusFilter) return false;
+    if (!term) return true;
+    return (
+      (a.company || "").toLowerCase().includes(term) ||
+      (a.role || "").toLowerCase().includes(term)
+    );
+  });
 
   const chipStyle = (active) => ({
     background: active ? A.ink : A.page,
@@ -328,13 +339,84 @@ export default function Applications() {
         </div>
       </div>
 
+      {/* ---------------- SEARCH ---------------- */}
+      <div style={{ position: "relative", marginTop: 18 }}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search your applications by company or role…"
+          aria-label="Search applications"
+          className="v3-search"
+          style={{
+            width: "100%",
+            background: "#fff",
+            border: `1px solid ${A.line}`,
+            borderRadius: 14,
+            padding: "14px 44px 14px 42px",
+            fontSize: 14.5,
+            color: A.ink,
+            outline: "none",
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            transition: "background .2s,border-color .2s,box-shadow .2s",
+          }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            left: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 11,
+            height: 11,
+            border: `1.8px solid ${A.faint}`,
+            borderRadius: "50%",
+            pointerEvents: "none",
+          }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            left: 25,
+            top: "calc(50% + 4px)",
+            width: 6,
+            height: 1.8,
+            background: A.faint,
+            transform: "rotate(45deg)",
+            transformOrigin: "left center",
+            borderRadius: 2,
+            pointerEvents: "none",
+          }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            style={{
+              position: "absolute",
+              right: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "transparent",
+              border: "none",
+              padding: 6,
+              fontSize: 15,
+              lineHeight: 1,
+              color: A.faint,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {/* ---------------- STATUS FILTER ---------------- */}
       <div
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: 8,
-          marginTop: 18,
+          marginTop: 14,
         }}
       >
         <button onClick={() => setStatusFilter("")} style={chipStyle(!statusFilter)}>
@@ -368,6 +450,24 @@ export default function Applications() {
           );
         })}
       </div>
+
+      {/* The status chips above always show totals for the whole tracker, so
+          spell out the filtered count while a search is narrowing the list. */}
+      {term && !loading && (
+        <div
+          style={{
+            marginTop: 16,
+            fontFamily: A.mono,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: ".1em",
+            textTransform: "uppercase",
+            color: A.faint,
+          }}
+        >
+          {visible.length} of {apps.length} matching “{search.trim()}”
+        </div>
+      )}
 
       {/* ---------------- LIST ---------------- */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
@@ -403,13 +503,37 @@ export default function Applications() {
                 color: A.ink,
               }}
             >
-              {statusFilter ? "Nothing at this stage" : "No applications tracked yet"}
+              {term
+                ? "No matching applications"
+                : statusFilter
+                  ? "Nothing at this stage"
+                  : "No applications tracked yet"}
             </div>
             <p style={{ margin: "8px 0 0", fontSize: 14, color: A.muted }}>
-              {statusFilter
-                ? "Pick another stage, or clear the filter."
-                : "Add one above, or mark a job as applied from your matches."}
+              {term
+                ? `Nothing here matches “${search.trim()}”.`
+                : statusFilter
+                  ? "Pick another stage, or clear the filter."
+                  : "Add one above, or mark a job as applied from your matches."}
             </p>
+            {term && (
+              <button
+                onClick={() => setSearch("")}
+                style={{
+                  marginTop: 16,
+                  background: A.ink,
+                  border: "none",
+                  borderRadius: 11,
+                  padding: "11px 18px",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  color: A.page,
+                  cursor: "pointer",
+                }}
+              >
+                Clear search
+              </button>
+            )}
           </div>
         ) : (
           visible.map((a, i) => {
