@@ -1,0 +1,58 @@
+name: job-engine collectors
+
+# job-engine's collectors are long, sequential CLI scripts (one per ATS board,
+# some using Playwright), not HTTP handlers — they don't fit a serverless
+# platform's per-request duration limit. A scheduled GitHub Actions workflow
+# runs them as a normal process instead, with no such limit (up to 6h/job on
+# the free tier, far beyond what a run here needs).
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   ANTHROPIC_API_KEY
+#   ANTHROPIC_MODEL        (optional — only needed if the code has no default)
+#
+# Adjust the schedule below to taste; every 6 hours is a starting point, not
+# a measured requirement.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: job-engine
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: job-engine/package-lock.json
+
+      - run: npm ci
+
+      # Only the LinkedIn collector drives a real browser; install just
+      # Chromium rather than every engine Playwright supports.
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run all collectors
+        run: npm run all
+
+      - name: Deactivate expired jobs and purge old inactive rows
+        # Still run this even if one collector above failed partway through
+        # `npm run all` (its steps are chained with &&) — a stalled ATS board
+        # shouldn't also block the cleanup pass.
+        if: always()
+        run: npm run cleanup
