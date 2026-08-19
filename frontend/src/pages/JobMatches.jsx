@@ -870,6 +870,32 @@ export default function JobMatches({ saved, toggle }) {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {j.apply_url && (
+                        <a
+                          href={j.apply_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: "inline-block",
+                            background: M.brand,
+                            border: `1px solid ${M.brand}`,
+                            borderRadius: 9,
+                            padding: "7px 13px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: M.page,
+                            cursor: "pointer",
+                            transition: "background .18s, opacity .18s",
+                            whiteSpace: "nowrap",
+                            textDecoration: "none",
+                            textAlign: "center",
+                          }}
+                          onMouseEnter={(e) => (e.target.style.opacity = "0.85")}
+                          onMouseLeave={(e) => (e.target.style.opacity = "1")}
+                        >
+                          Apply now
+                        </a>
+                      )}
                       <button
                         onClick={() => toggle(j.id)}
                         style={{
