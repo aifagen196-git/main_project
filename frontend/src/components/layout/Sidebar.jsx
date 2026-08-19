@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { NAV } from "../../data/constants";
 import { PLAN_LABEL, isPaidPlan } from "../../utils/plan";
 import { signOut } from "../../services/auth";
+import HelpPanel from "./HelpPanel";
 
 /* Port of the "AIFAGen v3" app sidebar. The spec drops icons in favour of a
    status dot per item, an active state that inverts to the ink pill, and a
@@ -47,6 +48,7 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
   const paid = isPaidPlan(plan);
 
   const [acctOpen, setAcctOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const acctRef = useRef(null);
 
   // Close the account menu on click-outside or Escape.
@@ -229,9 +231,10 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
           <button
             className="v3-softbtn"
             onClick={() => {
-              navigate("/settings");
+              setHelpOpen(true);
               setOpen(false);
             }}
+            aria-haspopup="dialog"
             style={{
               display: "flex",
               alignItems: "center",
@@ -456,6 +459,13 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
           </button>
         </div>
       </aside>
+
+      <HelpPanel
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        profile={profile}
+        plan={plan}
+      />
     </>
   );
 }
