@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { PLAN_LABEL } from "../../utils/plan";
 
 /* Help & Support panel, opened from the sidebar.
  *
  * Deliberately built only from things that actually work: the answers describe
- * this product's real behaviour, the shortcuts route to real screens, and the
- * contact links are mailto:/tel: which hand off to the user's own mail or phone
+ * this product's real behaviour, and the contact links are mailto:/tel:, which
+ * hand off to the user's own mail or phone
  * app. There is no contact form here — the app has no mail-sending backend, and
  * a form that silently discarded a support request would be worse than no form.
  */
@@ -55,7 +54,6 @@ const FAQS = [
 ];
 
 export default function HelpPanel({ open, onClose, profile, plan }) {
-  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
 
   // Close on Escape, and stop the page behind from scrolling while open.
@@ -87,23 +85,6 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
     "AIFAGen support request",
   )}&body=${encodeURIComponent(mailBody)}`;
 
-  const goto = (path) => {
-    onClose();
-    navigate(path);
-  };
-
-  const shortcut = {
-    background: H.page,
-    border: `1px solid ${H.line}`,
-    borderRadius: 11,
-    padding: "10px 13px",
-    fontSize: 13,
-    fontWeight: 700,
-    fontFamily: "inherit",
-    color: H.body,
-    cursor: "pointer",
-  };
-
   return (
     <div
       role="dialog"
@@ -126,17 +107,23 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
     >
       <div
         style={{
+          // The rounded card clips its own scroll area. Scrolling directly on
+          // a rounded, padded box puts the scrollbar out at the padding edge,
+          // where it renders past the corner curve and reads as a bar floating
+          // outside the panel — hence the separate scroll child below.
           width: "100%",
           maxWidth: 520,
           maxHeight: "86vh",
-          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
           background: "#fff",
           borderRadius: 22,
-          padding: 26,
           boxShadow: "0 40px 80px -32px rgba(15,23,42,.5)",
           animation: "riseIn .28s cubic-bezier(.2,.7,.2,1) both",
         }}
       >
+      <div style={{ overflowY: "auto", padding: 26 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -184,21 +171,8 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
           </button>
         </div>
 
-        {/* ---- Shortcuts ---- */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20 }}>
-          <button onClick={() => goto("/resume")} style={shortcut}>
-            Update my resume
-          </button>
-          <button onClick={() => goto("/applications")} style={shortcut}>
-            My applications
-          </button>
-          <button onClick={() => goto("/settings")} style={shortcut}>
-            Account settings
-          </button>
-        </div>
-
         {/* ---- FAQs ---- */}
-        <div style={{ marginTop: 22 }}>
+        <div style={{ marginTop: 20 }}>
           {FAQS.map((f, i) => {
             const isOpen = openFaq === i;
             return (
@@ -324,6 +298,7 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
           >
             {SUPPORT_PHONE}
           </a>
+        </div>
         </div>
       </div>
     </div>
