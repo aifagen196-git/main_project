@@ -117,11 +117,6 @@ export const NAV = [
     icon: FileText,
   },
   // {
-  //   id: "prep",
-  //   label: "Interview Prep",
-  //   icon: MessageSquare,
-  // },
-  // {
   //   id: "analytics",
   //   label: "Analytics",
   //   icon: BarChart3,

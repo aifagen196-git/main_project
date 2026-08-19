@@ -12,7 +12,6 @@ import SavedJobs from "../../pages/SavedJobs";
 
 // Recharts-heavy pages — lazy-loaded so recharts is split out of the main bundle.
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
-const InterviewPrep = lazy(() => import("../../pages/InterviewPrep"));
 const Analytics = lazy(() => import("../../pages/Analytics"));
 import SettingsView from "../../pages/SettingsView";
 import Pricing from "../../pages/Pricing";
@@ -97,8 +96,6 @@ export default function AppShell({ profile, refresh, exit }) {
                   element={<Resume profile={profile} plan={plan} />}
                 />
 
-                <Route path="/prep" element={<InterviewPrep />} />
-
                 <Route path="/analytics" element={<Analytics plan={plan} />} />
 
                 <Route
@@ -120,6 +117,12 @@ export default function AppShell({ profile, refresh, exit }) {
                   path="/billing"
                   element={<Billing profile={profile} />}
                 />
+
+                {/* Unknown path → dashboard. Without this, any URL that doesn't
+                    match renders a blank main area with no way back except the
+                    sidebar — including stale links to routes that have since
+                    been removed (e.g. the old /prep screen). */}
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
               </Suspense>
             </div>

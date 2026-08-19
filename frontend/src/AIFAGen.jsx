@@ -35,8 +35,6 @@ import {
   Menu,
   X,
   Bell,
-  LayoutDashboard,
-  Bookmark,
   BookmarkCheck,
   MapPin,
   Clock,
@@ -48,7 +46,6 @@ import {
   Send,
   Loader2,
   CreditCard,
-  Settings as SettingsIcon,
   Shield,
   Lock,
   Globe,
@@ -62,7 +59,6 @@ import {
   Star,
   Crown,
   Rocket,
-  BarChart3,
   Mail,
   Wand2,
   CircleDollarSign,
@@ -652,17 +648,6 @@ const PERF = [
   { x: "May 13", v: 66 },
   { x: "May 20", v: 74 },
   { x: "May 27", v: 78 },
-];
-
-const NAV = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "matches", label: "Job Matches", icon: Briefcase },
-  { id: "applications", label: "Applications", icon: FileText },
-  { id: "resume", label: "Resume", icon: FileText },
-  { id: "prep", label: "Interview Prep", icon: MessageSquare },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "saved", label: "Saved Jobs", icon: Bookmark },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
 // NOTE: a `callClaude()` helper used to live here that POSTed straight to
