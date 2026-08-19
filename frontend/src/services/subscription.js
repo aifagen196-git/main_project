@@ -59,16 +59,6 @@ export async function startCheckout(plan, billingCycle = "monthly") {
   });
 }
 
-/**
- * Razorpay has no hosted billing portal like Stripe. Direct users to support
- * to manage/cancel until a self-serve management flow is built.
- */
-export async function openBillingPortal() {
-  throw new Error(
-    "To manage or cancel your subscription, please contact info@aifagenlabs.com.",
-  );
-}
-
 /** Activates the free plan for the current user (no payment). */
 export async function selectFreePlan() {
   const { profile } = await api.post("/api/payments/free", {});

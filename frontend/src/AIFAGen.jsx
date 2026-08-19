@@ -345,7 +345,7 @@ const FAQS = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "All major cards via Stripe, plus regional methods. Annual billing saves 20%.",
+    a: "All major cards via Razorpay, plus regional methods. Annual billing saves 20%.",
   },
 ];
 

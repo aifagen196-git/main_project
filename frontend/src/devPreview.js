@@ -42,6 +42,11 @@ export const PREVIEW_PROFILE = {
   // the app shell — they're gated per-feature (see planLimits), not at the
   // door. Only "none" (no plan chosen yet) is inactive and lands on Pricing.
   subscription_status: PREVIEW_PLAN === "none" ? "inactive" : "active",
+  billing_cycle: PREVIEW_PLAN === "professional" || PREVIEW_PLAN === "career_accelerator" ? "monthly" : null,
+  current_period_end:
+    PREVIEW_PLAN === "professional" || PREVIEW_PLAN === "career_accelerator"
+      ? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
+      : null,
 };
 
 // Mirrors the sample set in the v3 design so the preview can be compared

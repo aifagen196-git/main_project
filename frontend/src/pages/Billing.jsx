@@ -1,143 +1,319 @@
-import { useState } from "react";
-import Card from "../components/common/Card";
-import SectionTitle from "../components/common/SectionTitle";
-import Pill from "../components/ui/Pill";
-import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
-import { openBillingPortal } from "../services/subscription";
-import { Rocket, Crown, Star, BadgeCheck, Loader2, CreditCard, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Rocket, Crown, Star, Mail } from "lucide-react";
 
-const bBrand =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white btn-brand transition shadow-sm disabled:opacity-60";
-const bOutline =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition disabled:opacity-60";
+import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
 
-const STATUS_STYLE = {
-  active: "bg-emerald-50 text-emerald-700",
-  trialing: "bg-brand-50 brand",
-  past_due: "bg-amber-50 text-amber-700",
-  canceled: "bg-slate-100 text-slate-600",
-  inactive: "bg-slate-100 text-slate-600",
+/* Billing screen in the "AIFAGen v3" design language.
+ *
+ * "Manage subscription" used to call openBillingPortal(), which unconditionally
+ * threw — Razorpay has no hosted self-serve portal the way Stripe does, so
+ * that function only ever produced an error, behind a whole card promising
+ * "invoices, payment method and cancel — all in the secure Stripe portal"
+ * (wrong processor name too; this app's checkout is Razorpay throughout,
+ * see services/subscription.js). Both the fake portal and the fake card are
+ * gone. The real ways to change something about a subscription today:
+ *   - switch plans / billing cycle → the Pricing screen, which runs the real
+ *     Razorpay checkout (Pricing.jsx, unchanged this pass)
+ *   - anything Pricing can't do, most notably cancelling a paid plan back to
+ *     free — POST /api/payments/free only activates from plan 'none'/'free'
+ *     (see backend payments.routes.js), so a paid user can't self-serve that
+ *     from the UI yet → email, same address the Help panel already uses
+ */
+
+const B = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  amber: "#F59E0B",
+  emerald: "#22C55E",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
 };
+
+const STATUS_META = {
+  active: { label: "Active", color: B.emerald },
+  trialing: { label: "Trial active", color: B.brand },
+  past_due: { label: "Payment due", color: B.amber },
+  canceled: { label: "Canceled", color: B.faint },
+  inactive: { label: "No active plan", color: B.faint },
+};
+
+const SUPPORT_EMAIL = "info@aifagenlabs.com";
 
 export default function Billing({ profile }) {
   const navigate = useNavigate();
-  const setView = (view) => navigate(`/${view}`);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
   const plan = profile?.plan || "none";
   const status = profile?.subscription_status || "inactive";
   const paid = isPaidPlan(plan);
   const Icon = plan === "career_accelerator" ? Crown : plan === "professional" ? Rocket : Star;
+  const meta = STATUS_META[status] || STATUS_META.inactive;
 
   const renew = profile?.current_period_end
     ? new Date(profile.current_period_end).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", year: "numeric",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       })
     : null;
 
-  async function manage() {
-    setErr("");
-    setBusy(true);
-    try {
-      await openBillingPortal(); // redirects to Stripe
-    } catch (e) {
-      setErr(e.message || "Could not open the billing portal.");
-      setBusy(false);
-    }
-  }
+  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+    "Cancel my AIFAGen subscription",
+  )}&body=${encodeURIComponent(
+    `Please cancel my subscription.\n\n—\nAccount: ${profile?.email || "unknown"}\nPlan: ${PLAN_LABEL[plan] || plan}`,
+  )}`;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-3xl font-extrabold text-slate-900">Subscription & Billing</h2>
-        <p className="text-slate-500 mt-1">Manage your plan, payment method and invoices.</p>
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div style={{ animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both" }}>
+        <div
+          style={{
+            fontFamily: B.mono,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: ".16em",
+            textTransform: "uppercase",
+            color: B.faint,
+          }}
+        >
+          Billing
+        </div>
+        <h1
+          style={{
+            fontFamily: B.display,
+            fontSize: "clamp(28px,3.4vw,40px)",
+            lineHeight: 1.04,
+            letterSpacing: "-.035em",
+            fontWeight: 700,
+            margin: "12px 0 0",
+            color: B.ink,
+          }}
+        >
+          Subscription &amp; billing
+        </h1>
+        <p style={{ margin: "9px 0 0", fontSize: 15, color: B.muted }}>
+          What you're on, and how to change it.
+        </p>
       </div>
 
-      <Card className="p-6 text-white relative overflow-hidden bg-brand-grad">
-        <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10" />
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
+      {/* ---------------- PLAN SUMMARY ---------------- */}
+      <div
+        style={{
+          marginTop: 26,
+          background: B.ink,
+          borderRadius: 20,
+          padding: 28,
+          color: B.page,
+          position: "relative",
+          overflow: "hidden",
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .08s both",
+        }}
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: -70,
+            right: -50,
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: "rgba(109,74,255,.25)",
+            filter: "blur(10px)",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            gap: 20,
+          }}
+        >
           <div>
-            <Pill className="bg-white/20 text-white">
-              <BadgeCheck size={13} /> {status === "trialing" ? "Trial active" : status === "active" ? "Active" : status}
-            </Pill>
-            <div className="mt-2 font-display text-3xl font-extrabold flex items-center gap-2">
-              <Icon size={26} /> {PLAN_LABEL[plan]} {plan !== "none" && "Plan"}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                fontFamily: B.mono,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: ".1em",
+                textTransform: "uppercase",
+                background: "rgba(255,255,255,.12)",
+                borderRadius: 20,
+                padding: "6px 12px",
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: meta.color,
+                }}
+              />
+              {meta.label}
+            </span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginTop: 14,
+                fontFamily: B.display,
+                fontSize: 28,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+              }}
+            >
+              <Icon size={24} />
+              {PLAN_LABEL[plan] || "Free"}
             </div>
             {profile?.billing_cycle && (
-              <p className="text-white/85 mt-1 capitalize">{profile.billing_cycle} billing</p>
+              <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6", textTransform: "capitalize" }}>
+                {profile.billing_cycle} billing
+              </p>
             )}
           </div>
+
           {renew && (
-            <div className="sm:text-right">
-              <div className="text-sm text-white/80">
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 12.5, color: "#B9C2D6" }}>
                 {status === "canceled" ? "Access until" : "Renews on"}
               </div>
-              <div className="num text-2xl font-extrabold">{renew}</div>
+              <div
+                style={{
+                  fontFamily: B.mono,
+                  fontSize: 20,
+                  fontWeight: 700,
+                  letterSpacing: "-.02em",
+                  marginTop: 3,
+                }}
+              >
+                {renew}
+              </div>
             </div>
           )}
         </div>
-        <div className="mt-5 flex flex-wrap gap-2 relative">
-          {paid ? (
-            <button onClick={manage} disabled={busy} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold brand hover:bg-white/90 disabled:opacity-60 inline-flex items-center gap-2">
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-              Manage subscription
-            </button>
-          ) : (
-            <button onClick={() => setView("pricing")} className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold brand hover:bg-white/90 inline-flex items-center gap-2">
-              Upgrade plan <ArrowRight size={16} />
-            </button>
-          )}
+
+        <div style={{ position: "relative", marginTop: 22 }}>
+          <button
+            onClick={() => navigate("/pricing")}
+            style={{
+              background: B.page,
+              border: "none",
+              borderRadius: 12,
+              padding: "12px 20px",
+              fontSize: 13.5,
+              fontWeight: 700,
+              fontFamily: "inherit",
+              color: B.ink,
+              cursor: "pointer",
+            }}
+          >
+            {paid ? "Manage subscription" : "See plans"}
+          </button>
         </div>
-      </Card>
-
-      {err && (
-        <div className="rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm text-rose-700">{err}</div>
-      )}
-
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card className="p-5">
-          <div className="text-xs text-slate-400 font-semibold">Current plan</div>
-          <div className="font-display text-lg font-bold text-slate-900 mt-1">{PLAN_LABEL[plan]}</div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs text-slate-400 font-semibold">Status</div>
-          <div className="mt-1">
-            <Pill className={STATUS_STYLE[status] || "bg-slate-100 text-slate-600"}>{status}</Pill>
-          </div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs text-slate-400 font-semibold">Billing cycle</div>
-          <div className="font-display text-lg font-bold text-slate-900 mt-1 capitalize">
-            {profile?.billing_cycle || "—"}
-          </div>
-        </Card>
       </div>
 
-      {paid && (
-        <Card className="p-6 flex flex-col sm:flex-row sm:items-center gap-3">
-          <div>
-            <div className="font-bold text-slate-900">Invoices & payment method</div>
-            <p className="text-sm text-slate-500">View invoices, update your card, or cancel — all in the secure Stripe portal.</p>
-          </div>
-          <button onClick={manage} disabled={busy} className={bOutline + " sm:ml-auto"}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-            Open billing portal
-          </button>
-        </Card>
-      )}
+      {/* ---------------- HOW TO CHANGE SOMETHING ---------------- */}
+      <div
+        style={{
+          marginTop: 16,
+          background: "#fff",
+          border: `1px solid ${B.line}`,
+          borderRadius: 20,
+          padding: 26,
+          boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .16s both",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: B.display,
+            fontSize: 19,
+            fontWeight: 700,
+            letterSpacing: "-.02em",
+            margin: 0,
+            color: B.ink,
+          }}
+        >
+          Need to change something?
+        </h2>
 
-      {!paid && (
-        <Card className="p-6 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: "linear-gradient(135deg,#f3efff,#fdf2f8)" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
+            gap: 16,
+            marginTop: 18,
+          }}
+        >
           <div>
-            <div className="font-bold text-slate-900">Unlock more with a paid plan</div>
-            <p className="text-sm text-slate-500">Unlimited AI matches, resume optimization, cover letters and more.</p>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: B.ink }}>
+              Upgrade, downgrade, or switch billing cycle
+            </div>
+            <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.6, color: B.muted }}>
+              Head to Plans &amp; pricing — switching tiers runs a new checkout
+              and takes effect right away.
+            </p>
+            <button
+              onClick={() => navigate("/pricing")}
+              style={{
+                marginTop: 12,
+                background: B.page,
+                border: `1px solid ${B.line}`,
+                borderRadius: 10,
+                padding: "9px 15px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                fontFamily: "inherit",
+                color: B.ink,
+                cursor: "pointer",
+              }}
+            >
+              View plans
+            </button>
           </div>
-          <button onClick={() => setView("pricing")} className={bBrand + " sm:ml-auto"}>
-            See plans <ArrowRight size={16} />
-          </button>
-        </Card>
-      )}
+
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: B.ink }}>
+              Cancel your subscription
+            </div>
+            <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.6, color: B.muted }}>
+              Cancellation isn't self-serve yet — email us and we'll take care
+              of it, no back-and-forth needed.
+            </p>
+            <a
+              href={mailHref}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                marginTop: 12,
+                background: "#fff",
+                border: "1px solid #FFD3DB",
+                borderRadius: 10,
+                padding: "9px 15px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: B.clay,
+                textDecoration: "none",
+              }}
+            >
+              <Mail size={13} /> Email to cancel
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

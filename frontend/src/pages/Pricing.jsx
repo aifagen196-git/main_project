@@ -1,16 +1,49 @@
 import { useState } from "react";
-import Card from "../components/common/Card";
+import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lucide-react";
+
 import { PLANS, isPaidPlan } from "../utils/plan";
 import { startCheckout, selectFreePlan } from "../services/subscription";
 import { signOut } from "../services/auth";
-import {
-  Star, CheckCircle2, Shield, CreditCard, Lock, HelpCircle, Loader2, LogOut,
-} from "lucide-react";
 
-const bBrand =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white btn-brand transition shadow-sm disabled:opacity-60";
-const bOutline =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition disabled:opacity-60";
+/* Pricing screen in the "AIFAGen v3" design language.
+ *
+ * Two render modes, unchanged from before this pass:
+ *  - onboarding: full-screen gate shown right after account creation, with
+ *    its own header (no sidebar exists yet — the user hasn't picked a plan).
+ *  - in-app (/pricing route, inside AppShell): plain section, no header,
+ *    reached from "Manage subscription" on Billing or an upgrade prompt
+ *    elsewhere in the app.
+ *
+ * Checkout logic is untouched: selectFreePlan() and startCheckout() (real
+ * Razorpay order + verify flow, see services/subscription.js) are called
+ * exactly as before. Only the presentation changed, plus one factual fix —
+ * the trust strip previously said "Payments handled securely by Stripe",
+ * but this app's payment processor is Razorpay; there is no Stripe
+ * integration anywhere in the codebase.
+ */
+
+const P = {
+  brand: "#6D4AFF",
+  clay: "#F43F5E",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+const kicker = {
+  fontFamily: P.mono,
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: ".16em",
+  textTransform: "uppercase",
+  color: P.faint,
+};
 
 export default function Pricing({ profile, refresh, onboarding = false }) {
   const [cycle, setCycle] = useState("monthly");
@@ -36,143 +69,379 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
 
   const grid = (
     <>
-      <div className="text-center">
-        <p className="text-xs font-bold tracking-widest brand">PRICING</p>
-        <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+      <div style={{ textAlign: "center" }}>
+        <div style={{ ...kicker, textAlign: "center" }}>Pricing</div>
+        <h1
+          style={{
+            fontFamily: P.display,
+            fontSize: "clamp(28px,4vw,42px)",
+            lineHeight: 1.05,
+            letterSpacing: "-.035em",
+            fontWeight: 700,
+            margin: "12px 0 0",
+            color: P.ink,
+          }}
+        >
           {onboarding ? "Choose your plan to get started" : "Plans & pricing"}
-        </h2>
-        <p className="text-slate-500 mt-3 max-w-lg mx-auto">
+        </h1>
+        <p
+          style={{
+            margin: "12px auto 0",
+            maxWidth: 460,
+            fontSize: 15,
+            lineHeight: 1.6,
+            color: P.muted,
+          }}
+        >
           {onboarding
             ? "Pick a plan to unlock your dashboard. Paid plans include a 7-day free trial — cancel anytime."
             : "Upgrade or downgrade anytime. Paid plans include a 7-day free trial."}
         </p>
       </div>
 
-      {/* Billing cycle toggle */}
-      <div className="mt-6 flex justify-center">
-        <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5">
-          <button
-            onClick={() => setCycle("monthly")}
-            className={"px-4 py-1.5 rounded-lg text-sm font-semibold " + (cycle === "monthly" ? "btn-brand text-white" : "text-slate-500")}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setCycle("annual")}
-            className={"px-4 py-1.5 rounded-lg text-sm font-semibold " + (cycle === "annual" ? "btn-brand text-white" : "text-slate-500")}
-          >
-            Annual <span className="text-xs">-20%</span>
-          </button>
+      {/* ---- Billing cycle toggle ---- */}
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 26 }}>
+        <div
+          style={{
+            display: "inline-flex",
+            background: "#fff",
+            border: `1px solid ${P.line}`,
+            borderRadius: 13,
+            padding: 4,
+            gap: 2,
+          }}
+        >
+          {[
+            ["monthly", "Monthly"],
+            ["annual", "Annual"],
+          ].map(([id, label]) => {
+            const active = cycle === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setCycle(id)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  background: active ? P.ink : "transparent",
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "9px 17px",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  fontFamily: "inherit",
+                  color: active ? P.page : P.muted,
+                  cursor: "pointer",
+                  transition: "background .18s,color .18s",
+                }}
+              >
+                {label}
+                {id === "annual" && (
+                  <span
+                    style={{
+                      fontFamily: P.mono,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      color: active ? "#B9D8FF" : P.brand,
+                    }}
+                  >
+                    −20%
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {err && (
-        <div className="mt-5 max-w-xl mx-auto rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm text-rose-700">
+        <div
+          style={{
+            marginTop: 20,
+            maxWidth: 460,
+            marginLeft: "auto",
+            marginRight: "auto",
+            background: "#FFF0F3",
+            border: "1px solid #FFD3DB",
+            borderRadius: 13,
+            padding: "12px 15px",
+            fontSize: 13.5,
+            color: P.clay,
+            textAlign: "center",
+          }}
+        >
           {err}
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-6 mt-8 items-start">
+      {/* ---- Plan cards ---- */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+          gap: 18,
+          marginTop: 34,
+          alignItems: "start",
+        }}
+      >
         {PLANS.map((p) => {
           const price = cycle === "monthly" ? p.monthly : p.annual;
           const isCurrent = currentPlan === p.id;
           return (
-            <Card
+            <div
               key={p.id}
-              className={"p-7 relative " + (p.popular ? "border-brand shadow-xl" : "")}
-              style={p.popular ? { borderWidth: 2 } : undefined}
+              style={{
+                position: "relative",
+                background: "#fff",
+                border: `1.5px solid ${p.popular ? P.brand : P.line}`,
+                boxShadow: p.popular
+                  ? "0 24px 54px -28px rgba(109,74,255,.4)"
+                  : "0 1px 2px rgba(15,23,42,.04)",
+                borderRadius: 20,
+                padding: 28,
+              }}
             >
               {p.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white flex items-center gap-1">
-                  <Star size={12} /> Most Popular
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -13,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: P.brand,
+                    color: "#fff",
+                    borderRadius: 20,
+                    padding: "5px 13px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Most popular
                 </span>
               )}
-              <h3 className="font-display text-xl font-extrabold text-slate-900">{p.name}</h3>
-              <p className="text-sm text-slate-500 mt-1 min-h-[2.5rem]">{p.tagline}</p>
-              <div className="mt-3 flex items-end gap-1">
-                <span className="num text-4xl font-extrabold text-slate-900">${price}</span>
-                <span className="text-slate-400 mb-1.5">/month</span>
+
+              <h3
+                style={{
+                  fontFamily: P.display,
+                  fontSize: 19,
+                  fontWeight: 700,
+                  letterSpacing: "-.02em",
+                  margin: 0,
+                  color: P.ink,
+                }}
+              >
+                {p.name}
+              </h3>
+              <p
+                style={{
+                  margin: "7px 0 0",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: P.muted,
+                  minHeight: "2.6em",
+                }}
+              >
+                {p.tagline}
+              </p>
+
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 5, marginTop: 14 }}>
+                <span
+                  style={{
+                    fontFamily: P.mono,
+                    fontSize: 36,
+                    fontWeight: 700,
+                    letterSpacing: "-.03em",
+                    color: P.ink,
+                    lineHeight: 1,
+                  }}
+                >
+                  ${price}
+                </span>
+                <span style={{ fontSize: 13.5, color: P.faint, paddingBottom: 4 }}>/month</span>
               </div>
               {cycle === "annual" && price > 0 && (
-                <div className="text-xs text-emerald-600 font-semibold">Billed ${price * 12}/year</div>
+                <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: P.brand }}>
+                  Billed ${price * 12}/year
+                </div>
               )}
 
               <button
                 onClick={() => choose(p)}
                 disabled={busy !== null || isCurrent}
-                className={(p.popular ? bBrand : bOutline) + " w-full mt-5"}
+                style={{
+                  width: "100%",
+                  marginTop: 20,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  background: isCurrent ? P.page : p.popular ? P.brand : "#fff",
+                  border: `1px solid ${isCurrent ? P.line : p.popular ? P.brand : P.lineMid}`,
+                  borderRadius: 12,
+                  padding: 13,
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  fontFamily: "inherit",
+                  color: isCurrent ? P.muted : p.popular ? "#fff" : P.ink,
+                  cursor: busy !== null || isCurrent ? "default" : "pointer",
+                  opacity: busy !== null && busy !== p.id ? 0.55 : 1,
+                }}
               >
                 {busy === p.id ? (
-                  <><Loader2 size={16} className="animate-spin" /> Please wait…</>
+                  <>
+                    <Loader2 size={15} className="animate-spin" /> Please wait…
+                  </>
                 ) : isCurrent ? (
                   "Current plan"
                 ) : isPaidPlan(p.id) ? (
                   p.cta
                 ) : (
-                  "Get Started Free"
+                  "Get started free"
                 )}
               </button>
 
-              <div className="mt-6 space-y-3">
-                {p.features.map((f, k) => (
-                  <div key={k} className="flex gap-2.5 text-sm text-slate-600">
-                    <CheckCircle2 size={18} className="brand shrink-0" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
+                {p.features.map((f) => (
+                  <div
+                    key={f}
+                    style={{ display: "flex", gap: 10, fontSize: 13, color: P.body }}
+                  >
+                    <Check size={16} style={{ color: P.brand, flexShrink: 0, marginTop: 1 }} />
                     {f}
                   </div>
                 ))}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* trust strip */}
-      <div className="mt-10 rounded-2xl bg-brand-50 px-6 py-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          [Shield, "7-Day Free Trial", "Try all premium features risk-free."],
-          [CreditCard, "Cancel Anytime", "No commitments. Cancel anytime."],
-          [Lock, "Secure & Private", "Payments handled securely by Stripe."],
-          [HelpCircle, "24/7 Support", "We're here to help you succeed."],
-        ].map((x, i) => {
-          const Icon = x[0];
-          return (
-            <div key={i} className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white">
-                <Icon size={20} className="brand" />
-              </div>
-              <div>
-                <div className="font-bold text-slate-900 text-sm">{x[1]}</div>
-                <div className="text-xs text-slate-500">{x[2]}</div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* ---- Trust strip ---- */}
+      <div
+        style={{
+          marginTop: 36,
+          background: "#F0EDFF",
+          borderRadius: 20,
+          padding: 24,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 20,
+        }}
+      >
+        {[
+          [Shield, "7-day free trial", "Try every premium feature risk-free."],
+          [CreditCard, "Cancel anytime", "No lock-in — change your plan whenever."],
+          [Lock, "Secure payments", "Handled by Razorpay, not stored on our servers."],
+          [HelpCircle, "Real support", "Email us and a person answers."],
+        ].map(([Icon, title, desc]) => (
+          <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 11,
+                background: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon size={18} style={{ color: P.brand }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: P.ink }}>{title}</div>
+              <div style={{ fontSize: 12, color: P.muted, marginTop: 2 }}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </>
   );
 
-  // Onboarding = full-screen gate with its own header. In-app = plain section.
-  if (!onboarding) return <div className="space-y-2">{grid}</div>;
+  if (!onboarding) return <div>{grid}</div>;
 
   return (
-    <div className="page-bg min-h-screen">
-      <header className="sticky top-0 z-20 bg-white/85 backdrop-blur border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="AIFAGen" className="h-8 w-8 object-contain" />
-            <span className="font-display text-lg font-extrabold text-slate-900">AIFAGen</span>
+    <div style={{ minHeight: "100vh", background: P.page }}>
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: "rgba(255,255,255,.9)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderBottom: `1px solid ${P.line}`,
+          height: 68,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1180,
+            width: "100%",
+            margin: "0 auto",
+            padding: "0 clamp(16px,3vw,32px)",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <img src="/logo.png" alt="AIFAGen" style={{ height: 28, width: 28, objectFit: "contain" }} />
+            <span
+              style={{
+                fontFamily: P.display,
+                fontSize: 17,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                color: P.ink,
+              }}
+            >
+              AIFAGen
+            </span>
           </div>
           <button
             onClick={() => signOut()}
-            className="ml-auto flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+            style={{
+              marginLeft: "auto",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "transparent",
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 13.5,
+              fontWeight: 600,
+              fontFamily: "inherit",
+              color: P.muted,
+              cursor: "pointer",
+            }}
           >
-            <LogOut size={16} /> Sign out
+            <LogOut size={15} /> Sign out
           </button>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-5 py-10 sm:py-14">
+
+      <main
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto",
+          padding: "clamp(36px,6vw,64px) clamp(16px,3vw,32px)",
+        }}
+      >
         {profile?.full_name && (
-          <p className="text-center text-sm text-slate-500 mb-2">
+          <p
+            style={{
+              textAlign: "center",
+              margin: "0 0 8px",
+              fontSize: 14,
+              color: P.muted,
+            }}
+          >
             Welcome, {profile.full_name.split(" ")[0]} 👋
           </p>
         )}
