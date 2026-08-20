@@ -3,16 +3,17 @@ import { supabase } from "../config/supabase.js";
 import {
   createOrder,
   verifyPaymentSignature,
-  planBillingCycle,
+  fetchOrderNotes,
 } from "../services/payments/razorpay.service.js";
 
 const router = express.Router();
 
-// Two paid tiers, one fixed price + billing period each — see
-// razorpay.service.js's PRICING for the amounts (source of truth) and
+// Two paid tiers — Basic can be billed monthly or every 6 months (same
+// features either way); Premium is 6-monthly only. See razorpay.service.js's
+// PRICING for the actual amounts (source of truth) and
 // frontend/src/utils/plan.js for display copy. No free tier: profiles.plan
 // starts at 'none' and stays there until checkout completes.
-const PAID_PLANS = new Set(["basic", "premium"]);
+const VALID_PAIRS = new Set(["basic:monthly", "basic:semiannual", "premium:semiannual"]);
 
 // DEAD (UNREACHABLE FROM THE UI) — Pricing.jsx no longer offers a free plan,
 // so nothing calls this anymore. Left mounted (harmless, still auth-gated) in
@@ -38,17 +39,19 @@ router.post("/free", async (req, res) => {
   return res.json({ success: true, profile: data });
 });
 
-// Create a Razorpay order for a paid plan. Amount AND billing cycle are both
-// derived server-side from the plan id (razorpay.service.js) — a client
-// can't request "basic" pricing while claiming a "premium" billing cycle.
+// Create a Razorpay order for a plan + billing cycle. The pair is validated
+// against VALID_PAIRS, and the actual amount is looked up server-side from
+// PRICING (razorpay.service.js) — a client can't request Basic's monthly
+// price while claiming the semiannual cycle, or invent a pair that doesn't
+// exist.
 router.post("/order", async (req, res) => {
-  const { plan } = req.body || {};
-  if (!PAID_PLANS.has(plan)) {
-    return res.status(400).json({ success: false, message: "Invalid plan" });
+  const { plan, billingCycle } = req.body || {};
+  if (!VALID_PAIRS.has(`${plan}:${billingCycle}`)) {
+    return res.status(400).json({ success: false, message: "Invalid plan/billing cycle" });
   }
 
   try {
-    const order = await createOrder({ plan, userId: req.user.id });
+    const order = await createOrder({ plan, billingCycle, userId: req.user.id });
     return res.json({
       success: true,
       order,
@@ -60,17 +63,20 @@ router.post("/order", async (req, res) => {
   }
 });
 
-// Verify the payment signature from checkout, then activate the plan.
-// Service-role update bypasses the profiles billing-protection trigger.
+// Verify the payment signature, then activate the plan. Service-role update
+// bypasses the profiles billing-protection trigger.
+//
+// Deliberately does NOT accept plan/billingCycle from the request body. The
+// HMAC signature only proves this payment belongs to this order — it says
+// nothing about what the CLIENT CLAIMS the order was for, and with Basic now
+// having two valid prices, trusting a client-sent cycle here would let
+// someone pay the cheaper one and claim the pricier cycle got activated.
+// fetchOrderNotes() reads back what the order was actually created for
+// (set server-side, in /order above), which is the only trustworthy source.
 router.post("/verify", async (req, res) => {
-  const {
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    plan,
-  } = req.body || {};
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
 
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !PAID_PLANS.has(plan)) {
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return res.status(400).json({ success: false, message: "Missing payment fields" });
   }
 
@@ -83,14 +89,28 @@ router.post("/verify", async (req, res) => {
     return res.status(400).json({ success: false, message: "Invalid payment signature" });
   }
 
+  let notes;
+  try {
+    notes = await fetchOrderNotes(razorpay_order_id);
+  } catch (e) {
+    console.error("Could not fetch order notes", e);
+    return res.status(502).json({ success: false, message: "Could not verify order" });
+  }
+
+  const { plan, billingCycle, userId } = notes;
+  // The order must belong to the same user completing checkout — otherwise
+  // a valid signature for someone else's order could activate a plan on
+  // this account (or vice versa) if an order id ever leaked.
+  if (!VALID_PAIRS.has(`${plan}:${billingCycle}`) || userId !== req.user.id) {
+    return res.status(400).json({ success: false, message: "Order does not match this account" });
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .update({
       plan,
       subscription_status: "active",
-      // Derived from the plan, same as /order — never trust a client-supplied
-      // billing cycle for what actually gets stored/billed.
-      billing_cycle: planBillingCycle(plan),
+      billing_cycle: billingCycle,
       razorpay_payment_id,
       razorpay_order_id,
     })

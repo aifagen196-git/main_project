@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lucide-react";
 
-import { PLANS } from "../utils/plan";
+import { PRICING_CARDS } from "../utils/plan";
 import { startCheckout } from "../services/subscription";
 import { signOut } from "../services/auth";
 
 /* Pricing screen in the "AIFAGen v3" design language.
  *
- * Two plans, no free tier: Basic ($210/month) and Premium ($2499/6 months).
- * Each has exactly one fixed price and billing period (utils/plan.js), so
- * there's no monthly/annual toggle anymore — every plan card just shows its
- * own price and period.
+ * Three cards, no free tier: Basic monthly ($210), Basic every 6 months
+ * ($1299 — same features as monthly, just a different commitment), and
+ * Premium every 6 months ($2499). PRICING_CARDS (utils/plan.js) is the
+ * display list; each card carries both `id` (the plan tier) and
+ * `billingCycle`, since Basic now has two cards with the same id.
  *
  * Two render modes, unchanged from before this pass:
  *  - onboarding: full-screen gate shown right after account creation, with
@@ -56,15 +57,17 @@ const kicker = {
 };
 
 export default function Pricing({ profile, refresh, onboarding = false }) {
-  const [busy, setBusy] = useState(null); // plan id currently processing
+  const [busy, setBusy] = useState(null); // "id:billingCycle" currently processing
   const [err, setErr] = useState("");
   const currentPlan = profile?.plan;
+  const currentCycle = profile?.billing_cycle;
 
-  async function choose(plan) {
+  async function choose(card) {
+    const key = `${card.id}:${card.billingCycle}`;
     setErr("");
-    setBusy(plan.id);
+    setBusy(key);
     try {
-      await startCheckout(plan.id); // opens Razorpay, resolves on success
+      await startCheckout(card.id, card.billingCycle); // opens Razorpay, resolves on success
       await refresh?.();
     } catch (e) {
       setErr(e.message || "Something went wrong. Please try again.");
@@ -134,11 +137,12 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           alignItems: "start",
         }}
       >
-        {PLANS.map((p) => {
-          const isCurrent = currentPlan === p.id;
+        {PRICING_CARDS.map((p) => {
+          const key = `${p.id}:${p.billingCycle}`;
+          const isCurrent = currentPlan === p.id && currentCycle === p.billingCycle;
           return (
             <div
-              key={p.id}
+              key={key}
               style={{
                 position: "relative",
                 background: "#fff",
@@ -170,18 +174,36 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                 </span>
               )}
 
-              <h3
-                style={{
-                  fontFamily: P.display,
-                  fontSize: 19,
-                  fontWeight: 700,
-                  letterSpacing: "-.02em",
-                  margin: 0,
-                  color: P.ink,
-                }}
-              >
-                {p.name}
-              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+                <h3
+                  style={{
+                    fontFamily: P.display,
+                    fontSize: 19,
+                    fontWeight: 700,
+                    letterSpacing: "-.02em",
+                    margin: 0,
+                    color: P.ink,
+                  }}
+                >
+                  {p.name}
+                </h3>
+                <span
+                  style={{
+                    fontFamily: P.mono,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: ".08em",
+                    textTransform: "uppercase",
+                    color: P.muted,
+                    background: P.page,
+                    border: `1px solid ${P.line}`,
+                    borderRadius: 20,
+                    padding: "3px 9px",
+                  }}
+                >
+                  {p.periodTag}
+                </span>
+              </div>
               <p
                 style={{
                   margin: "7px 0 0",
@@ -194,22 +216,18 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                 {p.tagline}
               </p>
 
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 5, marginTop: 14 }}>
-                <span
-                  style={{
-                    fontFamily: P.mono,
-                    fontSize: 36,
-                    fontWeight: 700,
-                    letterSpacing: "-.03em",
-                    color: P.ink,
-                    lineHeight: 1,
-                  }}
-                >
-                  ${p.price}
-                </span>
-                <span style={{ fontSize: 13.5, color: P.faint, paddingBottom: 4 }}>
-                  / {p.period}
-                </span>
+              <div
+                style={{
+                  fontFamily: P.mono,
+                  fontSize: 36,
+                  fontWeight: 700,
+                  letterSpacing: "-.03em",
+                  color: P.ink,
+                  lineHeight: 1,
+                  marginTop: 14,
+                }}
+              >
+                ${p.price}
               </div>
 
               <button
@@ -231,10 +249,10 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   fontFamily: "inherit",
                   color: isCurrent ? P.muted : p.popular ? "#fff" : P.ink,
                   cursor: busy !== null || isCurrent ? "default" : "pointer",
-                  opacity: busy !== null && busy !== p.id ? 0.55 : 1,
+                  opacity: busy !== null && busy !== key ? 0.55 : 1,
                 }}
               >
-                {busy === p.id ? (
+                {busy === key ? (
                   <>
                     <Loader2 size={15} className="animate-spin" /> Please wait…
                   </>

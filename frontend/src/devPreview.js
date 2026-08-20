@@ -16,8 +16,6 @@ export const DEV_PREVIEW =
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).has("preview");
 
-import { PLANS } from "./utils/plan";
-
 export const PREVIEW_USER = {
   id: "00000000-0000-4000-8000-000000000001",
   email: "preview@aifagenlabs.com",
@@ -34,7 +32,10 @@ const PREVIEW_PLAN = DEV_PREVIEW
   ? new URLSearchParams(window.location.search).get("preview") || "premium"
   : "premium";
 
-const planMeta = PLANS.find((p) => p.id === PREVIEW_PLAN);
+// Basic can be billed either cycle in reality (see utils/plan.js's
+// PRICING_CARDS); the preview fixture only needs one representative value per
+// plan tier, since gating (planLimits) is keyed on the tier, not the cycle.
+const PREVIEW_BILLING_CYCLE = { basic: "monthly", premium: "semiannual" };
 
 export const PREVIEW_PROFILE = {
   id: PREVIEW_USER.id,
@@ -47,8 +48,8 @@ export const PREVIEW_PROFILE = {
   // back to) is inactive and lands on Pricing — basic/premium are both paid,
   // active subscriptions, gated per-feature (see planLimits), not at the door.
   subscription_status: PREVIEW_PLAN === "none" ? "inactive" : "active",
-  billing_cycle: planMeta?.billingCycle ?? null,
-  current_period_end: planMeta
+  billing_cycle: PREVIEW_BILLING_CYCLE[PREVIEW_PLAN] ?? null,
+  current_period_end: PREVIEW_BILLING_CYCLE[PREVIEW_PLAN]
     ? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
     : null,
 };

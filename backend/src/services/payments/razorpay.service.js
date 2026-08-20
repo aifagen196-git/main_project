@@ -2,17 +2,17 @@ import Razorpay from "razorpay";
 import crypto from "node:crypto";
 
 // Server-side source of truth for plan pricing (USD). Amounts are in the
-// smallest currency unit (cents) as Razorpay requires. Each plan has exactly
-// one fixed price and billing period — there is no monthly/annual toggle, so
-// billingCycle is derived from the plan here rather than trusted from the
-// client (a request can't pay the "basic" amount and have it recorded, and
-// later billed, as "premium").
+// smallest currency unit (cents) as Razorpay requires.
 //
-// MUST stay in sync with frontend/src/utils/plan.js's PLANS (display) and
-// supabase/migrations/0009_plan_tiers.sql's consume_ai_usage() (usage caps).
+// Basic has two selectable billing cycles (same features either way — see
+// PLAN_LIMITS in frontend/src/utils/plan.js and consume_ai_usage() in
+// supabase/migrations/0009_plan_tiers.sql, both keyed on plan alone, not
+// cycle). Premium has exactly one.
+//
+// MUST stay in sync with frontend/src/utils/plan.js's PRICING_CARDS (display).
 const PRICING = {
-  basic: { amount: 210, billingCycle: "monthly" },
-  premium: { amount: 2499, billingCycle: "semiannual" },
+  basic: { monthly: 210, semiannual: 1299 },
+  premium: { semiannual: 2499 },
 };
 
 const CURRENCY = process.env.RAZORPAY_CURRENCY || "USD";
@@ -28,29 +28,37 @@ function client() {
   return _client;
 }
 
-export function planAmount(plan) {
-  const p = PRICING[plan];
-  if (!p) throw new Error("Unknown plan");
-  return Math.round(p.amount * 100); // cents
+export function planAmount(plan, billingCycle) {
+  const cents = PRICING[plan]?.[billingCycle];
+  if (!cents) throw new Error("Unknown plan/billing cycle combination");
+  return Math.round(cents * 100);
 }
 
-/** The plan's fixed billing period — the only value ever written to
- *  profiles.billing_cycle, regardless of what a client sends. */
-export function planBillingCycle(plan) {
-  const p = PRICING[plan];
-  if (!p) throw new Error("Unknown plan");
-  return p.billingCycle;
-}
-
-export async function createOrder({ plan, userId }) {
-  const amount = planAmount(plan);
-  const billingCycle = planBillingCycle(plan);
+export async function createOrder({ plan, billingCycle, userId }) {
+  const amount = planAmount(plan, billingCycle); // throws on an invalid pair
   return client().orders.create({
     amount,
     currency: CURRENCY,
     receipt: `rcpt_${userId.slice(0, 8)}_${Date.now()}`,
     notes: { plan, billingCycle, userId },
   });
+}
+
+/**
+ * Fetches the order back from Razorpay and returns its notes — the plan,
+ * billingCycle and userId it was actually created for.
+ *
+ * /verify (payments.routes.js) uses this instead of trusting whatever plan/
+ * billingCycle the browser sends back alongside the payment IDs. The HMAC
+ * signature proves the payment belongs to this order, but says nothing about
+ * what a client CLAIMS that order was for — and now that Basic has two valid
+ * prices, a client could otherwise pay the cheaper one and claim the pricier
+ * cycle got activated. The order's own notes, set server-side at creation,
+ * are the only trustworthy source for what was actually paid.
+ */
+export async function fetchOrderNotes(orderId) {
+  const order = await client().orders.fetch(orderId);
+  return order.notes || {};
 }
 
 /** Verifies the checkout signature returned to the browser. */
