@@ -26,7 +26,8 @@ const H = {
 };
 
 const SUPPORT_EMAIL = "info@aifagenlabs.com";
-const SUPPORT_PHONE = "+1 (475) 224-0417";
+// Only the dialable form is used — the display text no longer shows the raw
+// number (see the "Call us" link below).
 const SUPPORT_PHONE_HREF = "+14752240417";
 
 // Answers describe how the product actually behaves today.
@@ -281,22 +282,27 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
               textDecoration: "none",
             }}
           >
-            Email {SUPPORT_EMAIL}
+            Email us
           </a>
           <a
             href={`tel:${SUPPORT_PHONE_HREF}`}
+            className="v3-btn-outline-light"
             style={{
               display: "block",
-              marginTop: 12,
-              fontFamily: H.mono,
-              fontSize: 12.5,
+              width: "100%",
+              marginTop: 10,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,.22)",
+              borderRadius: 11,
+              padding: 12,
+              fontSize: 13.5,
               fontWeight: 700,
               color: H.page,
               textAlign: "center",
               textDecoration: "none",
             }}
           >
-            {SUPPORT_PHONE}
+            Call us
           </a>
         </div>
         </div>

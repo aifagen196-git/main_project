@@ -136,6 +136,8 @@ const CSS = `
 .v3-btn-hero::after{content:'';position:absolute;top:0;bottom:0;left:0;width:70px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:sheen 3.4s cubic-bezier(.3,.6,.3,1) 1.4s infinite}
 .v3-btn-light{transition:transform .2s cubic-bezier(.2,.7,.2,1)}
 .v3-btn-light:hover{transform:translateY(-2px)}
+.v3-btn-outline-light{transition:background .2s,border-color .2s}
+.v3-btn-outline-light:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)!important}
 .v3-feedrow{transition:background .2s}
 .v3-feedrow:hover{background:#F6F8FF}
 [data-feature-card]{transition:background .25s}
