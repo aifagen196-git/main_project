@@ -1494,14 +1494,15 @@ function Marketing({ enter, go }) {
                   position: "relative",
                   overflow: "hidden",
                   background: "#fff",
-                  height: 236,
-                  perspective: 1200,
+                  height: 300,
+                  perspective: 1400,
                 }}
               >
                 {/* The card itself twists on hover — front shows only the
                     number/icon/title, back reveals the description. Both
                     faces are absolutely positioned on top of each other so
-                    the flip has nothing to reflow around. */}
+                    the flip has nothing to reflow around. Duration/easing
+                    tuned for a smooth, even twist — no overshoot/bounce. */}
                 <div
                   data-feature-flip="1"
                   style={{
@@ -1509,7 +1510,7 @@ function Marketing({ enter, go }) {
                     width: "100%",
                     height: "100%",
                     transformStyle: "preserve-3d",
-                    transition: "transform .6s cubic-bezier(.34,1.15,.4,1)",
+                    transition: "transform .8s cubic-bezier(.65,0,.35,1)",
                   }}
                 >
                   {/* ---- Front ---- */}
@@ -1519,13 +1520,13 @@ function Marketing({ enter, go }) {
                       inset: 0,
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
-                      padding: "30px 26px 34px",
+                      padding: "38px 32px 42px",
                     }}
                   >
                     <div
                       style={{
                         fontFamily: V3.mono,
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: 700,
                         color: V3.faint,
                       }}
@@ -1535,10 +1536,10 @@ function Marketing({ enter, go }) {
                     <div
                       data-feature-chip="1"
                       style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: 11,
-                        marginTop: 20,
+                        width: 48,
+                        height: 48,
+                        borderRadius: 13,
+                        marginTop: 24,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1547,15 +1548,15 @@ function Marketing({ enter, go }) {
                         opacity: 0.92,
                       }}
                     >
-                      <Icon size={18} color="#fff" strokeWidth={2} />
+                      <Icon size={22} color="#fff" strokeWidth={2} />
                     </div>
                     <h3
                       style={{
                         fontFamily: V3.display,
-                        fontSize: 19,
+                        fontSize: 23,
                         fontWeight: 700,
                         letterSpacing: "-.02em",
-                        margin: "20px 0 0",
+                        margin: "24px 0 0",
                         color: V3.ink,
                       }}
                     >
@@ -1564,9 +1565,9 @@ function Marketing({ enter, go }) {
                     <span
                       style={{
                         display: "block",
-                        marginTop: 14,
+                        marginTop: 16,
                         fontFamily: V3.mono,
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: 700,
                         letterSpacing: ".1em",
                         textTransform: "uppercase",
@@ -1586,19 +1587,19 @@ function Marketing({ enter, go }) {
                       WebkitBackfaceVisibility: "hidden",
                       transform: "rotateY(180deg)",
                       background: f.color,
-                      padding: "30px 26px 34px",
+                      padding: "38px 32px 42px",
                       display: "flex",
                       flexDirection: "column",
                     }}
                   >
-                    <Icon size={20} color="#fff" strokeWidth={2} style={{ opacity: 0.9 }} />
+                    <Icon size={24} color="#fff" strokeWidth={2} style={{ opacity: 0.9 }} />
                     <h3
                       style={{
                         fontFamily: V3.display,
-                        fontSize: 17,
+                        fontSize: 20,
                         fontWeight: 700,
                         letterSpacing: "-.02em",
-                        margin: "14px 0 0",
+                        margin: "16px 0 0",
                         color: "#fff",
                       }}
                     >
@@ -1606,9 +1607,9 @@ function Marketing({ enter, go }) {
                     </h3>
                     <p
                       style={{
-                        margin: "9px 0 0",
-                        fontSize: 13.5,
-                        lineHeight: 1.6,
+                        margin: "12px 0 0",
+                        fontSize: 15,
+                        lineHeight: 1.65,
                         color: "rgba(255,255,255,.88)",
                       }}
                     >
