@@ -37,16 +37,8 @@ const FAQS = [
     a: "Matching runs off your resume — your skills, titles and years of experience are scored against each role. There is no separate preferences form: to change what you get matched with, upload an updated resume on the Resume screen.",
   },
   {
-    q: "What does the “Stretch” tag mean?",
-    a: "It marks a role scoring below 70. You don't clearly meet everything listed, but it's close enough to be worth a look — a reach rather than a safe match.",
-  },
-  {
     q: "How do I track an application?",
     a: "Press “I applied” on any match, or add one by hand on the Applications screen. Nothing is detected automatically, so move a row through interviewing, assessment, offer or closed yourself using its status dropdown.",
-  },
-  {
-    q: "My matches don't look right.",
-    a: "Matching only sees what your resume says. If a role family or seniority looks wrong, check that your resume states it plainly, replace it on the Resume screen, then use “Re-run matching” on Job Matches.",
   },
   {
     q: "How do I change or cancel my plan?",
