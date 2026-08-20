@@ -67,6 +67,7 @@ import {
   Mic,
   HelpCircle,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -140,9 +141,10 @@ const CSS = `
 .v3-btn-outline-light:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)!important}
 .v3-feedrow{transition:background .2s}
 .v3-feedrow:hover{background:#F6F8FF}
-[data-feature-card]{transition:background .25s}
-[data-feature-card]:hover{background:#FBFCFF}
-[data-feature-card]:hover [data-feature-chip]{transform:scale(1.08) rotate(-5deg)}
+[data-feature-card]:hover [data-feature-flip]{transform:rotateY(180deg)}
+@media (prefers-reduced-motion:reduce){
+  [data-feature-flip]{transition:none!important}
+}
 .v3-footlink{transition:color .18s}
 .v3-footlink:hover{color:#0F172A}
 .v3-input:focus{border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
@@ -1149,10 +1151,15 @@ function Marketing({ enter, go }) {
     "Terms & Conditions": "terms",
   };
 
+  // Interview Preparation was removed — no such feature exists in the
+  // product (the page that once showed it was fabricated data and was
+  // deleted outright earlier). Application Tracking replaces it, describing
+  // the real Applications screen: log an application, move it through
+  // applied/interviewing/assessment/offer yourself.
   const FEATURE_CARDS = [
     { icon: Target, color: V3.brand, t: "Smart Job Matching", d: "AI finds the most relevant jobs based on your skills, experience, and career goals." },
     { icon: FileText, color: V3.ochre, t: "Resume Optimization", d: "Get AI-powered suggestions to improve your resume and pass ATS scans." },
-    { icon: MessageSquare, color: V3.clay, t: "Interview Preparation", d: "Practice with role-specific questions and get expert AI feedback." },
+    { icon: ClipboardList, color: V3.clay, t: "Application Tracking", d: "Log every application and move it through your pipeline — applied, interviewing, assessment, offer." },
     { icon: Zap, color: "#334155", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
   ];
 
@@ -1487,59 +1494,128 @@ function Marketing({ enter, go }) {
                   position: "relative",
                   overflow: "hidden",
                   background: "#fff",
-                  padding: "30px 26px 34px",
-                  transformStyle: "preserve-3d",
+                  height: 236,
+                  perspective: 1200,
                 }}
               >
+                {/* The card itself twists on hover — front shows only the
+                    number/icon/title, back reveals the description. Both
+                    faces are absolutely positioned on top of each other so
+                    the flip has nothing to reflow around. */}
                 <div
+                  data-feature-flip="1"
                   style={{
-                    fontFamily: V3.mono,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: V3.faint,
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
+                    transformStyle: "preserve-3d",
+                    transition: "transform .6s cubic-bezier(.34,1.15,.4,1)",
                   }}
                 >
-                  {String(i + 1).padStart(2, "0")}
+                  {/* ---- Front ---- */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      padding: "30px 26px 34px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: V3.mono,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: V3.faint,
+                      }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div
+                      data-feature-chip="1"
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 11,
+                        marginTop: 20,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "transform .5s cubic-bezier(.34,1.4,.4,1)",
+                        background: f.color,
+                        opacity: 0.92,
+                      }}
+                    >
+                      <Icon size={18} color="#fff" strokeWidth={2} />
+                    </div>
+                    <h3
+                      style={{
+                        fontFamily: V3.display,
+                        fontSize: 19,
+                        fontWeight: 700,
+                        letterSpacing: "-.02em",
+                        margin: "20px 0 0",
+                        color: V3.ink,
+                      }}
+                    >
+                      {f.t}
+                    </h3>
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: 14,
+                        fontFamily: V3.mono,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        letterSpacing: ".1em",
+                        textTransform: "uppercase",
+                        color: V3.faint,
+                      }}
+                    >
+                      Hover to read more
+                    </span>
+                  </div>
+
+                  {/* ---- Back ---- */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      backfaceVisibility: "hidden",
+                      WebkitBackfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)",
+                      background: f.color,
+                      padding: "30px 26px 34px",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <Icon size={20} color="#fff" strokeWidth={2} style={{ opacity: 0.9 }} />
+                    <h3
+                      style={{
+                        fontFamily: V3.display,
+                        fontSize: 17,
+                        fontWeight: 700,
+                        letterSpacing: "-.02em",
+                        margin: "14px 0 0",
+                        color: "#fff",
+                      }}
+                    >
+                      {f.t}
+                    </h3>
+                    <p
+                      style={{
+                        margin: "9px 0 0",
+                        fontSize: 13.5,
+                        lineHeight: 1.6,
+                        color: "rgba(255,255,255,.88)",
+                      }}
+                    >
+                      {f.d}
+                    </p>
+                  </div>
                 </div>
-                <div
-                  data-feature-chip="1"
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 11,
-                    marginTop: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "transform .5s cubic-bezier(.34,1.4,.4,1)",
-                    background: f.color,
-                    opacity: 0.92,
-                  }}
-                >
-                  <Icon size={18} color="#fff" strokeWidth={2} />
-                </div>
-                <h3
-                  style={{
-                    fontFamily: V3.display,
-                    fontSize: 19,
-                    fontWeight: 700,
-                    letterSpacing: "-.02em",
-                    margin: "20px 0 0",
-                    color: V3.ink,
-                  }}
-                >
-                  {f.t}
-                </h3>
-                <p
-                  style={{
-                    margin: "9px 0 0",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: V3.muted,
-                  }}
-                >
-                  {f.d}
-                </p>
               </div>
             );
           })}
