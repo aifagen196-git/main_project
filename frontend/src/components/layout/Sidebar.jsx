@@ -259,7 +259,7 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                 width: 34,
                 height: 34,
                 borderRadius: 10,
-                background: C.brand,
+                background: profile?.avatar_url ? C.page : C.brand,
                 color: C.page,
                 display: "flex",
                 alignItems: "center",
@@ -268,9 +268,18 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                 fontSize: 13,
                 fontWeight: 700,
                 flexShrink: 0,
+                overflow: "hidden",
               }}
             >
-              {initials}
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                initials
+              )}
             </span>
             <span style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
               <span

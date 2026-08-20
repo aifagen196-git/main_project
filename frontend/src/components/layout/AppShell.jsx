@@ -141,7 +141,7 @@ export default function AppShell({ profile, refresh, exit }) {
 
                 <Route
                   path="/settings"
-                  element={<SettingsView profile={profile} />}
+                  element={<SettingsView profile={profile} refresh={refresh} />}
                 />
 
                 <Route

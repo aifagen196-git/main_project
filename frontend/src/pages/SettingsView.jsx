@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { signOut, updatePassword } from "../services/auth";
-import { updateProfile } from "../services/profile";
+import { updateProfile, uploadAvatar, removeAvatar, validateAvatarFile } from "../services/profile";
 import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
 
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
@@ -32,7 +32,7 @@ const T = {
   mono: "'JetBrains Mono',monospace",
 };
 
-export default function SettingsView({ profile }) {
+export default function SettingsView({ profile, refresh }) {
   const navigate = useNavigate();
   const setView = (view) => navigate(`/${view}`);
   const [form, setForm] = useState({
@@ -43,6 +43,11 @@ export default function SettingsView({ profile }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState("");
+
+  const fileInputRef = useRef(null);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarErr, setAvatarErr] = useState("");
 
   const [pw, setPw] = useState({ next: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
@@ -72,6 +77,43 @@ export default function SettingsView({ profile }) {
       setErr(e.message || "Could not save changes.");
     }
     setSaving(false);
+  }
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    setAvatarErr("");
+    try {
+      validateAvatarFile(file);
+    } catch (err) {
+      setAvatarErr(err.message);
+      return;
+    }
+
+    setAvatarBusy(true);
+    try {
+      const updated = await uploadAvatar(file);
+      setAvatarUrl(updated.avatar_url || "");
+      await refresh?.();
+    } catch (err) {
+      setAvatarErr(err.message || "Could not upload photo.");
+    }
+    setAvatarBusy(false);
+  }
+
+  async function handleRemoveAvatar() {
+    setAvatarErr("");
+    setAvatarBusy(true);
+    try {
+      const updated = await removeAvatar();
+      setAvatarUrl(updated.avatar_url || "");
+      await refresh?.();
+    } catch (err) {
+      setAvatarErr(err.message || "Could not remove photo.");
+    }
+    setAvatarBusy(false);
   }
 
   async function savePassword() {
@@ -203,13 +245,27 @@ export default function SettingsView({ profile }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarChange}
+              style={{ display: "none" }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarBusy}
+              aria-label={avatarUrl ? "Change profile photo" : "Add profile photo"}
+              title={avatarUrl ? "Change profile photo" : "Add profile photo"}
               style={{
+                position: "relative",
                 width: 52,
                 height: 52,
                 borderRadius: 14,
-                background: T.brand,
+                background: avatarUrl ? T.page : T.brand,
                 color: T.page,
+                border: "none",
+                padding: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -217,11 +273,48 @@ export default function SettingsView({ profile }) {
                 fontSize: 18,
                 fontWeight: 700,
                 flexShrink: 0,
+                overflow: "hidden",
+                cursor: avatarBusy ? "default" : "pointer",
+                opacity: avatarBusy ? 0.6 : 1,
               }}
             >
-              {initials}
-            </span>
-            <div style={{ minWidth: 0 }}>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                initials
+              )}
+              {/* Camera badge — signals the circle is clickable to add/change a photo. */}
+              <span
+                style={{
+                  position: "absolute",
+                  right: -2,
+                  bottom: -2,
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  background: T.ink,
+                  border: `2px solid #fff`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .83-.45l.94-1.4A1 1 0 0 1 9.8 3.5h4.4a1 1 0 0 1 .83.45l.94 1.4a1 1 0 0 0 .83.45H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"
+                    stroke="#fff"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="12.5" r="3.1" stroke="#fff" strokeWidth="1.6" />
+                </svg>
+              </span>
+            </button>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
                   fontFamily: T.display,
@@ -247,8 +340,33 @@ export default function SettingsView({ profile }) {
               >
                 {profile?.email || ""}
               </div>
+              {avatarUrl && !avatarBusy && (
+                <button
+                  onClick={handleRemoveAvatar}
+                  style={{
+                    marginTop: 4,
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: T.clay,
+                    cursor: "pointer",
+                  }}
+                >
+                  Remove photo
+                </button>
+              )}
+              {avatarBusy && (
+                <span style={{ display: "block", marginTop: 4, fontSize: 12, color: T.muted }}>
+                  Saving…
+                </span>
+              )}
             </div>
           </div>
+          {avatarErr && (
+            <div style={{ marginTop: 10, fontSize: 12.5, color: T.clay }}>{avatarErr}</div>
+          )}
 
           <div style={{ height: 1, background: T.lineSoft, margin: "22px 0" }} />
 
