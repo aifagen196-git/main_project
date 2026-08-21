@@ -244,7 +244,7 @@ export default function SettingsView({ profile, refresh }) {
             animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .08s both",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <input
               ref={fileInputRef}
               type="file"
@@ -259,9 +259,9 @@ export default function SettingsView({ profile, refresh }) {
               title={avatarUrl ? "Change profile photo" : "Add profile photo"}
               style={{
                 position: "relative",
-                width: 52,
-                height: 52,
-                borderRadius: 14,
+                width: 104,
+                height: 104,
+                borderRadius: 26,
                 background: avatarUrl ? T.page : T.brand,
                 color: T.page,
                 border: "none",
@@ -270,7 +270,7 @@ export default function SettingsView({ profile, refresh }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: T.display,
-                fontSize: 18,
+                fontSize: 32,
                 fontWeight: 700,
                 flexShrink: 0,
                 overflow: "hidden",
@@ -291,19 +291,19 @@ export default function SettingsView({ profile, refresh }) {
               <span
                 style={{
                   position: "absolute",
-                  right: -2,
-                  bottom: -2,
-                  width: 20,
-                  height: 20,
+                  right: 0,
+                  bottom: 0,
+                  width: 32,
+                  height: 32,
                   borderRadius: "50%",
                   background: T.ink,
-                  border: `2px solid #fff`,
+                  border: `2.5px solid #fff`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path
                     d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .83-.45l.94-1.4A1 1 0 0 1 9.8 3.5h4.4a1 1 0 0 1 .83.45l.94 1.4a1 1 0 0 0 .83.45H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"
                     stroke="#fff"
@@ -318,7 +318,7 @@ export default function SettingsView({ profile, refresh }) {
               <div
                 style={{
                   fontFamily: T.display,
-                  fontSize: 17,
+                  fontSize: 21,
                   fontWeight: 700,
                   letterSpacing: "-.02em",
                   color: T.ink,
@@ -331,7 +331,8 @@ export default function SettingsView({ profile, refresh }) {
               </div>
               <div
                 style={{
-                  fontSize: 13,
+                  marginTop: 3,
+                  fontSize: 14,
                   color: T.muted,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -344,7 +345,7 @@ export default function SettingsView({ profile, refresh }) {
                 <button
                   onClick={handleRemoveAvatar}
                   style={{
-                    marginTop: 4,
+                    marginTop: 8,
                     background: "transparent",
                     border: "none",
                     padding: 0,
