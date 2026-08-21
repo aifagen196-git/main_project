@@ -6,6 +6,10 @@ const collectors = [
   ["smartrecruiters", "../collectors/smartrecruiters.js"],
   ["linkedin", "../collectors/linkedin.js"],
   ["indeed", "../collectors/indeed.js"],
+  ["ziprecruiter", "../collectors/ziprecruiter.js"],
+  ["monster", "../collectors/monster.js"],
+  ["simplyhired", "../collectors/simplyhired.js"],
+  ["dice", "../collectors/dice.js"],
 ];
 
 for (const [name, modulePath] of collectors) {

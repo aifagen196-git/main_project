@@ -20,7 +20,11 @@
     "verify:ashby": "node scripts/verifyAshbyBoards.js",
     "test": "node tests/test.js",
     "dedupe": "node scripts/dedupeJobs.js",
-    "indeed": "node collectors/indeed.js"
+    "indeed": "node collectors/indeed.js",
+    "ziprecruiter": "node collectors/ziprecruiter.js",
+    "monster": "node collectors/monster.js",
+    "simplyhired": "node collectors/simplyhired.js",
+    "dice": "node collectors/dice.js"
   },
   "keywords": [],
   "author": "",

@@ -12,6 +12,14 @@ name: job-engine collectors
 #   ANTHROPIC_API_KEY
 #   ANTHROPIC_MODEL        (optional — only needed if the code has no default)
 #
+# Optional — the newer sources below (ziprecruiter/monster/simplyhired/dice)
+# each skip themselves cleanly with a log message if their own secrets are
+# unset, so leaving any of these blank is safe, not a broken workflow:
+#   ZIPRECRUITER_API_KEY
+#   BRIGHTDATA_API_KEY, BRIGHTDATA_MONSTER_DATASET_ID
+#   APIFY_TOKEN, APIFY_SIMPLYHIRED_ACTOR_ID, APIFY_DICE_ACTOR_ID
+# See job-engine/.env.example for what each of these is and where to get it.
+#
 # Adjust the schedule below to taste; every 6 hours is a starting point, not
 # a measured requirement.
 
@@ -32,6 +40,12 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+      ZIPRECRUITER_API_KEY: ${{ secrets.ZIPRECRUITER_API_KEY }}
+      BRIGHTDATA_API_KEY: ${{ secrets.BRIGHTDATA_API_KEY }}
+      BRIGHTDATA_MONSTER_DATASET_ID: ${{ secrets.BRIGHTDATA_MONSTER_DATASET_ID }}
+      APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+      APIFY_SIMPLYHIRED_ACTOR_ID: ${{ secrets.APIFY_SIMPLYHIRED_ACTOR_ID }}
+      APIFY_DICE_ACTOR_ID: ${{ secrets.APIFY_DICE_ACTOR_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +63,23 @@ jobs:
 
       - name: Run all collectors
         run: npm run all
+
+      - name: Run newer sources (ziprecruiter/monster/simplyhired/dice)
+        # Not folded into `npm run all` yet — each is unverified against a
+        # live response (see the header comment in its own collector file)
+        # and most need a paid third-party account this repo doesn't have
+        # configured yet. Each skips itself cleanly if its own secrets are
+        # unset. GitHub Actions runs a multi-line `run:` under `bash -e`, so
+        # `|| true` after each line is required — without it, a REAL failure
+        # in one (as opposed to its own graceful unconfigured-skip, which
+        # exits 0) would stop the rest of this step from running at all,
+        # exactly like chaining with `&&` would.
+        if: always()
+        run: |
+          npm run ziprecruiter || true
+          npm run monster || true
+          npm run simplyhired || true
+          npm run dice || true
 
       - name: Deactivate expired jobs and purge old inactive rows
         # Still run this even if one collector above failed partway through
