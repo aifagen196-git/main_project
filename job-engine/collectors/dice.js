@@ -30,7 +30,11 @@ const SCRAPE_LAST_HOURS = Number(process.env.SCRAPE_LAST_HOURS || 24);
 // Dice is tech-focused (per the guide) — every category in linkedinSearches
 // already is too, so no extra filtering needed here, just the same
 // "start narrow" keyword/location slice as the other new sources.
-const KEYWORDS = Object.values(linkedinSearches).map((group) => group[0]);
+// linkedinSearches (config/linkedinSearches.js) exports a FLAT array of all
+// ~59 keywords, not grouped by category — every 6th index approximates "one
+// representative keyword per category" (~10 keywords) without needing to
+// know the exact group boundaries.
+const KEYWORDS = linkedinSearches.filter((_, i) => i % 6 === 0);
 const SEARCH_LOCATIONS = locations.slice(0, 5);
 const MAX_ITEMS_PER_SEARCH = Number(process.env.DICE_MAX_ITEMS || 100);
 
