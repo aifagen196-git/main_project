@@ -1,25 +1,28 @@
 // processors/normalizeSimplyHired.js
 //
-// Maps one dataset item from an Apify SimplyHired Actor into this app's row
-// shape. Targets thirdwatch/simplyhired-jobs-scraper (recommended default —
-// see collectors/simplyhired.js's header for why), whose documented output
-// fields are: title, company, location, salary_text, salary_min, salary_max,
-// salary_currency, salary_period, description, posted_date, source, url.
-// (Checked live via https://apify.com/thirdwatch/simplyhired-jobs-scraper/api
-// — still not verified against an ACTUAL scrape response, since this repo has
-// no Apify token yet, but at least matched against the provider's own docs
-// now instead of being a pure guess.)
+// Maps one dataset item from thirdwatch/simplyhired-jobs-scraper (Apify)
+// into this app's row shape.
+//
+// VERIFIED against a real live response (2026-08-24, 5 real jobs pulled with
+// a throwaway ~$0.04 test run) — this is no longer a documentation-matched
+// guess. Confirmed real fields: title, company, location, url, description,
+// job_types (ARRAY, e.g. ["Part-time","Full-time","Contract"] — not a single
+// jobType/employmentType string), is_remote (boolean), job_key (snake_case —
+// not jobKey), posted_date, salary_text/salary_min/salary_max/
+// salary_currency/salary_period, source, scraped_at. Also present but not
+// currently mapped: company_rating, requirements[], benefits[], sponsored,
+// indeed_apply — none of those have a column on `jobs` yet.
+//
+// Two real mistakes this fixed versus the previous docs-only-matched
+// version: job_key is snake_case, not the jobKey I'd guessed, and there is
+// no single employment-type string field at all — job_types is a list, so
+// employment_type below joins it rather than reading one guessed key.
 //
 // Apify Actor schemas vary a lot between authors — a second candidate actor
-// checked the same way (easyapi/simplyhired-job-scraper) uses completely
-// different field names that look copied from an Indeed scraper (jobKey,
-// dateOnIndeed, indeedApply), a sign it may not be a reliable, purpose-built
-// SimplyHired scraper. If you pick a different actor than thirdwatch's,
-// open its own /api page and adjust this mapping to match — don't assume
-// these field names carry over.
-//
-// No `id` field is documented on thirdwatch's actor, so source_job_id is
-// derived from the URL's last path segment instead.
+// checked separately (easyapi/simplyhired-job-scraper) uses completely
+// different field names that look copied from an Indeed scraper, a sign it
+// isn't purpose-built for this site. If you switch actors, none of this is
+// guaranteed to carry over — re-verify with a small real run first.
 
 function salaryText(job) {
   if (job.salary_text) return job.salary_text;
@@ -28,30 +31,27 @@ function salaryText(job) {
     const period = job.salary_period ? ` / ${job.salary_period}` : "";
     return `${currency}${job.salary_min} - ${currency}${job.salary_max}${period}`;
   }
-  // Fallbacks in case a different actor is used instead — see header.
-  return job.salary || job.estimatedSalary || "";
+  return "";
 }
 
 export default function normalizeSimplyHired(job) {
   const id =
+    job.job_key ||
     job.id ||
-    job.jobKey ||
     (job.url ? job.url.split("/").filter(Boolean).pop() : "") ||
     "";
 
   return {
     source: "simplyhired",
     source_job_id: String(id),
-    title: job.title || job.jobTitle || "",
-    company: job.company || job.companyName || "",
+    title: job.title || "",
+    company: job.company || "",
     location: job.location || "",
-    apply_url: job.url || job.applyUrl || job.link || "",
+    apply_url: job.url || "",
     salary: salaryText(job),
-    posted_date: job.posted_date || job.postedDate || job.datePosted
-      ? new Date(job.posted_date || job.postedDate || job.datePosted).toISOString()
-      : null,
-    description: job.description || job.snippet || "",
-    employment_type: job.jobType || job.employmentType || "",
-    is_remote_us: /remote/i.test(job.location || ""),
+    posted_date: job.posted_date ? new Date(job.posted_date).toISOString() : null,
+    description: job.description || "",
+    employment_type: Array.isArray(job.job_types) ? job.job_types.join(", ") : "",
+    is_remote_us: job.is_remote === true,
   };
 }
