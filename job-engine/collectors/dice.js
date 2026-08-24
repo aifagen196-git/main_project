@@ -8,14 +8,26 @@
 // implements the FALLBACK the guide describes instead: an Apify Actor for
 // dice.com. Swap in the real partner API here once/if that access exists.
 //
-// Needs an Apify account, a personal API token, and the exact Actor ID for
-// their Dice scraper (search "Dice.com scraper" in the Apify Store). Until
+// RECOMMENDED ACTOR: unfenced-group/dice-scraper
+// (https://apify.com/unfenced-group/dice-scraper) — verified with real
+// throwaway test calls (2026-08-24), not just its docs page. Cheap: ~$0.57
+// per 1,000 results. Its input takes ONE searchQuery string per call (unlike
+// SimplyHired's batched `queries` array), so the per-(keyword, location)
+// loop below is the right shape for this actor specifically.
+//
+// fetchDetails: true is REQUIRED below — confirmed live that description
+// and skills are both empty without it (it makes the actor visit each job's
+// detail page, so it's slower and costs more per result, but an empty
+// description defeats the point of collecting the job at all).
+//
+// Needs an Apify account, a personal API token, and that Actor ID. Until
 // both APIFY_TOKEN and APIFY_DICE_ACTOR_ID are set, this collector logs why
 // it's skipping and exits cleanly.
 //
-// NOT verified against a live response yet — see normalizeDice.js's header.
-// Run `npm run dice` once configured and sanity-check a handful of saved
-// rows before trusting this at scale.
+// Field mapping verified against real responses — see normalizeDice.js's
+// header for the three real data-quality issues found and handled there
+// (URL-encoded company names, a contaminated state field, and postedDate
+// holding badge text instead of an actual date).
 
 import { runCollector } from "./runtime.js";
 import { saveJobs, deactivateStale } from "../processors/saveJobs.js";
@@ -59,9 +71,10 @@ export default async function collectDiceJobs() {
       let rawJobs;
       try {
         rawJobs = await apifyRun(ACTOR_ID, {
-          search,
+          searchQuery: search,
           location,
-          maxItems: MAX_ITEMS_PER_SEARCH,
+          maxResults: MAX_ITEMS_PER_SEARCH,
+          fetchDetails: true,
         });
       } catch (err) {
         console.error(`❌ "${search}" @ "${location}" failed: ${err.message}`);
