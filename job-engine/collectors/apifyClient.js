@@ -29,15 +29,34 @@ export async function apifyRun(actorId, input) {
     throw new Error("apifyRun requires an actorId");
   }
 
-  const res = await axios.post(
-    `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/run-sync-get-dataset-items`,
-    input,
-    {
-      params: { token: APIFY_TOKEN },
-      // Apify actor runs can legitimately take minutes for a large maxItems.
-      timeout: 300_000,
-    },
-  );
+  let res;
+  try {
+    res = await axios.post(
+      `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/run-sync-get-dataset-items`,
+      input,
+      {
+        params: { token: APIFY_TOKEN },
+        // Apify actor runs can legitimately take minutes for a large maxItems.
+        timeout: 300_000,
+      },
+    );
+  } catch (err) {
+    // axios's own err.message ("Request failed with status code 403") hides
+    // WHY — found the hard way debugging a real run where every call failed
+    // identically and the status code alone gave no clue. Apify's error body
+    // ({ error: { type, message } }) has the actual reason (e.g.
+    // "platform-feature-disabled" / "Monthly usage hard limit exceeded"),
+    // so surface it instead of making every caller dig through
+    // err.response.data by hand.
+    const apiError = err.response?.data?.error;
+    if (apiError) {
+      const e = new Error(`Apify ${apiError.type || "error"}: ${apiError.message || "unknown"}`);
+      e.status = err.response.status;
+      e.apifyErrorType = apiError.type;
+      throw e;
+    }
+    throw err;
+  }
 
   return Array.isArray(res.data) ? res.data : [];
 }
