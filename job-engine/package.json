@@ -12,7 +12,7 @@
     "workable": "node collectors/workable.js",
     "smartrecruiters": "node collectors/smartrecruiters.js",
     "linkedin": "node collectors/linkedin.js",
-    "all": "node collectors/greenhouse.js && node collectors/ashby.js && node collectors/lever.js && node collectors/workable.js && node collectors/smartrecruiters.js && node collectors/linkedin.js",
+    "all": "node collectors/greenhouse.js && node collectors/ashby.js && node collectors/lever.js && node collectors/workable.js && node collectors/smartrecruiters.js && node collectors/linkedin.js && node collectors/simplyhired.js && node collectors/dice.js",
     "check:collectors": "node tests/importCollectors.js",
     "backfill": "node scripts/processExistingJobs.js",
     "cleanup": "node scripts/cleanupExpiredJobs.js",

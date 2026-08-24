@@ -13,6 +13,7 @@ import extractRoleFamily from "../processors/roleFamilyExtractor.js";
 import { planSearches, RateLimitTracker } from "../processors/searchPlanner.js";
 import locations from "../config/locations.js";
 import { normalizeCountry, normalizeEmploymentType } from "../processors/canonicalFields.js";
+import relativeToISO from "../processors/relativeDate.js";
 
 const BASE_URL =
   "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search";
@@ -55,23 +56,8 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // LinkedIn's guest fragment gives a RELATIVE date ("3 weeks ago", "2 days ago",
 // "yesterday"), not a timestamp — inserting it straight into the timestamptz
-// `posted_date` column throws. Convert to an approximate ISO date, else null.
-function relativeToISO(text = "") {
-  const t = String(text).toLowerCase().trim();
-  if (!t) return null;
-  if (/just now|moments? ago|yesterday/.test(t)) {
-    const d = new Date();
-    if (t.includes("yesterday")) d.setDate(d.getDate() - 1);
-    return d.toISOString();
-  }
-  const m = t.match(/(\d+)\s*(hour|day|week|month|year)s?\s*ago/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  const unitDays = { hour: 1 / 24, day: 1, week: 7, month: 30, year: 365 }[
-    m[2]
-  ];
-  return new Date(Date.now() - n * unitDays * 86400000).toISOString();
-}
+// `posted_date` column throws. relativeToISO (processors/relativeDate.js)
+// converts to an approximate ISO date, else null.
 
 const US_LOCATION =
   /\b(united states|usa|u\.s\.|remote)\b|,\s*(al|ak|az|ar|ca|co|ct|de|fl|ga|hi|id|il|in|ia|ks|ky|la|me|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|vt|va|wa|wv|wi|wy)\b/i;
