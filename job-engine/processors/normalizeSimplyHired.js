@@ -1,17 +1,43 @@
 // processors/normalizeSimplyHired.js
 //
 // Maps one dataset item from an Apify SimplyHired Actor into this app's row
-// shape.
+// shape. Targets thirdwatch/simplyhired-jobs-scraper (recommended default —
+// see collectors/simplyhired.js's header for why), whose documented output
+// fields are: title, company, location, salary_text, salary_min, salary_max,
+// salary_currency, salary_period, description, posted_date, source, url.
+// (Checked live via https://apify.com/thirdwatch/simplyhired-jobs-scraper/api
+// — still not verified against an ACTUAL scrape response, since this repo has
+// no Apify token yet, but at least matched against the provider's own docs
+// now instead of being a pure guess.)
 //
-// NOT verified against a live response — this repo has no Apify account/
-// token yet (see job-engine/.env.example). Field names below are a
-// reasonable guess; Apify Actor output schemas vary per author, so once you
-// have APIFY_SIMPLYHIRED_ACTOR_ID set, open the Actor's page in the Apify
-// Store first — it documents its exact output fields — and adjust this
-// mapping to match before trusting it at scale.
+// Apify Actor schemas vary a lot between authors — a second candidate actor
+// checked the same way (easyapi/simplyhired-job-scraper) uses completely
+// different field names that look copied from an Indeed scraper (jobKey,
+// dateOnIndeed, indeedApply), a sign it may not be a reliable, purpose-built
+// SimplyHired scraper. If you pick a different actor than thirdwatch's,
+// open its own /api page and adjust this mapping to match — don't assume
+// these field names carry over.
+//
+// No `id` field is documented on thirdwatch's actor, so source_job_id is
+// derived from the URL's last path segment instead.
+
+function salaryText(job) {
+  if (job.salary_text) return job.salary_text;
+  if (job.salary_min && job.salary_max) {
+    const currency = job.salary_currency || "$";
+    const period = job.salary_period ? ` / ${job.salary_period}` : "";
+    return `${currency}${job.salary_min} - ${currency}${job.salary_max}${period}`;
+  }
+  // Fallbacks in case a different actor is used instead — see header.
+  return job.salary || job.estimatedSalary || "";
+}
 
 export default function normalizeSimplyHired(job) {
-  const id = job.id || job.jobKey || (job.url ? job.url.split("/").pop() : "") || "";
+  const id =
+    job.id ||
+    job.jobKey ||
+    (job.url ? job.url.split("/").filter(Boolean).pop() : "") ||
+    "";
 
   return {
     source: "simplyhired",
@@ -20,9 +46,9 @@ export default function normalizeSimplyHired(job) {
     company: job.company || job.companyName || "",
     location: job.location || "",
     apply_url: job.url || job.applyUrl || job.link || "",
-    salary: job.salary || job.estimatedSalary || "",
-    posted_date: job.postedDate || job.datePosted
-      ? new Date(job.postedDate || job.datePosted).toISOString()
+    salary: salaryText(job),
+    posted_date: job.posted_date || job.postedDate || job.datePosted
+      ? new Date(job.posted_date || job.postedDate || job.datePosted).toISOString()
       : null,
     description: job.description || job.snippet || "",
     employment_type: job.jobType || job.employmentType || "",
