@@ -19,9 +19,12 @@ name: job-engine collectors
 #   BRIGHTDATA_API_KEY, BRIGHTDATA_MONSTER_DATASET_ID
 # See job-engine/.env.example for what each of these is and where to get it.
 #
-# simplyhired/dice need NO secrets — both scrape directly (Playwright, free)
-# and are folded into `npm run all` below, same as every other source that
-# doesn't need a paid account.
+# simplyhired/dice/jobright need NO secrets — all three scrape directly
+# (simplyhired/dice via Playwright, jobright via plain HTTP — no browser at
+# all) and are folded into `npm run all` below, same as every other source
+# that doesn't need a paid account. jobright doesn't search the 13 target
+# domains the way the others do — see collectors/jobright.js's header for
+# why (its real search requires a login this repo doesn't have).
 #
 # Adjust the schedule below to taste; every 6 hours is a starting point, not
 # a measured requirement.

@@ -10,6 +10,7 @@ const collectors = [
   ["monster", "../collectors/monster.js"],
   ["simplyhired", "../collectors/simplyhired.js"],
   ["dice", "../collectors/dice.js"],
+  ["jobright", "../collectors/jobright.js"],
 ];
 
 for (const [name, modulePath] of collectors) {
