@@ -188,10 +188,12 @@ const CSS = `
 /* Dashboard grids. Stats stay two-up, the main row splits to a wide primary
    column plus a rail at 1180px, and suggestions go 1 → 2 → 3 across. */
 [data-dashgrid]{display:grid;gap:16px;min-width:0}
-[data-dashgrid="stats"]{grid-template-columns:1fr 1fr;gap:14px}
+/* Two stat cards (Job Matches, Saved Jobs) — auto-fit keeps them side by side
+   wherever there's room and drops to one column when there isn't, without
+   needing a hardcoded breakpoint. */
+[data-dashgrid="stats"]{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 [data-dashgrid="main"]{grid-template-columns:1fr}
 [data-dashgrid="sugg"]{grid-template-columns:1fr}
-@media (max-width:560px){[data-dashgrid="stats"]{grid-template-columns:1fr}}
 @media (min-width:760px){
   [data-dashgrid="sugg"]{grid-template-columns:1fr 1fr}
   [data-dashgrid="sugg"] > *:last-child{grid-column:1 / -1}

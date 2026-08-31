@@ -8,6 +8,7 @@ import JobMatches from "../../pages/JobMatches";
 import Applications from "../../pages/Applications";
 import Resume from "../../pages/Resume";
 import SavedJobs from "../../pages/SavedJobs";
+import InternalJobs from "../../pages/InternalJobs";
 
 // Recharts-heavy pages — lazy-loaded so recharts is split out of the main bundle.
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
@@ -122,6 +123,8 @@ export default function AppShell({ profile, refresh, exit }) {
                 />
 
                 <Route path="/applications" element={<Applications />} />
+
+                <Route path="/internal-jobs" element={<InternalJobs />} />
 
                 <Route
                   path="/resume"

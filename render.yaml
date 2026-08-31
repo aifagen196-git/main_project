@@ -1,0 +1,76 @@
+# Render Blueprint — deploys all three services in one step.
+# In the Render dashboard: New → Blueprint → connect this repo → Render reads
+# this file and proposes all three services below. Secret-valued env vars
+# (marked sync: false) are left blank for you to fill in per-service in the
+# dashboard — never committed here.
+#
+# https://render.com/docs/blueprint-spec
+
+services:
+  # --- Backend: Express API (Supabase + Razorpay + Claude/Gemini/Groq) ---
+  - type: web
+    name: aifagen-backend
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_CURRENCY
+        value: USD
+      - key: CORS_ORIGIN
+        value: https://aifagenlabs.com,https://www.aifagenlabs.com
+
+  # --- Frontend: public Vite/React app ---
+  - type: web
+    name: aifagen-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      # SPA fallback — React Router owns client-side routes like /dashboard.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://api.aifagenlabs.com
+
+  # --- Admin: internal job postings tool (separate app, separate login) ---
+  - type: web
+    name: aifagen-admin
+    runtime: static
+    rootDir: admin
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false

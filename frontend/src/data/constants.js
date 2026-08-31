@@ -131,6 +131,11 @@ export const NAV = [
     label: "Saved Jobs",
     icon: Bookmark,
   },
+  {
+    id: "internal-jobs",
+    label: "Internal Jobs",
+    icon: BadgeCheck,
+  },
   // Settings is not a NAV entry — it's reached via the account button at the
   // bottom of the sidebar (Sidebar.jsx), which links straight to /settings.
 ];

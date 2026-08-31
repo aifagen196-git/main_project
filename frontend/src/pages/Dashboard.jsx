@@ -46,15 +46,6 @@ function matchBand(score) {
         : "Weak";
 }
 
-function getWeekCount(items = [], dateKey = "applied_at") {
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return items.filter((item) => {
-    const rawDate = item?.[dateKey] || item?.updated_at || item?.created_at || "";
-    const ts = Date.parse(rawDate);
-    return Number.isFinite(ts) && ts >= weekAgo;
-  }).length;
-}
-
 /**
  * Weighted profile completeness. Each item carries a weight, a user-facing
  * label, and where to go to fix it — so the card can say WHAT to do next
@@ -182,9 +173,6 @@ export default function Dashboard({ profile }) {
   const offers = applicationsAvailable
     ? applications.filter((app) => app.status === "offer").length
     : null;
-  const applicationsThisWeek = applicationsAvailable
-    ? getWeekCount(applications, "applied_at")
-    : null;
 
   const stats = [
     {
@@ -192,18 +180,6 @@ export default function Dashboard({ profile }) {
       v: loading || !matchesAvailable ? "--" : String(matches.length),
       d: loading ? "Loading" : matchesAvailable ? "From your profile" : "Unavailable",
       color: D.brand,
-    },
-    {
-      t: "Applications",
-      v: loading || !applicationsAvailable ? "--" : String(applications.length),
-      d: loading ? "Loading" : applicationsAvailable ? `${applicationsThisWeek} this week` : "Unavailable",
-      color: D.ochre,
-    },
-    {
-      t: "Interviews",
-      v: loading || !applicationsAvailable ? "--" : String(interviews),
-      d: loading ? "Loading" : applicationsAvailable ? "Interviewing or assessment" : "Unavailable",
-      color: "#334155",
     },
     {
       t: "Saved Jobs",
