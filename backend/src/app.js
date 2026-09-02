@@ -5,6 +5,7 @@ import compression from "compression";
 import morgan from "morgan";
 
 import { requireAuth } from "./middleware/auth.js";
+import { requireAdmin } from "./middleware/requireAdmin.js";
 
 import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -16,6 +17,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -89,6 +91,7 @@ app.use("/api/resumes", requireAuth, resumesRoutes);
 app.use("/api/ai", requireAuth, aiRoutes);
 app.use("/api/analytics", requireAuth, analyticsRoutes);
 app.use("/api/payments", requireAuth, paymentsRoutes);
+app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
 
 // =============================
 // 404
