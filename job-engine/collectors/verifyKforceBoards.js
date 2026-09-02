@@ -1,4 +1,6 @@
 import axios from "axios";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const SEARCH_ENDPOINT =
   process.env.KFORCE_SEARCH_ENDPOINT ||
@@ -47,4 +49,10 @@ async function run() {
   }
 }
 
-run();
+// CLI-only guard — see collectors/runtime.js's runCollector() for the
+// same pattern used everywhere else in this repo. Without it, import()-ing
+// this file for any reason runs it as a side effect.
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(path.resolve(entrypoint)).href) {
+  run();
+}

@@ -1,4 +1,6 @@
 // collectors/verifyAshbyBoards.js
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 //
 // Re-verify the Ashby company list against the endpoint the COLLECTOR actually
 // uses (api.ashbyhq.com/posting-api/...), not the public HTML board page.
@@ -77,4 +79,10 @@ async function run() {
   console.log(`Wrote ${OUT}`);
 }
 
-run();
+// CLI-only guard — see collectors/runtime.js's runCollector() for the
+// same pattern used everywhere else in this repo. Without it, import()-ing
+// this file for any reason runs it as a side effect.
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(path.resolve(entrypoint)).href) {
+  run();
+}

@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { inferRoleFamily } from "../../backend/src/services/matching/scoreMatch.js";
 
@@ -108,7 +110,14 @@ async function run() {
   console.log(`Done. Scanned ${scanned}, updated ${updated}.`);
 }
 
-run().catch((err) => {
-  console.error("Backfill crashed:", err.message);
-  process.exit(1);
-});
+// CLI-only guard — see collectors/runtime.js's runCollector() for the same
+// pattern used everywhere else in this repo. Without it, import()-ing this
+// file for any reason runs a real backfill against production as a side
+// effect (this already happened once during verification).
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(path.resolve(entrypoint)).href) {
+  run().catch((err) => {
+    console.error("Backfill crashed:", err.message);
+    process.exit(1);
+  });
+}

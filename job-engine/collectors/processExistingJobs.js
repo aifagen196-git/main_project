@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { extractJobProfile } from "./processors/extractProfile.js";
 
@@ -117,4 +119,10 @@ async function run() {
   console.log(`Done. Enriched ${done}, failed ${failed}, in ${((Date.now() - t0) / 60000).toFixed(1)} min.`);
 }
 
-run();
+// CLI-only guard — see collectors/runtime.js's runCollector() for the
+// same pattern used everywhere else in this repo. Without it, import()-ing
+// this file for any reason runs it as a side effect.
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(path.resolve(entrypoint)).href) {
+  run();
+}
