@@ -1,8 +1,13 @@
-# Render Blueprint — deploys all three services in one step.
+# Render Blueprint — deploys both services in one step.
 # In the Render dashboard: New → Blueprint → connect this repo → Render reads
-# this file and proposes all three services below. Secret-valued env vars
+# this file and proposes the two services below. Secret-valued env vars
 # (marked sync: false) are left blank for you to fill in per-service in the
 # dashboard — never committed here.
+#
+# The admin app (internal job postings tool) lives in admin/ but is
+# deliberately NOT pushed to this repo or listed here — it's kept local /
+# deployed separately. If it's ever pushed to its own repo, give it the same
+# two-envVar static-site block the frontend below has (rootDir: admin).
 #
 # https://render.com/docs/blueprint-spec
 
@@ -57,20 +62,3 @@ services:
         sync: false
       - key: VITE_API_URL
         value: https://api.aifagenlabs.com
-
-  # --- Admin: internal job postings tool (separate app, separate login) ---
-  - type: web
-    name: aifagen-admin
-    runtime: static
-    rootDir: admin
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
