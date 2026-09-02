@@ -229,6 +229,29 @@ export async function previewApi(path, method = "GET", body) {
     return { saved: false };
   }
 
+  if (route === "/api/internal-jobs") {
+    // Shape matches a real row inserted through the teammate's admin page
+    // (2026-08-31) — that schema has no `company` column, just
+    // `department`/`employment_type`/`skills` — this fixture mirrors it
+    // exactly so the fallback rendering gets exercised in preview too.
+    return {
+      jobs: [
+        {
+          id: "c883eeea-340e-4c46-9b03-3d115e8c0555",
+          title: "full stack",
+          location: "sidipet",
+          description: "sudybcuyaswvbdicuhabsdcgybasw",
+          apply_url: "https://example.com/apply",
+          is_active: true,
+          department: "full stack",
+          employment_type: "intership",
+          skills: ["frontend"],
+          created_at: new Date().toISOString(),
+        },
+      ],
+    };
+  }
+
   if (route === "/api/analytics") {
     return { analytics: previewAnalytics() };
   }

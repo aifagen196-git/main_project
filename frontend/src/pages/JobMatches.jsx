@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getMatchedJobs, searchJobs } from "../services/matchingService";
 import { getAppliedJobIds, markJobApplied } from "../services/applications";
@@ -193,47 +193,6 @@ function FilterDropdown({ group, open, setOpen }) {
   );
 }
 
-// Title → job-function inference, mirroring the backend matcher's
-// TITLE_FAMILIES (scoreMatch.js). Most stored role_family values are the
-// collector-era default "other", so the title is the reliable signal.
-const TITLE_FAMILIES = [
-  ["supply-chain", "Supply Chain", /\b(supply chain|logistics|procurement|sourcing|demand plan(ner|ning)?|inventory|fulfillment|warehouse|s&op|supply planning|materials manage)\b/i],
-  ["ai-ml", "AI / Machine Learning", /\b(machine learning|ml engineer|ai engineer|deep learning|data scientist|nlp|computer vision|llm|genai|generative ai|ai\/ml|mlops|applied scientist)\b/i],
-  ["data-engineering", "Data Engineering", /\b(data engineer|etl|data platform|analytics engineer)\b/i],
-  ["data-analytics", "Data Analytics", /\b(data analyst|business intelligence|bi analyst)\b/i],
-  ["security", "Security", /\b(penetration tester|red team|offensive security|security engineer|application security|infosec|cyber ?security|security analyst|detection)\b/i],
-  ["network-engineering", "Network Engineering", /\b(network engineer|network administrator)\b/i],
-  ["devops", "DevOps / SRE / Platform", /\b(devops|site reliability|sre\b|platform engineer|infrastructure engineer|build engineer|release engineer)\b/i],
-  ["cloud-engineering", "Cloud Engineering", /\b(cloud engineer|cloud architect|aws engineer|azure engineer)\b/i],
-  ["frontend-engineering", "Frontend Engineering", /\b(front.?end|react developer|ui engineer|web developer)\b/i],
-  ["backend-engineering", "Backend Engineering", /\b(back.?end|api engineer)\b/i],
-  ["qa-testing", "QA / Testing", /\b(qa engineer|quality assurance|test engineer|sdet)\b/i],
-  ["software-engineering", "Software Engineering", /\b(software engineer|software developer|full.?stack|swe\b|sde\b|solutions? engineer|forward deployed)\b/i],
-  ["product-management", "Product / Program Mgmt", /\b(product manager|product owner|program manager|project manager|chief of staff)\b/i],
-  ["design", "Design / UX", /\b(designer|ux\b|ui designer|product design)\b/i],
-  ["business-analysis", "Business / Operations", /\b(business analyst|revenue operations|revops|salesops|sales operations|gtm planning|deal desk|deal pricing|pricing analyst|strategy analyst|operations analyst)\b/i],
-];
-
-const FUNCTION_LABELS = Object.fromEntries(TITLE_FAMILIES.map(([k, label]) => [k, label]));
-
-function jobFunctionOf(j) {
-  // TITLE FIRST, matching the backend matcher's precedence exactly
-  // (scoreMatch.js jobFamily()) — measured there: of stored role_family
-  // values, over half contradict the job's own title. A live example: a
-  // Product Manager posting that merely mentions "partner with our DevOps
-  // team" gets role_family stored as "devops" by the collector's
-  // description-keyword heuristic. The backend correctly scores/gates that
-  // job as product-management from the title; trusting the stored value
-  // here would have shown the user a "DevOps / SRE / Platform" badge on a
-  // PM role — visibly wrong, and inconsistent with what actually matched it.
-  for (const [family, , re] of TITLE_FAMILIES) {
-    if (re.test(j.title || "")) return family;
-  }
-  const stored = (j.role_family || "").toLowerCase();
-  if (stored && stored !== "other" && FUNCTION_LABELS[stored]) return stored;
-  return "other";
-}
-
 // Workplace type from the strongest available signals. "Hybrid" only ever
 // appears in the location text; remote uses the same test as the matcher.
 function workplaceOf(j) {
@@ -327,7 +286,6 @@ export default function JobMatches({ saved, toggle }) {
   const searchSeq = useRef(0);
 
   // Filters
-  const [jobFunction, setJobFunction] = useState("");
   const [expLevel, setExpLevel] = useState("");
   const [workplace, setWorkplace] = useState(""); // "" | onsite | hybrid | remote
   const [jobType, setJobType] = useState(""); // "" | fulltime | parttime | intern | contract
@@ -390,23 +348,12 @@ export default function JobMatches({ saved, toggle }) {
 
   const scoreOf = (j) => j.match_score ?? 0;
 
-  // Dropdown options derived from the loaded jobs, so no dead choices.
-  const functionOptions = useMemo(() => {
-    const present = new Set(base.map(jobFunctionOf));
-    const opts = TITLE_FAMILIES.filter(([k]) => present.has(k)).map(
-      ([k, label]) => [k, label],
-    );
-    if (present.has("other")) opts.push(["other", "Other"]);
-    return opts;
-  }, [base]);
-
   // Client-side filters + sorting (instant — the full set is already loaded).
   const expTest = EXPERIENCE_LEVELS.find((l) => l.key === expLevel)?.test;
   const postedCutoff = postedWithin
     ? Date.now() - postedWithin * 24 * 60 * 60 * 1000
     : 0;
   let jobs = base.filter((j) => {
-    if (jobFunction && jobFunctionOf(j) !== jobFunction) return false;
     if (expTest && !expTest(minYearsOf(j))) return false;
     if (workplace && workplaceOf(j) !== workplace) return false;
     if (jobType && jobTypeOf(j) !== jobType) return false;
@@ -429,10 +376,9 @@ export default function JobMatches({ saved, toggle }) {
   }
 
   const anyFilter =
-    jobFunction || expLevel || workplace || jobType ||
+    expLevel || workplace || jobType ||
     postedWithin > 0 || locationFilter;
   const clearFilters = () => {
-    setJobFunction("");
     setExpLevel("");
     setWorkplace("");
     setJobType("");
@@ -454,13 +400,6 @@ export default function JobMatches({ saved, toggle }) {
   // Filter groups rendered with the design's dropdown treatment. Every group
   // here is a real filter the page already supported.
   const filterGroups = [
-    functionOptions.length > 0 && {
-      key: "function",
-      label: "Function",
-      value: jobFunction,
-      onPick: set(setJobFunction),
-      options: [["", "Any"], ...functionOptions],
-    },
     {
       key: "workplace",
       label: "Workplace",

@@ -17,10 +17,17 @@ import HelpPanel from "./HelpPanel";
    details, plan and log out already live on that screen, and "Settings" is
    no longer a separate sidebar entry — this button replaces it (see NAV in
    data/constants.js). The plan summary that used to sit above this button
-   is also gone; it doesn't need to be visible on every single screen. */
+   is also gone; it doesn't need to be visible on every single screen.
+
+   Light theme with real color (2026-08-27): a dark sidebar was tried and
+   rejected — went back to a light surface, but kept the vivid purple-
+   gradient accents (top bar, logo chip, active pill, avatar) that weren't
+   the problem. A flat solid-ink active state read as "plain"; a gradient
+   pill with a glow reads as designed without going dark. */
 
 const C = {
   brand: "#6D4AFF",
+  brandLight: "#8F79FF",
   ink: "#0F172A",
   page: "#F8F9FE",
   line: "#E8ECF5",
@@ -67,24 +74,41 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
         className="v3-sidebar"
         data-open={open ? "1" : "0"}
         style={{
+          position: "sticky",
+          overflow: "hidden",
           width: 270,
           flexShrink: 0,
-          background: "#fff",
+          background: "linear-gradient(180deg,#FDFCFF 0%,#F6F3FF 100%)",
           borderRight: `1px solid ${C.line}`,
           display: "flex",
           flexDirection: "column",
-          position: "sticky",
           top: 0,
           height: "100vh",
         }}
       >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "-25%",
+            left: "-20%",
+            width: "140%",
+            height: "30%",
+            background: "radial-gradient(ellipse at center,rgba(109,74,255,.14),transparent 65%)",
+            filter: "blur(16px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", height: 3, background: `linear-gradient(90deg,${C.brand},${C.brandLight},#F59E0B)`, flexShrink: 0 }} />
         <button
           onClick={exit}
           style={{
+            position: "relative",
             display: "flex",
             alignItems: "center",
             gap: 11,
-            height: 74,
+            height: 71,
             padding: "0 22px",
             background: "transparent",
             border: "none",
@@ -93,11 +117,25 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
             flexShrink: 0,
           }}
         >
-          <img
-            src="/logo.png"
-            alt="AIFAGen"
-            style={{ height: 32, width: 32, objectFit: "contain" }}
-          />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              background: `linear-gradient(135deg,${C.brand},${C.brandLight})`,
+              boxShadow: "0 8px 18px -8px rgba(109,74,255,.55)",
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src="/logo.png"
+              alt="AIFAGen"
+              style={{ height: 22, width: 22, objectFit: "contain", filter: "invert(1)" }}
+            />
+          </div>
           <span
             style={{
               fontFamily: C.display,
@@ -156,14 +194,17 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                   alignItems: "center",
                   gap: 12,
                   width: "100%",
-                  padding: "11px 12px",
+                  padding: "11px 16px",
                   border: "none",
-                  borderRadius: 12,
-                  background: active ? C.ink : "transparent",
-                  color: active ? C.page : C.body,
+                  borderRadius: 999,
+                  background: active
+                    ? `linear-gradient(135deg,${C.brand},${C.brandLight})`
+                    : "transparent",
+                  color: active ? "#fff" : C.body,
                   fontSize: 14,
                   fontWeight: active ? 700 : 600,
                   cursor: "pointer",
+                  boxShadow: active ? "0 10px 22px -10px rgba(109,74,255,.55)" : "none",
                 }}
               >
                 <span
@@ -172,7 +213,8 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                     height: 7,
                     borderRadius: "50%",
                     flexShrink: 0,
-                    background: active ? C.brand : C.lineMid,
+                    background: active ? "#fff" : C.lineMid,
+                    boxShadow: active ? "0 0 8px #fff" : "none",
                     transition: "background .2s",
                   }}
                 />
@@ -182,7 +224,7 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                     fontFamily: C.mono,
                     fontSize: 10.5,
                     fontWeight: 700,
-                    color: active ? "#A8B3C4" : C.faint,
+                    color: active ? "rgba(255,255,255,.85)" : C.faint,
                   }}
                 >
                   {count == null || count === 0 ? "" : count}
@@ -207,10 +249,10 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
               alignItems: "center",
               gap: 12,
               width: "100%",
-              padding: "11px 12px",
+              padding: "11px 16px",
               background: "transparent",
               border: "none",
-              borderRadius: 12,
+              borderRadius: 999,
               fontSize: 14,
               fontWeight: 600,
               color: C.muted,
@@ -234,7 +276,7 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
             plan management already live there, so a dropdown that only ever
             offered "Profile & settings" as one of three options was a step
             most people didn't need. */}
-        <div style={{ padding: "0 14px 14px", flexShrink: 0 }}>
+        <div style={{ position: "relative", padding: "0 14px 14px", flexShrink: 0 }}>
           <button
             className="v3-softbtn"
             onClick={() => {
@@ -246,7 +288,7 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
               display: "flex",
               alignItems: "center",
               gap: 11,
-              background: "transparent",
+              background: "#fff",
               border: `1px solid ${C.line}`,
               borderRadius: 14,
               padding: 10,
@@ -259,7 +301,10 @@ export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {
                 width: 34,
                 height: 34,
                 borderRadius: 10,
-                background: profile?.avatar_url ? C.page : C.brand,
+                background: profile?.avatar_url
+                  ? C.page
+                  : `linear-gradient(135deg,${C.brand},${C.brandLight})`,
+                boxShadow: profile?.avatar_url ? "none" : "0 6px 14px -6px rgba(109,74,255,.6)",
                 color: C.page,
                 display: "flex",
                 alignItems: "center",

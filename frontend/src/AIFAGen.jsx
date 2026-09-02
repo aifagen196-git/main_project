@@ -126,6 +126,7 @@ const CSS = `
 @keyframes auroraA{0%,100%{transform:translate(0,0) scale(1);opacity:.5}50%{transform:translate(6%,-8%) scale(1.18);opacity:.85}}
 @keyframes auroraB{0%,100%{transform:translate(0,0) scale(1.1);opacity:.45}50%{transform:translate(-7%,6%) scale(.92);opacity:.75}}
 @keyframes lineDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes kenBurns{from{transform:scale(1.06) translate(0,0)}to{transform:scale(1.14) translate(-1.5%,-1%)}}
 @keyframes cardFlip{0%{opacity:0;transform:perspective(900px) rotateY(-100deg)}60%{opacity:1}100%{opacity:1;transform:perspective(900px) rotateY(0)}}
 
 .v3-navlink{transition:color .18s}
@@ -134,6 +135,15 @@ const CSS = `
 .v3-btn-outline:hover{background:#fff;border-color:#0F172A}
 .v3-btn-dark{transition:transform .2s cubic-bezier(.2,.7,.2,1),background .2s}
 .v3-btn-dark:hover{background:#6D4AFF;transform:translateY(-2px)}
+.v3-join-cta:hover{background:#6D4AFF!important;transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(109,74,255,.6)!important}
+.v3-pulse-dot{animation:v3PulseDot 2s ease-in-out infinite}
+@keyframes v3PulseDot{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.55)}50%{box-shadow:0 0 0 5px rgba(37,211,102,0)}}
+.v3-step-card{transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .35s,background .35s}
+.v3-step-card:hover{transform:translateY(-6px);border-color:rgba(109,74,255,.5);background:rgba(255,255,255,.05)}
+.v3-step-card:hover .v3-step-chip{transform:scale(1.12) rotate(-6deg)}
+.v3-step-card:hover .v3-step-line{transform:scaleX(1)}
+.v3-step-chip{transition:transform .4s cubic-bezier(.34,1.4,.4,1)}
+.v3-step-line{transform-origin:left;transform:scaleX(.35);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .v3-btn-hero::after{content:'';position:absolute;top:0;bottom:0;left:0;width:70px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:sheen 3.4s cubic-bezier(.3,.6,.3,1) 1.4s infinite}
 .v3-btn-light{transition:transform .2s cubic-bezier(.2,.7,.2,1)}
 .v3-btn-light:hover{transform:translateY(-2px)}
@@ -142,6 +152,10 @@ const CSS = `
 .v3-feedrow{transition:background .2s}
 .v3-feedrow:hover{background:#F6F8FF}
 [data-feature-card]:hover [data-feature-flip]{transform:rotateY(180deg)}
+.v3-feature-card{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}
+.v3-feature-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px -22px rgba(15,23,42,.28)}
+.v3-stat-card{transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+.v3-stat-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px -20px rgba(15,23,42,.3)}
 @media (prefers-reduced-motion:reduce){
   [data-feature-flip]{transition:none!important}
 }
@@ -185,8 +199,9 @@ const CSS = `
 @keyframes shimmer{0%{background-position:-460px 0}100%{background-position:460px 0}}
 @keyframes barGrow{from{transform:scaleY(.06)}to{transform:scaleY(1)}}
 
-/* Dashboard grids. Stats stay two-up, the main row splits to a wide primary
-   column plus a rail at 1180px, and suggestions go 1 → 2 → 3 across. */
+/* Dashboard grids. Stats stay two-up, the main row is a single full-width
+   column now that its Pipeline rail card is gone, and suggestions go
+   1 → 2 → 3 across. */
 [data-dashgrid]{display:grid;gap:16px;min-width:0}
 /* Two stat cards (Job Matches, Saved Jobs) — auto-fit keeps them side by side
    wherever there's room and drops to one column when there isn't, without
@@ -199,7 +214,6 @@ const CSS = `
   [data-dashgrid="sugg"] > *:last-child{grid-column:1 / -1}
 }
 @media (min-width:1180px){
-  [data-dashgrid="main"]{grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr)}
   [data-dashgrid="sugg"]{grid-template-columns:repeat(3,minmax(0,1fr))}
   [data-dashgrid="sugg"] > *:last-child{grid-column:auto}
 }
@@ -783,6 +797,28 @@ function MarketingNav({ enter }) {
             flexShrink: 0,
           }}
         >
+          <a
+            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen.I%20would%20like%20to%20connect%3F"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="v3-narrowhide"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: "#25D366",
+              borderRadius: 11,
+              padding: "10px 16px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#fff",
+              whiteSpace: "nowrap",
+              textDecoration: "none",
+            }}
+          >
+            <MessageSquare size={15} />
+            Let's Connect
+          </a>
           <button
             onClick={enter}
             className="v3-btn-outline"
@@ -799,23 +835,6 @@ function MarketingNav({ enter }) {
             }}
           >
             Login
-          </button>
-          <button
-            onClick={enter}
-            className="v3-btn-dark"
-            style={{
-              background: V3.ink,
-              border: "none",
-              borderRadius: 11,
-              padding: "11px 19px",
-              fontSize: 14,
-              fontWeight: 700,
-              color: V3.page,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Get your career plan
           </button>
           <button
             className="v3-burger"
@@ -869,6 +888,27 @@ function MarketingNav({ enter }) {
               {label}
             </a>
           ))}
+          <a
+            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen.I%20would%20like%20to%20connect%3F"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              marginTop: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "12px 6px",
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#fff",
+              background: "#25D366",
+            }}
+          >
+            <MessageSquare size={16} />
+            Let's Connect
+          </a>
         </nav>
       )}
     </header>
@@ -1137,22 +1177,6 @@ function Marketing({ enter, go }) {
   const stepsRef = useRevealChildren("stagger");
   const faqRef = useRevealChildren("stagger");
 
-  const FOOTER_ROUTES = {
-    "About Us": "about",
-    "Innovation Labs": "innovation",
-    "Case Studies": "caseStudies",
-    Careers: "caseStudies",
-    Services: "services",
-    Products: "products",
-    "AIFAG Suite": "products",
-    LifeOS: "products",
-    Contact: "contact",
-    Collaborate: "collaborate",
-    Partners: "partners",
-    "Privacy Policy": "privacy",
-    "Terms & Conditions": "terms",
-  };
-
   // Interview Preparation was removed — no such feature exists in the
   // product (the page that once showed it was fabricated data and was
   // deleted outright earlier). Application Tracking replaces it, describing
@@ -1166,16 +1190,10 @@ function Marketing({ enter, go }) {
   ];
 
   const STEP_CARDS = [
-    { t: "Create Your Profile", d: "Add your experience and career preferences." },
-    { t: "AI Finds Best Matches", d: "We scan thousands of jobs to find the perfect ones for you." },
-    { t: "Optimize & Apply", d: "AI optimizes your resume and creates tailored applications." },
-    { t: "Get Interviews", d: "Stand out, get noticed, and land more interviews." },
-  ];
-
-  const FOOTER_COLS = [
-    { title: "Company", links: ["About Us", "Innovation Labs", "Case Studies", "Careers"] },
-    { title: "Solutions", links: ["Services", "Products", "AIFAG Suite", "LifeOS"] },
-    { title: "Connect", links: ["Contact", "Collaborate", "Partners", "Privacy Policy", "Terms & Conditions"] },
+    { t: "Create Your Profile", d: "Add your experience and career preferences.", icon: Upload },
+    { t: "AI Finds Best Matches", d: "We scan thousands of jobs to find the perfect ones for you.", icon: Search },
+    { t: "Optimize & Apply", d: "AI optimizes your resume and creates tailored applications.", icon: Wand2 },
+    { t: "Get Interviews", d: "Stand out, get noticed, and land more interviews.", icon: Mic },
   ];
 
   const h2Style = {
@@ -1318,7 +1336,14 @@ function Marketing({ enter, go }) {
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 32 }}>
               <button
-                onClick={enter}
+                onClick={() => {
+                  const el = document.getElementById("pricing");
+                  if (!el) return;
+                  window.scrollTo({
+                    top: el.getBoundingClientRect().top + window.scrollY - 74,
+                    behavior: "smooth",
+                  });
+                }}
                 className="v3-btn-dark v3-btn-hero"
                 style={{
                   position: "relative",
@@ -1458,44 +1483,58 @@ function Marketing({ enter, go }) {
       </div>
 
       {/* ---------------- FEATURES ---------------- */}
+      {/* Full-bleed tinted band (not just a constrained blob inside a white
+          box) — deliberately more saturated than the hero's own aurora, so
+          this section actually reads as "a different, colorful place" while
+          scrolling instead of a white gap between two dark sections. */}
       <section
         id="features"
         style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "clamp(56px,7vw,96px) 24px",
+          position: "relative",
+          overflow: "hidden",
+          background:
+            "radial-gradient(1100px 520px at 85% -8%,rgba(109,74,255,.16),transparent 60%),radial-gradient(900px 460px at 5% 105%,rgba(245,158,11,.14),transparent 60%),linear-gradient(180deg,#F8F9FE 0%,#F3F1FF 100%)",
         }}
       >
-        <div style={{ maxWidth: "34em" }}>
-          <span style={v3Kicker(V3.brand)}>Powered by AI. Built for you.</span>
-          <h2 style={{ ...h2Style, color: V3.ink }}>
-            Everything you need to stand out and land your dream role.
-          </h2>
-        </div>
         <div
-          ref={featuresRef}
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(238px,1fr))",
-            gap: 1,
-            marginTop: 52,
-            background: V3.line,
-            border: `1px solid ${V3.line}`,
-            borderRadius: 20,
-            overflow: "hidden",
-            perspective: 1200,
+            position: "relative",
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(56px,7vw,96px) 24px",
           }}
         >
+          <div style={{ maxWidth: "34em" }}>
+            <span style={v3Kicker(V3.brand)}>Powered by AI. Built for you.</span>
+            <h2 style={{ ...h2Style, color: V3.ink }}>
+              Everything you need to stand out and land your dream role.
+            </h2>
+          </div>
+          <div
+            ref={featuresRef}
+            style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(238px,1fr))",
+              gap: 20,
+              marginTop: 52,
+              perspective: 1200,
+            }}
+          >
           {FEATURE_CARDS.map((f, i) => {
             const Icon = f.icon;
             return (
               <div
                 key={f.t}
                 data-feature-card="1"
+                className="v3-feature-card"
                 style={{
                   position: "relative",
                   overflow: "hidden",
-                  background: "#fff",
+                  background: `radial-gradient(ellipse at top left,${f.color}14,transparent 60%),#fff`,
+                  border: `1px solid ${V3.line}`,
+                  borderRadius: 22,
+                  boxShadow: "0 1px 2px rgba(15,23,42,.04)",
                   height: 300,
                   perspective: 1400,
                 }}
@@ -1525,32 +1564,56 @@ function Marketing({ enter, go }) {
                       padding: "38px 32px 42px",
                     }}
                   >
+                    {/* Corner ribbon in the card's own accent color — a
+                        visual "there's more here" cue that replaces the old
+                        "Hover to read more" caption, no text needed. */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        width: 64,
+                        height: 64,
+                        background: `linear-gradient(135deg,transparent 50%,${f.color}26 50%)`,
+                        pointerEvents: "none",
+                      }}
+                    />
                     <div
                       style={{
-                        fontFamily: V3.mono,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: V3.faint,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      {String(i + 1).padStart(2, "0")}
+                      <span
+                        style={{
+                          fontFamily: V3.mono,
+                          fontSize: 30,
+                          fontWeight: 700,
+                          color: `${f.color}33`,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
                     </div>
                     <div
                       data-feature-chip="1"
                       style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 13,
-                        marginTop: 24,
+                        width: 54,
+                        height: 54,
+                        borderRadius: 15,
+                        marginTop: 18,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         transition: "transform .5s cubic-bezier(.34,1.4,.4,1)",
                         background: f.color,
-                        opacity: 0.92,
+                        boxShadow: `0 10px 22px -10px ${f.color}99`,
                       }}
                     >
-                      <Icon size={22} color="#fff" strokeWidth={2} />
+                      <Icon size={24} color="#fff" strokeWidth={2} />
                     </div>
                     <h3
                       style={{
@@ -1558,7 +1621,7 @@ function Marketing({ enter, go }) {
                         fontSize: 23,
                         fontWeight: 700,
                         letterSpacing: "-.02em",
-                        margin: "24px 0 0",
+                        margin: "22px 0 0",
                         color: V3.ink,
                       }}
                     >
@@ -1566,17 +1629,19 @@ function Marketing({ enter, go }) {
                     </h3>
                     <span
                       style={{
-                        display: "block",
-                        marginTop: 16,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: 14,
                         fontFamily: V3.mono,
                         fontSize: 11,
                         fontWeight: 700,
-                        letterSpacing: ".1em",
+                        letterSpacing: ".08em",
                         textTransform: "uppercase",
-                        color: V3.faint,
+                        color: f.color,
                       }}
                     >
-                      Hover to read more
+                      Explore <ArrowRight size={13} />
                     </span>
                   </div>
 
@@ -1588,7 +1653,7 @@ function Marketing({ enter, go }) {
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
                       transform: "rotateY(180deg)",
-                      background: f.color,
+                      background: `radial-gradient(ellipse at top left,rgba(255,255,255,.22),transparent 60%),${f.color}`,
                       padding: "38px 32px 42px",
                       display: "flex",
                       flexDirection: "column",
@@ -1622,6 +1687,7 @@ function Marketing({ enter, go }) {
               </div>
             );
           })}
+          </div>
         </div>
       </section>
 
@@ -1684,54 +1750,366 @@ function Marketing({ enter, go }) {
               marginTop: 56,
             }}
           >
-            {STEP_CARDS.map((s, i) => (
-              <div key={s.t}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                  <span
+            {STEP_CARDS.map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <div key={s.t} style={{ position: "relative" }}>
+                  <div
+                    className="v3-step-card"
                     style={{
-                      fontFamily: V3.mono,
-                      fontSize: 40,
-                      fontWeight: 700,
-                      color: V3.page,
-                      lineHeight: 1,
+                      position: "relative",
+                      height: "100%",
+                      borderRadius: 20,
+                      border: "1px solid rgba(255,255,255,.10)",
+                      background: "rgba(255,255,255,.025)",
+                      padding: "28px 26px 30px",
+                      animation: `riseIn .7s cubic-bezier(.2,.7,.2,1) ${i * 0.08}s both`,
                     }}
                   >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span
-                    style={{
-                      flex: 1,
-                      height: 1,
-                      background: `linear-gradient(90deg,${V3.brand},#1E293B)`,
-                      transformOrigin: "left",
-                      animation: "lineDraw 1.1s cubic-bezier(.2,.7,.2,1) both",
-                    }}
-                  />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div
+                        className="v3-step-chip"
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 14,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: `${V3.brand}1f`,
+                          border: `1px solid ${V3.brand}4d`,
+                        }}
+                      >
+                        <Icon size={24} color={V3.brand} strokeWidth={2} />
+                      </div>
+                      <span
+                        style={{
+                          fontFamily: V3.mono,
+                          fontSize: 34,
+                          fontWeight: 700,
+                          color: "rgba(255,255,255,.14)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+
+                    <span
+                      className="v3-step-line"
+                      style={{
+                        display: "block",
+                        height: 2,
+                        marginTop: 22,
+                        borderRadius: 2,
+                        background: `linear-gradient(90deg,${V3.brand},transparent)`,
+                      }}
+                    />
+
+                    <h3
+                      style={{
+                        fontFamily: V3.display,
+                        fontSize: 19,
+                        fontWeight: 700,
+                        letterSpacing: "-.02em",
+                        margin: "18px 0 0",
+                      }}
+                    >
+                      {s.t}
+                    </h3>
+                    <p
+                      style={{
+                        margin: "9px 0 0",
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        color: V3.faint,
+                      }}
+                    >
+                      {s.d}
+                    </p>
+                  </div>
+
+                  {i < STEP_CARDS.length - 1 && (
+                    <div
+                      aria-hidden="true"
+                      className="v3-narrowhide"
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        right: -26,
+                        transform: "translateY(-50%)",
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        background: V3.ink,
+                        border: "1px solid rgba(255,255,255,.14)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1,
+                      }}
+                    >
+                      <ChevronRight size={14} color="rgba(255,255,255,.5)" />
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- PRICING ----------------
+          UI only for now — buttons don't charge anything yet. The real
+          checkout flow (Razorpay) already exists for the separate AI SaaS
+          subscription in pages/Pricing.jsx (utils/plan.js's PRICING_CARDS:
+          Basic $210/mo or $1,299/6mo, Premium $2,499/6mo) — these are a
+          DIFFERENT, done-for-you service (job application/interview
+          support) at different price points, not a replacement for that
+          one. Do not wire this to the same Razorpay flow without also
+          reconciling which product these three cards actually are. */}
+      <section
+        id="pricing"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          background:
+            "radial-gradient(1000px 480px at 50% -10%,rgba(109,74,255,.16),transparent 62%),#fff",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(56px,7vw,96px) 24px 0",
+          }}
+        >
+        <div style={{ position: "relative", textAlign: "center", maxWidth: 640, margin: "0 auto" }}>
+          <div
+            style={{
+              fontFamily: V3.mono,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: V3.faint,
+            }}
+          >
+            Pricing
+          </div>
+          <h2 style={h2Style}>Job marketing &amp; interview support</h2>
+          <p
+            style={{
+              margin: "14px 0 0",
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: V3.body,
+            }}
+          >
+            Hands-on help getting your applications, resume, and interviews
+            in front of the right people — pick the level of support that
+            fits where you are.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
+            gap: 20,
+            marginTop: 40,
+            alignItems: "start",
+          }}
+        >
+          {[
+            {
+              name: "Monthly",
+              periodTag: "Per month",
+              price: "189",
+              tagline: "Ongoing support while you're actively job hunting.",
+              popular: false,
+              features: [
+                "Targeted job applications",
+                "Resume review & optimization",
+                "Personalized career suggestions",
+              ],
+            },
+            {
+              name: "Basic",
+              periodTag: "One-time",
+              price: "1,299",
+              tagline: "Job Marketing Program — a full application push.",
+              popular: false,
+              features: [
+                "50+ targeted job applications every day",
+                "Resume drafting & optimization using 70-80 real job descriptions",
+                "ATS-optimized custom cover letter",
+                "Recruiter outreach across top U.S. job boards",
+                "Mock interview sessions with structured feedback",
+                "Dedicated marketing manager for your profile",
+                "Ongoing resume and keyword optimization based on market response",
+              ],
+            },
+            {
+              name: "Standard",
+              periodTag: "One-time",
+              price: "2,499",
+              tagline: "Acceleration Program — everything in Basic, plus interview prep.",
+              popular: true,
+              featuresIntro: "Includes everything in Basic, plus:",
+              features: [
+                "Provision of offer letter for OPT",
+                "Advanced resume crafting tailored to 70-80 targeted job descriptions",
+                "Customized cover letters specific to each role",
+                "Background Verification (BGV) support",
+                "Proxy interview support sessions",
+                "Evaluation calls with expert hiring mentors",
+                "LinkedIn optimization and portfolio website building",
+                "Advanced interview training with performance feedback",
+              ],
+            },
+          ].map((p) => (
+            <div
+              key={p.name}
+              style={{
+                position: "relative",
+                background: "#fff",
+                border: `1.5px solid ${p.popular ? V3.brand : V3.line}`,
+                boxShadow: p.popular
+                  ? "0 24px 54px -28px rgba(109,74,255,.4)"
+                  : "0 1px 2px rgba(15,23,42,.04)",
+                borderRadius: 20,
+                padding: 28,
+              }}
+            >
+              {p.popular && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -13,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: V3.brand,
+                    color: "#fff",
+                    borderRadius: 20,
+                    padding: "5px 13px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Most popular
+                </span>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
                 <h3
                   style={{
                     fontFamily: V3.display,
                     fontSize: 19,
                     fontWeight: 700,
                     letterSpacing: "-.02em",
-                    margin: "22px 0 0",
+                    margin: 0,
+                    color: V3.ink,
                   }}
                 >
-                  {s.t}
+                  {p.name}
                 </h3>
-                <p
+                <span
                   style={{
-                    margin: "9px 0 0",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: V3.faint,
+                    fontFamily: V3.mono,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: ".08em",
+                    textTransform: "uppercase",
+                    color: V3.muted,
+                    background: V3.page,
+                    border: `1px solid ${V3.line}`,
+                    borderRadius: 20,
+                    padding: "3px 9px",
                   }}
                 >
-                  {s.d}
-                </p>
+                  {p.periodTag}
+                </span>
               </div>
-            ))}
-          </div>
+
+              <p
+                style={{
+                  margin: "7px 0 0",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: V3.muted,
+                  minHeight: "2.6em",
+                }}
+              >
+                {p.tagline}
+              </p>
+
+              <div
+                style={{
+                  fontFamily: V3.mono,
+                  fontSize: 36,
+                  fontWeight: 700,
+                  letterSpacing: "-.03em",
+                  color: V3.ink,
+                  lineHeight: 1,
+                  marginTop: 14,
+                }}
+              >
+                ${p.price}
+              </div>
+
+              <button
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  width: "100%",
+                  marginTop: 20,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  background: p.popular ? V3.brand : "#fff",
+                  border: `1px solid ${p.popular ? V3.brand : V3.lineMid}`,
+                  borderRadius: 12,
+                  padding: 13,
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  fontFamily: "inherit",
+                  color: p.popular ? "#fff" : V3.ink,
+                  cursor: "pointer",
+                }}
+              >
+                Get Started
+              </button>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
+                {p.featuresIntro && (
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: V3.ink }}>
+                    {p.featuresIntro}
+                  </div>
+                )}
+                {p.features.map((f) => (
+                  <div key={f} style={{ display: "flex", gap: 10, fontSize: 13, color: V3.body }}>
+                    <Check size={16} style={{ color: V3.brand, flexShrink: 0, marginTop: 1 }} />
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p
+          style={{
+            textAlign: "center",
+            marginTop: 24,
+            fontSize: 13,
+            color: V3.faint,
+          }}
+        >
+          Split payments accepted for Basic and Standard packages.
+        </p>
         </div>
       </section>
 
@@ -1888,85 +2266,227 @@ function Marketing({ enter, go }) {
             Get Your Career Plan <span style={{ fontSize: 17 }}>→</span>
           </button>
         </div>
-      </section>
 
-      {/* ---------------- FOOTER ---------------- */}
-      <footer style={{ background: "#fff", borderTop: `1px solid ${V3.line}` }}>
         <div
           style={{
-            maxWidth: 1180,
-            margin: "0 auto",
-            padding: "44px 24px",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
-            gap: 36,
+            marginTop: 24,
+            borderRadius: 24,
+            padding: "clamp(30px,4vw,44px)",
+            textAlign: "center",
+            background:
+              "radial-gradient(ellipse at top,rgba(109,74,255,.08),transparent 65%),#F8F9FE",
+            border: `1px solid ${V3.line}`,
           }}
         >
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img
-                src="/logo.png"
-                alt="AIFAGen Labs"
-                style={{ height: 32, width: 32, objectFit: "contain" }}
-              />
-              <span
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              margin: "0 auto 18px",
+              borderRadius: "50%",
+              background: "rgba(109,74,255,.10)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: V3.brand,
+              position: "relative",
+            }}
+          >
+            <MessageSquare size={26} />
+            {/* Small "live" indicator — honest signal that this is an active
+                space, without claiming a specific member count we don't have
+                a real number for. */}
+            <span
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                background: V3.brand,
+                border: `2px solid ${V3.page}`,
+              }}
+              className="v3-pulse-dot"
+            />
+          </div>
+
+          <h3
+            style={{
+              fontFamily: V3.display,
+              fontSize: "clamp(22px,2.6vw,28px)",
+              lineHeight: 1.15,
+              letterSpacing: "-.03em",
+              fontWeight: 700,
+              margin: 0,
+              color: V3.ink,
+            }}
+          >
+            Join Our Job Seeker Community
+          </h3>
+          <p
+            style={{
+              margin: "10px auto 0",
+              fontSize: 15.5,
+              lineHeight: 1.6,
+              color: V3.body,
+              maxWidth: "34em",
+            }}
+          >
+            A dedicated space for people on the same job hunt as you —
+            not a broadcast channel, an actual community.
+          </p>
+
+          {/* Three scannable value props instead of burying them in the
+              paragraph above — each is a concrete reason to join, not a
+              vague promise. */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "10px 14px",
+              marginTop: 22,
+            }}
+          >
+            {[
+              [Bell, "Real-time job alerts"],
+              [Sparkles, "Career & resume tips"],
+              [HelpCircle, "Ask questions anytime"],
+            ].map(([Icon, label], i) => (
+              <div
+                key={i}
                 style={{
-                  fontFamily: V3.display,
-                  fontSize: 18,
-                  fontWeight: 700,
-                  letterSpacing: "-.02em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "9px 16px",
+                  borderRadius: 999,
+                  background: "#fff",
+                  border: `1px solid ${V3.line}`,
+                  fontSize: 13.5,
+                  fontWeight: 600,
                   color: V3.ink,
                 }}
               >
-                AIFAGen <span style={{ color: V3.brand }}>Labs</span>
+                <Icon size={15} style={{ color: V3.brand }} />
+                {label}
+              </div>
+            ))}
+          </div>
+
+          <a
+            href="https://chat.whatsapp.com/GjUoKpDEyM415A9WFzuXGP"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 26,
+              background: V3.brand,
+              borderRadius: 13,
+              padding: "16px 28px",
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#fff",
+              textDecoration: "none",
+              boxShadow: "0 10px 24px -12px rgba(109,74,255,.45)",
+              transition: "transform .18s,box-shadow .18s",
+            }}
+            className="v3-join-cta"
+          >
+            <MessageSquare size={18} />
+            Join the Community
+          </a>
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: 12.5,
+              color: V3.faint,
+            }}
+          >
+            No spam, ever
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- FOOTER ---------------- */}
+      <footer className="relative bg-slate-900 overflow-hidden">
+        <div className="h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-64 w-[36rem] rounded-full bg-brand-500/25 blur-3xl"
+        />
+
+        {/* Main columns */}
+        <div className="relative max-w-6xl mx-auto px-5 py-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-500/30">
+                <img src="/logo.png" alt="AIFAGen Labs" className="h-6 w-6 invert" />
+              </div>
+              <span className="font-display text-lg font-extrabold text-white">
+                AIFAGen <span className="text-brand-400">Labs</span>
               </span>
             </div>
-            <p
-              style={{
-                margin: "14px 0 0",
-                fontSize: 13.5,
-                lineHeight: 1.6,
-                color: V3.muted,
-                maxWidth: "24em",
-              }}
-            >
+            <p className="text-sm text-slate-400 mt-4 max-w-xs leading-relaxed">
               Building Intelligent Ecosystems for the Future. AI for All
               Generations.
             </p>
+            <div className="flex items-center gap-2.5 mt-5">
+              {[
+                [Linkedin, "LinkedIn", "https://www.linkedin.com/company/aifagenlabs/"],
+                [Twitter, "Twitter", "https://x.com/aifagenlabs"],
+                [Instagram, "Instagram", "https://www.instagram.com/aifagen_labs?igsh=Y3hqcWJoZWgxMDU0"],
+                [Mail, "Email", "mailto:pmo@aifagenlabs.com"],
+              ].map(([Icon, label, href], i) => (
+                <a
+                  key={i}
+                  href={href}
+                  aria-label={label}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                  onClick={href === "#" ? (e) => e.preventDefault() : undefined}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-brand-500 hover:text-white hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200"
+                >
+                  <Icon size={16} />
+                </a>
+              ))}
+            </div>
           </div>
 
-          {FOOTER_COLS.map((col) => (
-            <div key={col.title}>
-              <div
-                style={{
-                  ...v3Kicker(V3.faint),
-                  letterSpacing: ".14em",
-                }}
-              >
-                {col.title}
+          {[
+            ["Company", ["About Us", "Careers", "Collaborate", "Terms & Conditions"]],
+            ["Connect", ["Services", "Partners", "Privacy Policy", "Contact"]],
+          ].map((col, i) => (
+            <div key={i}>
+              <div className="font-bold text-white text-sm">
+                {col[0]}
+                <span className="block mt-2 h-0.5 w-6 rounded-full bg-brand-500" />
               </div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  margin: "16px 0 0",
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                {col.links.map((l) => (
+              <ul className="mt-4 space-y-2.5">
+                {col[1].map((l) => (
                   <li key={l}>
                     <a
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        const p = FOOTER_ROUTES[l];
-                        if (p) go?.(p);
+                        const routes = {
+                          "About Us": "about",
+                          "Careers": "caseStudies",
+                          "Services": "services",
+                          "Contact": "contact",
+                          "Collaborate": "collaborate",
+                          "Partners": "partners",
+                          "Privacy Policy": "privacy",
+                          "Terms & Conditions": "terms",
+                        };
+                        if (routes[l]) go?.(routes[l]);
                       }}
-                      className="v3-footlink"
-                      style={{ fontSize: 13.5, color: V3.body }}
+                      className="group inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-brand-300 transition-colors"
                     >
+                      <span className="h-1 w-1 rounded-full bg-brand-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                       {l}
                     </a>
                   </li>
@@ -1976,31 +2496,40 @@ function Marketing({ enter, go }) {
           ))}
         </div>
 
-        <div style={{ borderTop: `1px solid ${V3.line}` }}>
-          <div
-            style={{
-              maxWidth: 1180,
-              margin: "0 auto",
-              padding: "20px 24px",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "12px 26px",
-              fontSize: 13,
-              color: V3.muted,
-            }}
-          >
-            <span>Global Operations</span>
-            <a href="mailto:pmo@aifagenlabs.com" className="v3-footlink" style={{ color: V3.muted }}>
-              pmo@aifagenlabs.com
-            </a>
-            <a href="tel:+14752240417" className="v3-footlink" style={{ color: V3.muted }}>
-              +1 (475) 224-0417
-            </a>
-            <span>Hyderabad, India</span>
-            <span>USA: New Jersey</span>
-            <span style={{ marginLeft: "auto", color: V3.faint }}>
+        {/* Contact + locations bar */}
+        <div className="relative border-t border-white/10 bg-black/20">
+          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <Globe size={13} className="text-brand-400" />
+                Global Operations
+              </span>
+              <a
+                href="mailto:pmo@aifagenlabs.com"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
+              >
+                <Mail size={13} className="text-brand-400" />
+                pmo@aifagenlabs.com
+              </a>
+              <a
+                href="tel:+14752240417"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
+              >
+                <Phone size={13} className="text-brand-400" />
+                +1 (475) 224-0417
+              </a>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <MapPin size={13} className="text-brand-400" />
+                Hyderabad, India
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <MapPin size={13} className="text-brand-400" />
+                USA: New Jersey
+              </span>
+            </div>
+            <div className="text-xs text-slate-500 lg:ml-auto">
               © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
-            </span>
+            </div>
           </div>
         </div>
       </footer>

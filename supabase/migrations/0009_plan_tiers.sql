@@ -71,5 +71,21 @@ grant execute on function public.consume_ai_usage(uuid) to service_role;
 -- than dropped: any account that used it while the free tier was live still
 -- legitimately holds plan='free', and dropping the function wouldn't change
 -- that. It simply won't be called by anything going forward.
-comment on function public.activate_free_plan() is
-  'Unreachable from the current UI as of 0009_plan_tiers.sql — Pricing.jsx has no free-plan option. Kept for accounts that already hold plan=''free''.';
+--
+-- Guarded: on a database where 0001_subscriptions.sql's version of this
+-- function was never applied (activate_free_plan() doesn't exist here),
+-- COMMENT ON FUNCTION errors out and — since the SQL editor runs a pasted
+-- script as one transaction — silently rolls back everything above it too,
+-- including the consume_ai_usage() update this migration exists for. Only
+-- comment if the function is actually there.
+do $$
+begin
+  if exists (
+    select 1 from pg_proc
+    where proname = 'activate_free_plan'
+      and pronamespace = 'public'::regnamespace
+  ) then
+    comment on function public.activate_free_plan() is
+      'Unreachable from the current UI as of 0009_plan_tiers.sql — Pricing.jsx has no free-plan option. Kept for accounts that already hold plan=''free''.';
+  end if;
+end $$;

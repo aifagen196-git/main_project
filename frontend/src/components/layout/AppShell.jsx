@@ -5,10 +5,10 @@ import { Loader2 } from "lucide-react";
 import Sidebar from "./Sidebar";
 
 import JobMatches from "../../pages/JobMatches";
+import InternalJobs from "../../pages/InternalJobs";
 import Applications from "../../pages/Applications";
 import Resume from "../../pages/Resume";
 import SavedJobs from "../../pages/SavedJobs";
-import InternalJobs from "../../pages/InternalJobs";
 
 // Recharts-heavy pages — lazy-loaded so recharts is split out of the main bundle.
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
@@ -46,7 +46,14 @@ export default function AppShell({ profile, refresh, exit }) {
   const plan = profile?.plan || "none";
 
   return (
-    <div className="font-body" style={{ background: "#F8F9FE", color: "#0F172A" }}>
+    <div
+      className="font-body"
+      style={{
+        background:
+          "radial-gradient(1200px 600px at 100% -10%,rgba(109,74,255,.07),transparent 55%),radial-gradient(900px 500px at 0% 110%,rgba(245,158,11,.05),transparent 55%),#F8F9FE",
+        color: "#0F172A",
+      }}
+    >
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <Sidebar
           open={open}
@@ -122,9 +129,9 @@ export default function AppShell({ profile, refresh, exit }) {
                   }
                 />
 
-                <Route path="/applications" element={<Applications />} />
-
                 <Route path="/internal-jobs" element={<InternalJobs />} />
+
+                <Route path="/applications" element={<Applications />} />
 
                 <Route
                   path="/resume"

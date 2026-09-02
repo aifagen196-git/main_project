@@ -40,6 +40,71 @@ const fieldInput = {
   transition: "border-color .2s,box-shadow .2s",
 };
 
+/* Same scrolling-strip technique as the marketing page's "Candidates placed
+   at" company marquee (AIFAGen.jsx, PLACED_AT): a doubled array animated
+   with the existing `marquee` keyframe for a seamless loop, edge-faded with
+   a mask so nothing hard-cuts at the panel border.
+   No actual logo image files exist anywhere in this project, and using
+   another company's trademarked logo image without verified permission is
+   a different, bigger risk than a stock photo — so this reuses the exact
+   company list the marketing Hero already trusts (PLACED_AT), styled as
+   bold text wordmarks, the standard "trusted by" treatment when you don't
+   have official logo assets to drop in. */
+
+// Same list as AIFAGen.jsx's PLACED_AT — kept as a local copy since that
+// file only exports its default component, not this constant.
+const COMPANIES = [
+  "Stripe", "Anthropic", "Vercel", "Notion", "Snowflake",
+  "Cloudflare", "Okta", "Spotify", "Atlassian",
+];
+
+function CompanyMarqueeRow({ duration, reverse, top }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top,
+        left: 0,
+        right: 0,
+        overflow: "hidden",
+        maskImage:
+          "linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)",
+        WebkitMaskImage:
+          "linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)",
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          width: "max-content",
+          gap: 48,
+          animation: `marquee ${duration} linear infinite`,
+          animationDirection: reverse ? "reverse" : "normal",
+        }}
+      >
+        {[...COMPANIES, ...COMPANIES].map((name, i) => (
+          <span
+            key={`${name}-${i}`}
+            style={{
+              fontFamily: C.display,
+              fontSize: 18,
+              fontWeight: 700,
+              letterSpacing: "-.02em",
+              color: "#fff",
+              opacity: 0.5,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
@@ -80,6 +145,8 @@ export default function AuthScreen({ onBack }) {
       {/* ---------------- LEFT PANEL ---------------- */}
       <div
         style={{
+          position: "relative",
+          overflow: "hidden",
           background: C.ink,
           color: C.page,
           padding: "clamp(32px,5vw,64px)",
@@ -89,6 +156,72 @@ export default function AuthScreen({ onBack }) {
           minHeight: 340,
         }}
       >
+        {/* Real looping video instead of a static photo or abstract/
+            illustrated treatment — a close-up business handshake over
+            documents, the universal "you got the job / deal closed" visual,
+            no identifiable face in frame, on-theme for a job-matching login
+            screen (Pexels License, free for commercial use, no attribution
+            required: "Closeup Video Of a Handshake" by Kampus Production,
+            https://www.pexels.com/video/closeup-video-of-a-handshake-8426051/).
+            SD (960x540) file is ~1.8MB — still light enough to autoplay
+            smoothly. `poster` is that same clip's own official thumbnail
+            (images.pexels.com) — shown while the video loads and as the
+            fallback if video playback fails (autoplay is blocked in some
+            browsers/embedded contexts). Dark gradient overlay on top keeps
+            text fully readable over the footage either way. */}
+        <video
+          aria-hidden="true"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="https://images.pexels.com/videos/8426051/pexels-photo-8426051.jpeg?auto=compress&w=1600&dpr=1"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center 35%",
+            pointerEvents: "none",
+          }}
+        >
+          <source
+            src="https://videos.pexels.com/video-files/8426052/8426052-sd_960_540_25fps.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg,rgba(15,23,42,.88) 0%,rgba(15,23,42,.72) 45%,rgba(15,23,42,.93) 100%)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* One brand-color glow for a touch of accent color over the photo. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "-20%",
+            left: "-10%",
+            width: "70%",
+            height: "120%",
+            background:
+              "radial-gradient(ellipse at center,rgba(109,74,255,.45),rgba(109,74,255,0) 65%)",
+            filter: "blur(30px)",
+            mixBlendMode: "screen",
+            animation: "auroraA 20s ease-in-out infinite",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* "Trusted by" company-name strip drifting past in the background. */}
+        <CompanyMarqueeRow duration="38s" top="80%" />
+
         <button
           onClick={onBack}
           style={{
@@ -103,10 +236,10 @@ export default function AuthScreen({ onBack }) {
         >
           <img
             src="/logo.png"
-            alt="AIFAGen"
+            alt="AIFAGen Labs"
             style={{
-              height: 32,
-              width: 32,
+              height: 48,
+              width: 48,
               objectFit: "contain",
               filter: "invert(1)",
             }}
@@ -114,13 +247,13 @@ export default function AuthScreen({ onBack }) {
           <span
             style={{
               fontFamily: C.display,
-              fontSize: 20,
+              fontSize: 26,
               fontWeight: 700,
               letterSpacing: "-.03em",
               color: C.page,
             }}
           >
-            AIFAGen
+            AIFAGen <span style={{ color: C.brand }}>Labs</span>
           </span>
         </button>
 

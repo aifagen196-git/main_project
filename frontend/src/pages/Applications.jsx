@@ -1,19 +1,18 @@
-import { useEffect, useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { matchHex } from "../utils/matchHex";
 import {
   getApplications,
   addApplication,
-  updateApplicationStatus,
   deleteApplication,
   APPLICATION_STATUSES,
 } from "../services/applications";
 
 /* Presentation is an exact port of the "AIFAGen v3" tracker screen. The status
-   dot and colour the spec computes per row are surfaced here alongside the
-   status control, since this page — unlike the mockup — actually manages
-   application state. */
+   dot and colour the spec computes per row are surfaced here as a read-only
+   label, since this page — unlike the mockup — actually manages application
+   state. */
 
 const A = {
   brand: "#6D4AFF",
@@ -48,6 +47,17 @@ function formatWhen(value) {
   });
 }
 
+/** Local (not UTC) YYYY-MM-DD key — grouping by the day the user actually
+ * sees on their calendar, not whatever day UTC midnight happens to fall on. */
+function dateKey(d) {
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export default function Applications() {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +67,10 @@ export default function Applications() {
   const [err, setErr] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [view, setView] = useState("list"); // "list" | "calendar"
+  const today = new Date();
+  const [calMonth, setCalMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState(dateKey(today));
 
   useEffect(() => {
     getApplications()
@@ -79,17 +93,6 @@ export default function Applications() {
       setErr(e.message);
     }
     setSaving(false);
-  }
-
-  async function moveStatus(id, status) {
-    const prev = apps;
-    setApps((a) => a.map((x) => (x.id === id ? { ...x, status } : x)));
-    try {
-      await updateApplicationStatus(id, status);
-    } catch (e) {
-      console.error(e);
-      setApps(prev);
-    }
   }
 
   async function remove(id) {
@@ -116,6 +119,42 @@ export default function Applications() {
       (a.role || "").toLowerCase().includes(term)
     );
   });
+
+  // Group every application by the local calendar day it was applied on
+  // (applied_at, already set server-side at insert time).
+  const appsByDate = useMemo(() => {
+    const map = {};
+    for (const a of apps) {
+      const raw = a.applied_at || a.created_at;
+      if (!raw) continue;
+      const key = dateKey(new Date(raw));
+      (map[key] ||= []).push(a);
+    }
+    return map;
+  }, [apps]);
+
+  const calGrid = useMemo(() => {
+    const year = calMonth.getFullYear();
+    const month = calMonth.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const startOffset = firstOfMonth.getDay(); // 0=Sun
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) {
+      cells.push({ date: new Date(year, month, i - startOffset + 1), inMonth: false });
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      cells.push({ date: new Date(year, month, day), inMonth: true });
+    }
+    while (cells.length % 7 !== 0) {
+      const last = cells[cells.length - 1].date;
+      cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), inMonth: false });
+    }
+    return cells;
+  }, [calMonth]);
+
+  const selectedApps = appsByDate[selectedDate] || [];
+  const todayKey = dateKey(today);
 
   const chipStyle = (active) => ({
     background: active ? A.ink : A.page,
@@ -194,7 +233,50 @@ export default function Applications() {
             A running list of everything you have applied to.
           </p>
         </div>
-        <button
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              background: A.page,
+              border: `1px solid ${A.line}`,
+              borderRadius: 12,
+              padding: 4,
+            }}
+          >
+            <button
+              onClick={() => setView("list")}
+              style={{
+                border: "none",
+                borderRadius: 9,
+                padding: "9px 14px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: view === "list" ? A.ink : "transparent",
+                color: view === "list" ? A.page : A.body,
+                transition: "background .18s, color .18s",
+              }}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setView("calendar")}
+              style={{
+                border: "none",
+                borderRadius: 9,
+                padding: "9px 14px",
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: view === "calendar" ? A.ink : "transparent",
+                color: view === "calendar" ? A.page : A.body,
+                transition: "background .18s, color .18s",
+              }}
+            >
+              Calendar
+            </button>
+          </div>
+          <button
           onClick={() => setShowAdd((v) => !v)}
           className="v3-btn-dark"
           style={{
@@ -212,7 +294,8 @@ export default function Applications() {
           }}
         >
           + Add application
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* ---------------- ADD FORM ---------------- */}
@@ -296,6 +379,8 @@ export default function Applications() {
         </form>
       )}
 
+      {view === "list" && (
+      <>
       {/* ---------------- COUNT ---------------- */}
       <div
         style={{
@@ -410,49 +495,7 @@ export default function Applications() {
         )}
       </div>
 
-      {/* ---------------- STATUS FILTER ---------------- */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          marginTop: 14,
-        }}
-      >
-        <button onClick={() => setStatusFilter("")} style={chipStyle(!statusFilter)}>
-          All {apps.length}
-        </button>
-        {COLS.map((c) => {
-          const n = apps.filter((a) => a.status === c.k).length;
-          const active = statusFilter === c.k;
-          return (
-            <button
-              key={c.k}
-              onClick={() => setStatusFilter(active ? "" : c.k)}
-              style={{
-                ...chipStyle(active),
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: c.hex,
-                  flexShrink: 0,
-                }}
-              />
-              {c.label} {n}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* The status chips above always show totals for the whole tracker, so
-          spell out the filtered count while a search is narrowing the list. */}
+      {/* Spell out the filtered count while a search is narrowing the list. */}
       {term && !loading && (
         <div
           style={{
@@ -606,29 +649,17 @@ export default function Applications() {
                       flexShrink: 0,
                     }}
                   />
-                  <select
-                    value={a.status}
-                    onChange={(e) => moveStatus(a.id, e.target.value)}
-                    aria-label={`Status for ${a.role}`}
+                  <span
                     style={{
-                      background: A.page,
-                      border: `1px solid ${A.line}`,
-                      borderRadius: 9,
-                      padding: "6px 9px",
                       fontSize: 12.5,
                       fontWeight: 700,
                       fontFamily: "inherit",
                       color: A.body,
-                      cursor: "pointer",
-                      outline: "none",
+                      textTransform: "capitalize",
                     }}
                   >
-                    {APPLICATION_STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                    {a.status}
+                  </span>
                 </div>
 
                 <span
@@ -666,6 +697,236 @@ export default function Applications() {
           })
         )}
       </div>
+      </>
+      )}
+
+      {view === "calendar" && (
+        <div
+          style={{
+            marginTop: 24,
+            maxWidth: 760,
+            display: "grid",
+            gridTemplateColumns: "minmax(0,1fr) 260px",
+            gap: 16,
+            alignItems: "start",
+            animation: "riseIn .4s cubic-bezier(.2,.7,.2,1) both",
+          }}
+        >
+          {/* ---------------- MONTH GRID ---------------- */}
+          <div
+            style={{
+              background: "#fff",
+              border: `1px solid ${A.line}`,
+              borderRadius: 18,
+              padding: 16,
+              boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontFamily: A.display, fontSize: 15, fontWeight: 700, color: A.ink }}>
+                {calMonth.toLocaleString(undefined, { month: "long", year: "numeric" })}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <button
+                  onClick={() => setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                  aria-label="Previous month"
+                  style={{
+                    width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    background: A.page, border: `1px solid ${A.line}`, borderRadius: 8, cursor: "pointer", color: A.body,
+                  }}
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                <button
+                  onClick={() => {
+                    setCalMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+                    setSelectedDate(todayKey);
+                  }}
+                  style={{
+                    height: 26, padding: "0 10px", background: A.page, border: `1px solid ${A.line}`,
+                    borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700, color: A.body,
+                  }}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                  aria-label="Next month"
+                  style={{
+                    width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    background: A.page, border: `1px solid ${A.line}`, borderRadius: 8, cursor: "pointer", color: A.body,
+                  }}
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4, marginBottom: 4 }}>
+              {WEEKDAYS.map((w) => (
+                <div
+                  key={w}
+                  style={{
+                    textAlign: "center", fontFamily: A.mono, fontSize: 9, fontWeight: 700,
+                    letterSpacing: ".08em", textTransform: "uppercase", color: A.faint, padding: "3px 0",
+                  }}
+                >
+                  {w}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+              {calGrid.map(({ date, inMonth }) => {
+                const key = dateKey(date);
+                const dayApps = appsByDate[key] || [];
+                const isSelected = key === selectedDate;
+                const isToday = key === todayKey;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedDate(key)}
+                    style={{
+                      aspectRatio: "1",
+                      maxHeight: 52,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      textAlign: "left",
+                      padding: 4,
+                      borderRadius: 9,
+                      cursor: "pointer",
+                      background: isSelected ? "#F3F0FF" : "#fff",
+                      border: `1px solid ${isSelected ? A.brand : A.line}`,
+                      opacity: inMonth ? 1 : 0.4,
+                      transition: "background .15s, border-color .15s",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        width: 16, height: 16,
+                        alignItems: "center", justifyContent: "center",
+                        borderRadius: "50%",
+                        fontSize: 10, fontWeight: 700,
+                        background: isToday ? A.brand : "transparent",
+                        color: isToday ? "#fff" : A.ink,
+                      }}
+                    >
+                      {date.getDate()}
+                    </span>
+                    {dayApps.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                        {dayApps.slice(0, 3).map((a) => {
+                          const col = COLS.find((c) => c.k === a.status);
+                          return (
+                            <span
+                              key={a.id}
+                              style={{ width: 5, height: 5, borderRadius: "50%", background: col?.hex || A.faint }}
+                            />
+                          );
+                        })}
+                        {dayApps.length > 3 && (
+                          <span style={{ fontSize: 8, fontWeight: 700, color: A.faint }}>
+                            +{dayApps.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ---------------- SELECTED DAY PANEL ---------------- */}
+          <div>
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: 10, marginBottom: 12,
+                fontSize: 13.5, fontWeight: 700, color: A.ink,
+              }}
+            >
+              {new Date(selectedDate + "T00:00:00").toLocaleDateString(undefined, {
+                weekday: "long", month: "long", day: "numeric",
+              })}
+              <span
+                style={{
+                  fontFamily: A.mono, fontSize: 11, fontWeight: 700, color: A.faint,
+                  background: A.page, border: `1px solid ${A.line}`, borderRadius: 999,
+                  padding: "2px 9px",
+                }}
+              >
+                {selectedApps.length}
+              </span>
+            </div>
+
+            {selectedApps.length === 0 ? (
+              <div
+                style={{
+                  background: "#fff", border: `1px dashed ${A.lineMid}`, borderRadius: 16,
+                  padding: "32px 18px", textAlign: "center", fontSize: 13, color: A.muted,
+                }}
+              >
+                No applications on this day.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {selectedApps.map((a) => {
+                  const col = COLS.find((c) => c.k === a.status);
+                  const score = a.match_score;
+                  return (
+                    <div
+                      key={a.id}
+                      style={{
+                        background: "#fff", border: `1px solid ${A.line}`, borderRadius: 14,
+                        padding: "12px 14px", boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <div
+                          style={{
+                            width: 32, height: 32, borderRadius: 9, background: "#F3F6FD",
+                            border: `1px solid ${A.line}`, display: "flex", alignItems: "center",
+                            justifyContent: "center", fontFamily: A.display, fontSize: 13, fontWeight: 700,
+                            color: A.ink, flexShrink: 0,
+                          }}
+                        >
+                          {(a.company || "?").trim().charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: A.ink }}>{a.role}</div>
+                          <div style={{ fontSize: 11.5, color: A.muted, marginTop: 1 }}>{a.company}</div>
+                        </div>
+                        <button
+                          onClick={() => remove(a.id)}
+                          aria-label={`Remove ${a.role}`}
+                          style={{
+                            background: "transparent", border: "none", borderRadius: 8, padding: 5,
+                            cursor: "pointer", color: A.faint, display: "inline-flex", flexShrink: 0,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 9 }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: col?.hex || A.faint }} />
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: A.body, textTransform: "capitalize" }}>
+                            {a.status}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: A.mono, fontSize: 11.5, fontWeight: 700, color: score ? matchHex(score) : A.faint }}>
+                          {score ? `${score}%` : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

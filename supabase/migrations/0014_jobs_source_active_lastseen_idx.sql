@@ -1,0 +1,23 @@
+-- supabase/migrations/0014_jobs_source_active_lastseen_idx.sql
+--
+-- deactivateStale() (job-engine/processors/saveJobs.js), run at the end of
+-- every collector, does:
+--
+--   update jobs set is_active = false
+--   where source = ? and is_active = true and last_seen < ?
+--
+-- None of the existing jobs indexes have `source` as a leading column —
+-- jobs_active_expires_idx is (is_active, expires_at), jobs_is_active_search_idx
+-- is (is_active) alone, jobs_last_seen_idx is (last_seen) alone. So this
+-- query has to scan every active row across ALL sources in a shared,
+-- multi-source table, not just the one source being deactivated. On a
+-- large jobs table that scan exceeds Supabase's statement timeout and the
+-- deactivation pass fails outright ("canceling statement due to statement
+-- timeout") — the collector's actual scrape/save work still succeeds, only
+-- the stale-job cleanup at the end is affected, meaning old postings never
+-- get marked inactive.
+--
+-- `source` first makes this an index-only-ish lookup scoped to just that
+-- collector's rows before is_active/last_seen are even checked.
+create index if not exists jobs_source_active_lastseen_idx
+  on public.jobs (source, is_active, last_seen);

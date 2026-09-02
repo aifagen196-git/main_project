@@ -10,6 +10,7 @@ import {
   Calendar,
   Mail,
   Target,
+  Building2,
 } from "lucide-react";
 
 
@@ -106,6 +107,11 @@ export const NAV = [
     icon: Briefcase,
   },
   {
+    id: "internal-jobs",
+    label: "Internal Jobs",
+    icon: Building2,
+  },
+  {
     id: "applications",
     label: "Applications",
     icon: FileText,
@@ -130,11 +136,6 @@ export const NAV = [
     id: "saved",
     label: "Saved Jobs",
     icon: Bookmark,
-  },
-  {
-    id: "internal-jobs",
-    label: "Internal Jobs",
-    icon: BadgeCheck,
   },
   // Settings is not a NAV entry — it's reached via the account button at the
   // bottom of the sidebar (Sidebar.jsx), which links straight to /settings.
