@@ -25,6 +25,17 @@ name: job-engine collectors
 # that doesn't need a paid account. All three now search the 13 target
 # domains for real.
 #
+# 30 more sources (Comeet, TeamTailor, BreezyHR, WeWorkRemotely, HackerNews,
+# Jobvite, Recruitee, Pinpoint, Personio, Remotive, Kforce, BambooHR, UKG,
+# Avature, iCIMS, JazzHR, Oracle, SuccessFactors, BuiltIn, DailyRemote, Muse,
+# PostJobFree, RemoteOK, Web3Career, WorkingNomads, Workday, Jobicy,
+# Jobvertise, Arbeitnow, HiringCafe) also need no secrets and are folded into
+# `npm run all` via `npm run all-new-free` — verified live, each returns real
+# postings. 6 more (Adzuna, Careerjet, Findwork, Jooble, JSearch, USAJobs)
+# need a free-tier API key each; they abort cleanly if unset, so they're kept
+# out of `npm run all` and run individually below once configured — add their
+# secrets when ready and add a line for each to the step below.
+#
 # Adjust the schedule below to taste; every 6 hours is a starting point, not
 # a measured requirement.
 
