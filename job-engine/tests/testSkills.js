@@ -1,4 +1,4 @@
-import { extractSkills } from "../collectors/processors/extractSkills.js";
+import { extractSkills } from "../processors/extractSkills.js";
 
 const description = `
 We are looking for a Software Engineer with:

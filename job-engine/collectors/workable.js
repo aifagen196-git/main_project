@@ -1,22 +1,19 @@
-import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
-import { normalizeWorkableJob } from "./normalize/normalizeWorkable.js";
-import companies from "./config/workableCompanies.js";
+import { getSupabase, runCollector } from "./runtime.js";
+import { normalizeWorkableJob } from "../processors/normalizeWorkable.js";
+import companies from "../config/workableCompanies.js";
 import { chromium } from "playwright";
-import { isUsJob } from "./lib/isUsJob.js";
-
-dotenv.config({ path: ".env" });
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-);
+import runPool from "../processors/workerPool.js";
+import { saveJobs, deactivateStale } from "../processors/saveJobs.js";
 
 // =============================================
 // CONFIG
 // =============================================
 
 const SCRAPE_LAST_HOURS = Number(process.env.SCRAPE_LAST_HOURS || 24);
+// Each detail fetch opens its own browser page against the shared browser
+// instance — keep this modest (unlike the plain-HTTP collectors) since pages
+// are far heavier than a bare request.
+const DETAIL_CONCURRENCY = Number(process.env.WORKABLE_DETAIL_CONCURRENCY || 3);
 
 
 // =============================================
@@ -32,33 +29,6 @@ const stats = {
   updated: 0,
   failed: 0,
 };
-
-// =============================================
-// SAVE JOB
-// =============================================
-
-/**
- * Save many jobs in ONE upsert. The per-job SELECT+UPSERT pattern this
- * replaces made two network round trips for every posting, which is what made
- * full runs take hours. Postgres resolves insert-vs-update itself via the
- * (source, source_job_id) conflict target.
- */
-async function saveJobs(jobs) {
-  if (!jobs.length) return;
-  const CHUNK = 500;
-  for (let i = 0; i < jobs.length; i += CHUNK) {
-    const batch = jobs.slice(i, i + CHUNK);
-    const { error } = await supabase
-      .from("jobs")
-      .upsert(batch, { onConflict: "source,source_job_id" });
-    if (error) {
-      stats.failed += batch.length;
-      console.error("batch of " + batch.length + " failed: " + error.message);
-      continue;
-    }
-    stats.saved = (stats.saved || 0) + batch.length;
-  }
-}
 
 // =============================================
 // FETCH COMPANY JOBS
@@ -158,13 +128,15 @@ async function fetchJobDetails(browser, slug, shortcode) {
 // MAIN
 // =============================================
 
-async function run() {
+export default async function collectWorkableJobs() {
   console.log("\n==========================================");
  console.log("🚀 Workable Collector Started");
   console.log("==========================================\n");
 const browser = await chromium.launch({
   headless: true,
 });
+  const cutoff = new Date(Date.now() - SCRAPE_LAST_HOURS * 60 * 60 * 1000);
+
   for (const company of companies) {
     try {
       stats.companies++;
@@ -175,50 +147,53 @@ const browser = await chromium.launch({
 
     console.log(`🏢 ${company} (${jobs.length} jobs)`);
 
-     const normalized = [];
-     for (const job of jobs) {
-    // (No publish-date cutoff: the board API only ever lists
-    // currently-open postings.)
-    // }
+     const results = await runPool(
+       jobs,
+       async (job) => {
+         // Temporarily disabling date filter while testing
+         // const updatedAt = new Date(job.published);
+         // if (updatedAt < cutoff) {
+         //   stats.skipped++;
+         //   return null;
+         // }
 
-    console.log(`➡ ${job.title}`);
+         console.log(`➡ ${job.title}`);
 
-   
+         const details = await fetchJobDetails(browser, company, job.shortcode);
 
-       const details = await fetchJobDetails(
-  browser,
-  company,
-  job.shortcode
-);
+         if (!details) {
+           console.log(`❌ Couldn't fetch details for ${job.title}`);
+           return null;
+         }
+         const normalizedJob = await normalizeWorkableJob(details, company);
 
-if (!details) {
-  console.log(`❌ Couldn't fetch details for ${job.title}`);
-  continue;
-} 
-const normalizedJob = await normalizeWorkableJob(details, company);
+         // Skip jobs older than 24 hours
+         const postedDate = new Date(normalizedJob.posted_date);
+         if (!isNaN(postedDate) && postedDate < cutoff) {
+           stats.skipped++;
+           console.log(`⏭️ Old job: ${normalizedJob.title}`);
+           return null;
+         }
 
-// Workable's board API only ever lists currently-open postings, so
-// every job here is live right now regardless of posted_date — no
-// cutoff needed. Staleness is handled by the last_seen deactivation
-// pass below.
+         stats.processed++;
+         return normalizedJob;
+       },
+       DETAIL_CONCURRENCY,
+     );
+     const normalized = results.filter(Boolean);
 
-if (!isUsJob(normalizedJob)) {
-  stats.nonUs = (stats.nonUs || 0) + 1;
-  continue;
-}
-
-normalized.push(normalizedJob);
-
-stats.processed++;
-     }
-
-     await saveJobs(normalized);
-     if (normalized.length) console.log(`   💾 saved ${normalized.length}`);
+     const r = await saveJobs(normalized, stats);
+     if (r.deduped) console.log(`   🧹 ${r.deduped} duplicate(s) collapsed`);
+     if (r.attempted) console.log(`   💾 saved ${r.saved}/${r.attempted}`);
  } catch (err) {
   console.error(`\n❌ Company failed: ${company}`);
   console.error(err.message);
 }
   }
+
+  // This collector previously never retired anything, so delisted Workable
+  // postings stayed is_active = true forever.
+  await deactivateStale("workable", SCRAPE_LAST_HOURS);
 
   console.log("\n==========================================");
   console.log("✅ Workable Collector Finished");
@@ -229,4 +204,4 @@ await browser.close();
   console.log("==========================================\n");
 }
 
-run();
+runCollector(import.meta.url, collectWorkableJobs);

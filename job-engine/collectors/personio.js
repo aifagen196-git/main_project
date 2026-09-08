@@ -1,4 +1,7 @@
 import axios from "axios";
+import { withRunLog } from "./runLog.js";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
@@ -182,4 +185,12 @@ async function run() {
   console.log("==========================================\n");
 }
 
-run();
+// CLI-only guard — this file used to call run() unconditionally at
+// import time, which meant `import()`-ing it for any reason (a test
+// harness, a future registry, etc.) triggered a real scrape/save run as a
+// side effect. Only run when invoked directly (node collectors/personio.js),
+// matching every other collector in this repo (see runtime.js).
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(path.resolve(entrypoint)).href) {
+  withRunLog("personio", run);
+}

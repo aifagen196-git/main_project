@@ -13,10 +13,10 @@
 
 import axios from "axios";
 import fs from "fs";
-import companies from "../collectors/config/ashbyCompanies.js";
+import companies from "../config/ashbyCompanies.js";
 
 const CONCURRENCY = Number(process.env.VERIFY_CONCURRENCY || 4);
-const OUT = "../collectors/config/ashbyCompanies.js";
+const OUT = "./config/ashbyCompanies.js";
 
 const alive = [];
 let checked = 0;

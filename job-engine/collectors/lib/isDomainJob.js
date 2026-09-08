@@ -1,4 +1,4 @@
-import { inferRoleFamily } from "../../../backend/src/services/matching/scoreMatch.js";
+import { inferRoleFamily } from "../../vendor/scoreMatch.js";
 
 /**
  * Gate for the broad-aggregator collectors (hiringcafe.js, builtin.js) that

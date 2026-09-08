@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import companies from "../collectors/config/workableCompanies.js";
+import companies from "../config/workableCompanies.js";
 
 async function run() {
   const browser = await chromium.launch({ headless: true });

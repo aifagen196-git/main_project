@@ -1,22 +1,15 @@
-import axios from "axios";
-import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
-import { normalizeAshby } from "./normalize/normalizeAshby.js";
-import companies from "./config/ashbyCompanies.js";
-
-dotenv.config({ path: ".env" });
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-);
+import httpClient from "../utils/httpClient.js";
+import { getSupabase, runCollector } from "./runtime.js";
+import { normalizeAshby } from "../processors/normalizeAshby.js";
+import companies from "../config/ashbyCompanies.js";
+import withRetry from "../processors/retry.js";
+import { saveJobs, deactivateStale } from "../processors/saveJobs.js";
 
 // =============================================
 // CONFIG
 // =============================================
 
 const SCRAPE_LAST_HOURS = Number(process.env.SCRAPE_LAST_HOURS || 24);
-
 
 // =============================================
 // STATS
@@ -36,28 +29,6 @@ const stats = {
 // SAVE JOB
 // =============================================
 
-/**
- * Save many jobs in ONE upsert. The per-job SELECT+UPSERT pattern this
- * replaces made two network round trips for every posting, which is what made
- * full runs take hours. Postgres resolves insert-vs-update itself via the
- * (source, source_job_id) conflict target.
- */
-async function saveJobs(jobs) {
-  if (!jobs.length) return;
-  const CHUNK = 500;
-  for (let i = 0; i < jobs.length; i += CHUNK) {
-    const batch = jobs.slice(i, i + CHUNK);
-    const { error } = await supabase
-      .from("jobs")
-      .upsert(batch, { onConflict: "source,source_job_id" });
-    if (error) {
-      stats.failed += batch.length;
-      console.error();
-      continue;
-    }
-    stats.saved = (stats.saved || 0) + batch.length;
-  }
-}
 // =============================================
 // FETCH COMPANY JOBS
 // =============================================
@@ -68,7 +39,7 @@ async function fetchCompanyJobs(company) {
   try {
     const url = `https://api.ashbyhq.com/posting-api/job-board/${company}`;
 
-    const response = await axios.get(url);
+    const response = await withRetry(() => httpClient.get(url));
 
     return response.data.jobs || [];
   } catch (err) {
@@ -163,7 +134,7 @@ function isUSJob(job) {
 // MAIN
 // =============================================
 
-async function run() {
+export default async function collectAshbyJobs() {
   console.log("\n==========================================");
   console.log("🚀 Ashby Collector Started");
   console.log("==========================================\n");
@@ -201,8 +172,9 @@ async function run() {
         stats.processed++;
       }
 
-      await saveJobs(normalized);
-      if (normalized.length) console.log(`   💾 saved ${normalized.length}`);
+      const r = await saveJobs(normalized, stats);
+      if (r.deduped) console.log(`   🧹 ${r.deduped} duplicate(s) collapsed`);
+      if (r.attempted) console.log(`   💾 saved ${r.saved}/${r.attempted}`);
     } catch (err) {
       console.error(`\n❌ Company failed: ${company}`);
 
@@ -210,19 +182,7 @@ async function run() {
     }
   }
 
-  // Deactivate stale postings: anything not seen in this run's window and
-  // past its expiry. Frontend queries should filter on is_active = true.
-  const staleCutoff = new Date(
-    Date.now() - SCRAPE_LAST_HOURS * 60 * 60 * 1000,
-  ).toISOString();
-  const { error: deErr, count } = await supabase
-    .from("jobs")
-    .update({ is_active: false })
-    .lt("last_seen", staleCutoff)
-    .eq("is_active", true)
-    .select("id", { count: "exact", head: true });
-  if (deErr) console.error(`⚠ Deactivation pass failed: ${deErr.message}`);
-  else console.log(`🗑 Deactivated ${count ?? 0} stale jobs`);
+  await deactivateStale("ashby", SCRAPE_LAST_HOURS);
 
   console.log("\n==========================================");
   console.log("✅ Ashby Collector Finished");
@@ -233,4 +193,4 @@ async function run() {
   console.log("==========================================\n");
 }
 
-run();
+runCollector(import.meta.url, collectAshbyJobs);

@@ -43,4 +43,12 @@ job-engine.zip
 /admin/
 /DEPLOY.md
 /IMPLEMENTATION_NOTES.md
-/job-engine/
+
+# job-engine/ is tracked here (this folder is the consolidated primary
+# repo) — it also exists as its own separate repo
+# (github.com/aifagen196-git/collectors) for its independent GitHub
+# Actions cron; both are kept in sync manually.
+job-engine/node_modules/
+job-engine/.env
+job-engine/logs/
+job-engine/*.log
