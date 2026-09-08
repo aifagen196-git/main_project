@@ -66,7 +66,16 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # @supabase/supabase-js (see package.json) now requires Node 22+ —
+          # its Realtime client needs a native WebSocket global, which Node 20
+          # doesn't have. Nothing here actually uses realtime features
+          # (runLog.js and runtime.js both just do plain REST calls via
+          # createClient()), but supabase-js initializes its Realtime client
+          # eagerly inside createClient() regardless, so it throws
+          # "Node.js detected but native WebSocket not found" on Node 20
+          # before any real work runs. Confirmed live: this crashed the very
+          # first collector in the chain.
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
