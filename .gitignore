@@ -36,7 +36,6 @@ temp/
 # Stale backup archives — duplicate source already tracked as real files
 job-engine.zip
 frontend.zip
-job-engine/samples/indeed-search.zip
 
 # Kept locally, not pushed — internal tooling / one-off scripts / docs not
 # meant for the deploy repo (per explicit request). Still present on disk;
@@ -46,11 +45,9 @@ job-engine/samples/indeed-search.zip
 /DEPLOY.md
 /IMPLEMENTATION_NOTES.md
 
-# job-engine/ is tracked here (this folder is the consolidated primary
-# repo) — it also exists as its own separate repo
-# (github.com/aifagen196-git/collectors) for its independent GitHub
-# Actions cron; both are kept in sync manually.
-job-engine/node_modules/
-job-engine/.env
-job-engine/logs/
-job-engine/*.log
+# job-engine/ is NOT tracked here — it's its own repo
+# (github.com/aifagen196-git/collectors) with its own GitHub Actions cron,
+# kept as the single source of truth rather than duplicating and manually
+# syncing it across two repos. Still present on disk in this folder too;
+# just untracked.
+/job-engine/
