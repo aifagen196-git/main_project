@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
-import { extractJobProfile } from "../processors/extractProfile.js";
+import { extractJobProfile } from "../collectors/processors/extractProfile.js";
 
 dotenv.config({ path: fileURLToPath(new URL("../.env", import.meta.url)) });
 

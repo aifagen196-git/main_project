@@ -1,4 +1,4 @@
-import { extractJobProfile } from "./extractProfile.js";
+import { extractJobProfile } from "../collectors/processors/extractProfile.js";
 import normalizeCompany from "./companyNormalizer.js";
 import parseLocation from "./locationParser.js";
 import extractEmploymentType from "./employmentTypeExtractor.js";

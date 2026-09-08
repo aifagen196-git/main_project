@@ -1,52 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  Bookmark,
-  Briefcase,
-  ChevronRight,
-  FileText,
-  Loader2,
-  MessageSquare,
-  Mic,
-  Send,
-  Sparkles,
-} from "lucide-react";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-} from "recharts";
+import { Loader2 } from "lucide-react";
 
-import Card from "../components/common/Card";
-import Logo from "../components/common/Logo";
-import Ring from "../components/common/Ring";
-import SectionTitle from "../components/common/SectionTitle";
-import Stat from "../components/ui/Stat";
-import { STAT_TINT } from "../data/constants";
 import { getApplications } from "../services/applications";
 import { getMatchedJobs } from "../services/matchingService";
 import { getLatestResume } from "../services/resume";
 import { getSavedJobIds } from "../services/savedJobs";
 import { matchHex } from "../utils/matchHex";
 
-// Dashboard overview shows the active pipeline only (rejections are visible
-// on the Applications page, not here).
-const OUTCOME_META = [
-  { key: "applied", label: "Applied", color: "#6d4aff" },
-  { key: "interviewing", label: "Interviewing", color: "#f59e0b" },
-  { key: "assessment", label: "Assessment", color: "#0ea5e9" },
-  { key: "offer", label: "Offer", color: "#22c55e" },
-];
+/* Presentation is an exact port of the "AIFAGen v3" dashboard. All data below
+   is the app's own live account data — only the rendering changed. */
 
-function getWeekCount(items = [], dateKey = "applied_at") {
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return items.filter((item) => {
-    const rawDate = item?.[dateKey] || item?.updated_at || item?.created_at || "";
-    const ts = Date.parse(rawDate);
-    return Number.isFinite(ts) && ts >= weekAgo;
-  }).length;
+const D = {
+  brand: "#6D4AFF",
+  ochre: "#F59E0B",
+  clay: "#F43F5E",
+  track: "#EDF0F8",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+function matchBand(score) {
+  return score >= 80
+    ? "Top match"
+    : score >= 60
+      ? "Strong"
+      : score >= 40
+        ? "Fair"
+        : "Weak";
 }
 
 /**
@@ -122,7 +110,9 @@ export default function Dashboard({ profile }) {
       if (savedResult.status === "fulfilled") setSavedIds(savedResult.value || []);
       if (resumeResult.status === "fulfilled") setLatestResume(resumeResult.value || null);
 
-      const failed = results.some((r) => r.status === "rejected");
+      const failed = [matchResult, appResult, savedResult, resumeResult].some(
+        (r) => r.status === "rejected",
+      );
       setErrors({
         matches:
           matchResult.status === "rejected"
@@ -176,31 +166,13 @@ export default function Dashboard({ profile }) {
   const offers = applicationsAvailable
     ? applications.filter((app) => app.status === "offer").length
     : null;
-  const applicationsThisWeek = applicationsAvailable
-    ? getWeekCount(applications, "applied_at")
-    : null;
 
   const stats = [
     {
       t: "Job Matches",
       v: loading || !matchesAvailable ? "--" : String(matches.length),
       d: loading ? "Loading" : matchesAvailable ? "From your profile" : "Unavailable",
-      icon: Briefcase,
-      tint: "violet",
-    },
-    {
-      t: "Applications",
-      v: loading || !applicationsAvailable ? "--" : String(applications.length),
-      d: loading ? "Loading" : applicationsAvailable ? `${applicationsThisWeek} this week` : "Unavailable",
-      icon: Send,
-      tint: "emerald",
-    },
-    {
-      t: "Interviews",
-      v: loading || !applicationsAvailable ? "--" : String(interviews),
-      d: loading ? "Loading" : applicationsAvailable ? "Interviewing or assessment" : "Unavailable",
-      icon: MessageSquare,
-      tint: "rose",
+      color: D.brand,
     },
     {
       t: "Saved Jobs",
@@ -212,30 +184,15 @@ export default function Dashboard({ profile }) {
           ? `${offers} offers tracked`
           : "Saved from matches"
         : "Unavailable",
-      icon: Bookmark,
-      tint: "sky",
+      color: D.clay,
     },
   ];
 
-  const outcome = useMemo(
-    () =>
-      OUTCOME_META.map((item) => ({
-        ...item,
-        value: applicationsAvailable
-          ? applications.filter((app) => app.status === item.key).length
-          : null,
-      })),
-    [applications, applicationsAvailable],
-  );
-  const outcomeTotal = applicationsAvailable
-    ? outcome.reduce((sum, item) => sum + item.value, 0)
-    : null;
-  const activity = applicationsAvailable ? applications.slice(0, 4) : [];
   const recommendations = latestResume?.ai_analysis?.recommendations || [];
   const suggestions = [
     latestResume && {
-      icon: FileText,
-      tint: "emerald",
+      tag: "Resume",
+      color: D.brand,
       title: "Resume Analysis",
       text:
         recommendations[0] ||
@@ -244,284 +201,494 @@ export default function Dashboard({ profile }) {
           latestResume.ai_analysis?.resume_score ??
           "not scored"
         }.`,
-      action: "Open Resume",
+      action: "Open resume",
       view: "resume",
     },
     matches.length > 0 && {
-      icon: Sparkles,
-      tint: "violet",
+      tag: "Matches",
+      color: D.ochre,
       title: "Matched Jobs",
       text: `${matches.length} jobs are currently ranked against your profile.`,
-      action: "View Matches",
+      action: "View matches",
       view: "matches",
     },
     applicationsAvailable && interviews > 0 && {
-      icon: Mic,
-      tint: "amber",
+      tag: "Pipeline",
+      color: D.clay,
       title: "Interview Pipeline",
       text: `${interviews} application${interviews === 1 ? " is" : "s are"} in interview or assessment.`,
-      action: "View Applications",
+      action: "Open tracker",
       view: "applications",
     },
   ].filter(Boolean);
 
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-1">
-          <h2 className="font-display text-3xl font-extrabold text-slate-900">
-            Good morning, {profile?.full_name?.split(" ")[0] || "User"}!
-          </h2>
-          <p className="text-slate-500 mt-1">
-            Your dashboard is based only on live account data.
+    <div>
+      {/* ---------------- HEADER ---------------- */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 22,
+          animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) both",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              fontFamily: D.mono,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: D.faint,
+            }}
+          >
+            {today}
+          </div>
+          <h1
+            style={{
+              fontFamily: D.display,
+              fontSize: "clamp(28px,3.4vw,40px)",
+              lineHeight: 1.04,
+              letterSpacing: "-.035em",
+              fontWeight: 700,
+              margin: "12px 0 0",
+              color: D.ink,
+            }}
+          >
+            {greeting}, {firstName}.
+          </h1>
+          <p style={{ margin: "9px 0 0", fontSize: 15, color: D.muted }}>
+            Here is where everything stands.
           </p>
         </div>
 
-        <Card
-          hover={Boolean(nextStep)}
-          className={"p-4 flex items-center gap-4" + (nextStep ? " cursor-pointer" : "")}
-          onClick={() => nextStep && setView(nextStep.view)}
+        <button
+          onClick={() => setView(nextStep?.view || "resume")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            textAlign: "left",
+          }}
         >
-          <Ring value={profileStrength} size={70} stroke={8} label={`${profileStrength}%`} />
-          <div>
-            <div className="font-bold text-slate-900 text-sm">
-              Profile Strength
-            </div>
-            <div className="text-xs text-slate-500" style={{ maxWidth: "13rem" }}>
-              {nextStep ? (
-                <span className="inline-flex items-center gap-1">
-                  Next: {nextStep.label}
-                  <ArrowRight size={11} className="brand shrink-0" />
-                </span>
-              ) : (
-                "Your profile is complete. Nice work!"
-              )}
+          <div style={{ position: "relative", width: 52, height: 52, flexShrink: 0 }}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "50%",
+                background: `conic-gradient(${D.brand} ${(profileStrength * 3.6).toFixed(1)}deg, ${D.track} 0)`,
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 7,
+                borderRadius: "50%",
+                background: D.page,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: D.mono,
+                fontSize: 12,
+                fontWeight: 700,
+                color: D.ink,
+              }}
+            >
+              {profileStrength}%
             </div>
           </div>
-        </Card>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: D.ink }}>
+              Profile strength
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: D.brand,
+                fontWeight: 700,
+                marginTop: 2,
+                maxWidth: "15rem",
+              }}
+            >
+              {nextStep ? `${nextStep.label} →` : "Your profile is complete →"}
+            </div>
+          </div>
+        </button>
       </div>
 
       {loadError && (
-        <Card className="p-3 text-sm text-amber-700 bg-amber-50 border-amber-100 flex items-center gap-3">
-          <span className="flex-1">{loadError}</span>
+        <div
+          style={{
+            marginTop: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            background: "#FFFBEB",
+            border: "1px solid #FDE68A",
+            borderRadius: 14,
+            padding: "12px 14px",
+            fontSize: 13.5,
+            color: "#92400E",
+          }}
+        >
+          <span style={{ flex: 1 }}>{loadError}</span>
           <button
             onClick={() => setReloadKey((k) => k + 1)}
-            className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 font-semibold text-amber-800 hover:bg-amber-200 transition"
+            style={{
+              flexShrink: 0,
+              background: "#FDE68A",
+              border: "none",
+              borderRadius: 9,
+              padding: "6px 12px",
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: "#92400E",
+              cursor: "pointer",
+            }}
           >
             Retry
           </button>
-        </Card>
+        </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ---------------- STATS ---------------- */}
+      <div data-dashgrid="stats" style={{ marginTop: 28 }}>
         {stats.map((s, i) => (
-          <div key={s.t} className="fadeUp" style={{ animationDelay: i * 60 + "ms" }}>
-            <Stat s={s} />
+          <div
+            key={s.t}
+            className="v3-card v3-stat-card"
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              background: `radial-gradient(ellipse at top right,${s.color}12,transparent 60%),#fff`,
+              border: `1px solid ${D.line}`,
+              borderRadius: 18,
+              padding: 20,
+              boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+              animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${i * 55}ms both`,
+            }}
+          >
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background: s.color,
+              }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: s.color,
+                  boxShadow: `0 0 8px ${s.color}`,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: D.mono,
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  letterSpacing: ".14em",
+                  textTransform: "uppercase",
+                  color: D.faint,
+                }}
+              >
+                {s.t}
+              </span>
+            </div>
+            <div
+              style={{
+                fontFamily: D.mono,
+                fontSize: 34,
+                fontWeight: 700,
+                letterSpacing: "-.03em",
+                color: D.ink,
+                marginTop: 14,
+                lineHeight: 1,
+              }}
+            >
+              {s.v}
+            </div>
+            <div style={{ fontSize: 12.5, color: D.muted, marginTop: 10 }}>
+              {s.d}
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <SectionTitle
-            title="Top Job Matches"
-            action={
-              <button onClick={() => setView("matches")} className="text-sm font-semibold brand">
-                View all
-              </button>
-            }
-          />
+      {/* ---------------- MAIN ---------------- */}
+      <div data-dashgrid="main" style={{ marginTop: 14 }}>
+        <div
+          style={{
+            minWidth: 0,
+            background: "#fff",
+            border: `1px solid ${D.line}`,
+            borderRadius: 20,
+            padding: 22,
+            animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .18s both",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <h2
+              style={{
+                fontFamily: D.display,
+                fontSize: 19,
+                fontWeight: 700,
+                letterSpacing: "-.02em",
+                margin: 0,
+                color: D.ink,
+              }}
+            >
+              Top job matches
+            </h2>
+            <button
+              onClick={() => setView("matches")}
+              style={{
+                marginLeft: "auto",
+                background: "transparent",
+                border: "none",
+                fontSize: 13,
+                fontWeight: 700,
+                color: D.brand,
+                cursor: "pointer",
+              }}
+            >
+              View all →
+            </button>
+          </div>
 
-          <div className="space-y-3">
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              marginTop: 18,
+            }}
+          >
             {loading ? (
-              <div className="rounded-xl border border-slate-100 p-6 text-center text-slate-400">
-                <Loader2 size={20} className="mx-auto animate-spin" />
+              <div
+                style={{
+                  border: `1px solid ${D.lineSoft}`,
+                  borderRadius: 15,
+                  padding: 24,
+                  textAlign: "center",
+                  color: D.faint,
+                }}
+              >
+                <Loader2 size={20} className="animate-spin" style={{ margin: "0 auto" }} />
               </div>
             ) : topMatches.length === 0 ? (
-              <div className="rounded-xl border border-slate-100 p-4 text-sm text-slate-500">
+              <div
+                style={{
+                  border: `1px solid ${D.lineSoft}`,
+                  borderRadius: 15,
+                  padding: 16,
+                  fontSize: 13.5,
+                  color: D.muted,
+                }}
+              >
                 No job matches yet. Upload a resume to generate matches.
               </div>
             ) : (
-              topMatches.map((job) => (
-                <div
-                  key={job.id}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 card cursor-pointer"
-                  onClick={() => setView("matches")}
-                >
-                  <Logo lg={jobInitial(job.company)} size="h-10 w-10" text="text-sm" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-slate-900 text-sm truncate">
-                      {job.title}
-                    </div>
-                    <div className="text-xs text-slate-500 truncate">
-                      {job.company} {job.location ? `· ${job.location}` : ""}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div
-                      className="num text-sm font-bold"
-                      style={{ color: matchHex(job.match_score || 0) }}
-                    >
-                      {job.match_score ?? 0}%
-                    </div>
-                    <div className="text-xs text-slate-400">Match</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <button
-            onClick={() => setView("matches")}
-            className="w-full mt-3 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold brand"
-          >
-            Explore More Matches
-          </button>
-        </Card>
-
-        <Card className="p-6">
-          <SectionTitle
-            title="Application Overview"
-            action={
-              <button onClick={() => setView("applications")} className="text-sm font-semibold brand">
-                View all
-              </button>
-            }
-          />
-
-          <div className="flex items-center gap-4">
-            <div style={{ width: 140, height: 140 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={outcomeTotal ? outcome : [{ value: 1, color: "#e2e8f0" }]}
-                    dataKey="value"
-                    innerRadius={42}
-                    outerRadius={62}
-                    paddingAngle={2}
-                  >
-                    {(outcomeTotal ? outcome : [{ color: "#e2e8f0" }]).map((item, i) => (
-                      <Cell key={i} fill={item.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="flex-1 space-y-1.5">
-              {outcome.map((item) => (
-                <div key={item.key} className="flex items-center gap-2 text-sm">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: item.color }}
-                  />
-                  <span className="text-slate-600 flex-1">{item.label}</span>
-                  <span className="num font-bold text-slate-800">
-                    {item.value ?? "--"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-xl bg-brand-50 p-3 flex items-center gap-2 text-sm">
-            <Sparkles size={16} className="brand" />
-            <span className="font-semibold brand">
-              {applicationsAvailable
-                ? `${outcomeTotal} total application${outcomeTotal === 1 ? "" : "s"} tracked.`
-                : "Application data is unavailable right now."}
-            </span>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <SectionTitle
-            title="Recent Applications"
-            action={
-              <button onClick={() => setView("applications")} className="text-sm font-semibold brand">
-                View all
-              </button>
-            }
-          />
-
-          <div className="space-y-3">
-            {loading ? (
-              <div className="rounded-xl border border-slate-100 p-6 text-center text-slate-400">
-                <Loader2 size={20} className="mx-auto animate-spin" />
-              </div>
-            ) : activity.length === 0 ? (
-              <div className="rounded-xl border border-slate-100 p-4 text-sm text-slate-500">
-                No applications tracked yet.
-              </div>
-            ) : (
-              activity.map((app) => (
-                <div
-                  key={app.id}
-                  className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => setView("applications")}
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50">
-                    <Send size={16} className="text-slate-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-slate-800 truncate">
-                      {app.role}
-                    </div>
-                    <div className="text-xs text-slate-400 capitalize">
-                      {app.company} · {app.status}
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-slate-300" />
-                </div>
-              ))
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <div>
-        <h3 className="font-display text-lg font-bold text-slate-900 mb-4">
-          AI Suggestions For You
-        </h3>
-
-        <div className="grid md:grid-cols-3 gap-5">
-          {suggestions.length === 0 ? (
-            <Card className="p-5 md:col-span-3">
-              <div className="font-bold text-slate-900">No suggestions yet</div>
-              <p className="text-sm text-slate-500 mt-1">
-                Upload a resume, save jobs, or track applications to populate this section.
-              </p>
-            </Card>
-          ) : (
-            suggestions.map((item) => {
-              const Icon = item.icon;
-              const tint = STAT_TINT[item.tint];
-
-              return (
-                <Card key={item.title} hover className="p-5">
+              topMatches.map((job, i) => {
+                const score = job.match_score ?? 0;
+                return (
                   <div
-                    className={
-                      "inline-flex h-11 w-11 items-center justify-center rounded-xl " +
-                      tint.bg
-                    }
+                    key={job.id}
+                    className="v3-matchrow"
+                    onClick={() => setView("matches")}
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: 13,
+                      border: `1px solid ${D.lineSoft}`,
+                      borderRadius: 15,
+                      cursor: "pointer",
+                      animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${200 + i * 55}ms both`,
+                    }}
                   >
-                    <Icon size={20} className={tint.fg} />
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 11,
+                        background: "#F3F6FD",
+                        border: `1px solid ${D.line}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: D.display,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: D.ink,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {jobInitial(job.company)}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: D.ink,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {job.title}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12.5,
+                          color: D.muted,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {job.company}
+                        {job.location ? ` · ${job.location}` : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: D.mono,
+                          fontSize: 13.5,
+                          fontWeight: 700,
+                          letterSpacing: "-.02em",
+                          color: matchHex(score),
+                        }}
+                      >
+                        {score}%
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: D.mono,
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          letterSpacing: ".1em",
+                          textTransform: "uppercase",
+                          color: D.faint,
+                          marginTop: 2,
+                        }}
+                      >
+                        {matchBand(score)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-bold text-slate-900 mt-3">{item.title}</div>
-                  <p className="text-sm text-slate-500 mt-1">{item.text}</p>
-                  <button
-                    onClick={() => setView(item.view)}
-                    className="mt-3 text-sm font-semibold brand flex items-center gap-1"
-                  >
-                    {item.action}
-                    <ArrowRight size={14} />
-                  </button>
-                </Card>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
+
       </div>
+
+      {/* ---------------- SUGGESTIONS ---------------- */}
+      {suggestions.length > 0 && (
+        <div data-dashgrid="sugg" style={{ marginTop: 14 }}>
+          {suggestions.map((s, i) => (
+            <div
+              key={s.title}
+              className="v3-card"
+              style={{
+                background: "#fff",
+                border: `1px solid ${D.line}`,
+                borderRadius: 20,
+                padding: 24,
+                boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+                animation: `riseIn .55s cubic-bezier(.2,.7,.2,1) ${i * 55}ms both`,
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-block",
+                  background: `${s.color}1F`,
+                  color: s.color,
+                  borderRadius: 8,
+                  padding: "5px 10px",
+                  fontFamily: D.mono,
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  letterSpacing: ".12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {s.tag}
+              </div>
+              <h3
+                style={{
+                  fontFamily: D.display,
+                  fontSize: 17,
+                  fontWeight: 700,
+                  letterSpacing: "-.02em",
+                  margin: "16px 0 0",
+                  color: D.ink,
+                }}
+              >
+                {s.title}
+              </h3>
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: 13.5,
+                  lineHeight: 1.6,
+                  color: D.muted,
+                }}
+              >
+                {s.text}
+              </p>
+              <button
+                onClick={() => setView(s.view)}
+                style={{
+                  marginTop: 16,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: D.brand,
+                  cursor: "pointer",
+                }}
+              >
+                {s.action} →
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

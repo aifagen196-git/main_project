@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { DEV_PREVIEW, PREVIEW_USER } from '../devPreview'
 
 export function useAuth() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(DEV_PREVIEW ? PREVIEW_USER : null)
+  const [loading, setLoading] = useState(!DEV_PREVIEW)
 
   useEffect(() => {
+    // Dev preview: hand back a stub session so the signed-in UI can be
+    // reviewed without Supabase. Compiled out of production builds.
+    if (DEV_PREVIEW) return
+
     let mounted = true
 
     supabase.auth.getUser().then(({ data }) => {

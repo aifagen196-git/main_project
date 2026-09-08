@@ -1,136 +1,371 @@
-import { NAV } from "../../data/constants";
-import { bBrandSm } from "../../styles/buttonStyles";
-import { PLAN_LABEL, isPaidPlan } from "../../utils/plan";
-import { CreditCard, HelpCircle } from "lucide-react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { NAV } from "../../data/constants";
+import HelpPanel from "./HelpPanel";
 
-export default function Sidebar({ open, setOpen, exit, plan }) {
-  const paid = isPaidPlan(plan);
+/* Port of the "AIFAGen v3" app sidebar. The spec drops icons in favour of a
+   status dot per item, an active state that inverts to the ink pill, and a
+   mono count on the right. Static properties are inline; hover, and the
+   below-1024px slide-over behaviour, live in the v3 CSS block in AIFAGen.jsx.
+
+   The account block at the bottom came from the spec's topbar. That bar was
+   removed — once search moved onto the pages that own it, the only things
+   left were this menu and a decorative bell, which did not justify 74px of
+   permanent vertical space on every screen.
+
+   It's a direct link to Settings rather than its own dropdown: account
+   details, plan and log out already live on that screen, and "Settings" is
+   no longer a separate sidebar entry — this button replaces it (see NAV in
+   data/constants.js). The plan summary that used to sit above this button
+   is also gone; it doesn't need to be visible on every single screen.
+
+   Light theme with real color (2026-08-27): a dark sidebar was tried and
+   rejected — went back to a light surface, but kept the vivid purple-
+   gradient accents (top bar, logo chip, active pill, avatar) that weren't
+   the problem. A flat solid-ink active state read as "plain"; a gradient
+   pill with a glow reads as designed without going dark. */
+
+const C = {
+  brand: "#6D4AFF",
+  brandLight: "#8F79FF",
+  ink: "#0F172A",
+  page: "#F8F9FE",
+  line: "#E8ECF5",
+  lineSoft: "#EFF2FA",
+  lineMid: "#DDE3EE",
+  body: "#475569",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  display: "'Bricolage Grotesque',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+};
+
+export default function Sidebar({ open, setOpen, exit, plan, profile, counts = {} }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const initials =
+    profile?.full_name
+      ?.split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U";
 
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-sm lg:hidden"
+          className="v3-scrim"
           onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            background: "rgba(15,23,42,.3)",
+            backdropFilter: "blur(2px)",
+          }}
         />
       )}
 
       <aside
-        className={
-          "fixed z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col transition-transform lg:static lg:translate-x-0 " +
-          (open ? "translate-x-0" : "-translate-x-full")
-        }
+        className="v3-sidebar"
+        data-open={open ? "1" : "0"}
+        style={{
+          position: "sticky",
+          overflow: "hidden",
+          width: 270,
+          flexShrink: 0,
+          background: "linear-gradient(180deg,#FDFCFF 0%,#F6F3FF 100%)",
+          borderRight: `1px solid ${C.line}`,
+          display: "flex",
+          flexDirection: "column",
+          top: 0,
+          height: "100vh",
+        }}
       >
-        {/* Logo */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "-25%",
+            left: "-20%",
+            width: "140%",
+            height: "30%",
+            background: "radial-gradient(ellipse at center,rgba(109,74,255,.14),transparent 65%)",
+            filter: "blur(16px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", height: 3, background: `linear-gradient(90deg,${C.brand},${C.brandLight},#F59E0B)`, flexShrink: 0 }} />
         <button
           onClick={exit}
-          className="flex items-center gap-3 px-5 h-16 border-b border-slate-100 shrink-0"
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: 11,
+            height: 71,
+            padding: "0 22px",
+            background: "transparent",
+            border: "none",
+            borderBottom: `1px solid ${C.lineSoft}`,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
         >
-          <img src="/logo.png" alt="AIFAGen" className="h-10 w-10 object-contain" />
-          <span className="font-display text-xl font-extrabold text-slate-900">AIFAGen</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              background: `linear-gradient(135deg,${C.brand},${C.brandLight})`,
+              boxShadow: "0 8px 18px -8px rgba(109,74,255,.55)",
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src="/logo.png"
+              alt="AIFAGen"
+              style={{ height: 22, width: 22, objectFit: "contain", filter: "invert(1)" }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: C.display,
+              fontSize: 21,
+              fontWeight: 700,
+              letterSpacing: "-.03em",
+              color: C.ink,
+            }}
+          >
+            AIFAGen
+          </span>
         </button>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto scroll px-3 py-4 space-y-1">
+        <nav
+          className="scroll"
+          style={{
+            position: "relative",
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: C.mono,
+              fontSize: 9.5,
+              fontWeight: 700,
+              letterSpacing: ".16em",
+              textTransform: "uppercase",
+              color: C.faint,
+              padding: "0 10px 10px",
+            }}
+          >
+            Workspace
+          </div>
+
           {NAV.map((n) => {
-            const Icon = n.icon;
             const active = location.pathname === `/${n.id}`;
+            const count = counts[n.id];
             return (
               <button
                 key={n.id}
+                className="v3-navbtn"
+                data-active-nav={active ? "1" : "0"}
                 onClick={() => {
-  navigate(`/${n.id}`);
-  setOpen(false);
-}}
-                className={
-                  "w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition " +
-                  (active ? "bg-brand-50 brand" : "text-slate-500 hover:bg-slate-50")
-                }
+                  navigate(`/${n.id}`);
+                  setOpen(false);
+                }}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  width: "100%",
+                  padding: "11px 16px",
+                  border: "none",
+                  borderRadius: 999,
+                  background: active
+                    ? `linear-gradient(135deg,${C.brand},${C.brandLight})`
+                    : "transparent",
+                  color: active ? "#fff" : C.body,
+                  fontSize: 14,
+                  fontWeight: active ? 700 : 600,
+                  cursor: "pointer",
+                  boxShadow: active ? "0 10px 22px -10px rgba(109,74,255,.55)" : "none",
+                }}
               >
-                <Icon size={18} className={active ? "brand" : "text-slate-400"} />
-                {n.label}
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: active ? "#fff" : C.lineMid,
+                    boxShadow: active ? "0 0 8px #fff" : "none",
+                    transition: "background .2s",
+                  }}
+                />
+                <span style={{ flex: 1, textAlign: "left" }}>{n.label}</span>
+                <span
+                  style={{
+                    fontFamily: C.mono,
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: active ? "rgba(255,255,255,.85)" : C.faint,
+                  }}
+                >
+                  {count == null || count === 0 ? "" : count}
+                </span>
               </button>
             );
           })}
-{/*
-<button
-  onClick={() => {
-    navigate("/billing");
-    setOpen(false);
-  }}
-  className={
-    "w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition " +
-    (
-      location.pathname === "/billing"
-        ? "bg-brand-50 brand"
-        : "text-slate-500 hover:bg-slate-50"
-    )
-  }
->
-  <CreditCard
-    size={18}
-    className={
-      location.pathname === "/billing"
-        ? "brand"
-        : "text-slate-400"
-    }
-  />
-  Billing
-</button>
-*/}
-        <div className="pt-2 mt-2 border-t border-slate-100">
-          <button className="w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
-            <HelpCircle size={18} className="text-slate-400" />
-            Help & Support
+
+          <div
+            style={{ height: 1, background: C.lineSoft, margin: "14px 10px" }}
+          />
+
+          <button
+            className="v3-softbtn"
+            onClick={() => {
+              setHelpOpen(true);
+              setOpen(false);
+            }}
+            aria-haspopup="dialog"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              width: "100%",
+              padding: "11px 16px",
+              background: "transparent",
+              border: "none",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.muted,
+              cursor: "pointer",
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: C.lineMid,
+              }}
+            />
+            <span style={{ flex: 1, textAlign: "left" }}>Help &amp; Support</span>
+          </button>
+        </nav>
+
+        {/* ---------------- ACCOUNT ---------------- */}
+        {/* Clicking this goes straight to Settings — the account details and
+            plan management already live there, so a dropdown that only ever
+            offered "Profile & settings" as one of three options was a step
+            most people didn't need. */}
+        <div style={{ position: "relative", padding: "0 14px 14px", flexShrink: 0 }}>
+          <button
+            className="v3-softbtn"
+            onClick={() => {
+              navigate("/settings");
+              setOpen(false);
+            }}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 11,
+              background: "#fff",
+              border: `1px solid ${C.line}`,
+              borderRadius: 14,
+              padding: 10,
+              cursor: "pointer",
+              transition: "background .18s, border-color .18s",
+            }}
+          >
+            <span
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: profile?.avatar_url
+                  ? C.page
+                  : `linear-gradient(135deg,${C.brand},${C.brandLight})`,
+                boxShadow: profile?.avatar_url ? "none" : "0 6px 14px -6px rgba(109,74,255,.6)",
+                color: C.page,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: C.display,
+                fontSize: 13,
+                fontWeight: 700,
+                flexShrink: 0,
+                overflow: "hidden",
+              }}
+            >
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                initials
+              )}
+            </span>
+            <span style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 13.5,
+                  fontWeight: 700,
+                  color: C.ink,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {profile?.full_name || "User"}
+              </span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 11.5,
+                  color: C.muted,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {profile?.email || ""}
+              </span>
+            </span>
+            <span aria-hidden="true" style={{ flexShrink: 0, fontSize: 15, color: C.faint }}>
+              ›
+            </span>
           </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* Plan card */}
-      <div className="p-3 shrink-0">
-        <div className="rounded-2xl bg-brand-50 p-4">
-          <div className="text-xs font-bold brand">Current plan</div>
-
-          <div className="font-display font-extrabold brand">
-            {PLAN_LABEL[plan] || "Free"}
-          </div>
-
-          {paid ? (
-            <>
-              <p className="text-xs text-slate-500 mt-1">
-                Manage your subscription and invoices.
-              </p>
-
-              {/* OPTIONAL: comment this too if you want NO billing access */}
-              {/*
-              <button
-                onClick={() => navigate("/billing")}
-                className={bBrandSm + " w-full mt-3"}
-              >
-                Manage plan
-              </button>
-              */}
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-slate-500 mt-1">
-                Unlock unlimited AI, resume optimization and more.
-              </p>
-
-              <button
-                onClick={() => navigate("/pricing")}
-                className={bBrandSm + " w-full mt-3"}
-              >
-                Upgrade Now
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </aside>
-  </>
-);
+      <HelpPanel
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        profile={profile}
+        plan={plan}
+      />
+    </>
+  );
 }

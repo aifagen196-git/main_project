@@ -1,15 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* The app is a light-only design. Without this, browsers in dark mode paint
-   the page canvas black, and any section without an explicit background
-   (marketing Features, FAQ) renders as a black band with unreadable text. */
 @layer base {
   html {
     color-scheme: light;
   }
   body {
-    @apply bg-white text-slate-800;
+    @apply bg-white text-slate-800 font-sans;
+  }
+}
+
+@layer utilities {
+  .brand {
+    color: #6D4AFF;
+  }
+  .num {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-feature-settings: 'tnum';
+  }
+  .card {
+    transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -26px rgba(15,23,42,.28);
+  }
+  .btn-brand {
+    background: linear-gradient(135deg,#6D4AFF 0%,#8F79FF 100%);
+  }
+  .btn-brand:hover {
+    filter: brightness(1.05);
   }
 }

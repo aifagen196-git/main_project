@@ -5,12 +5,12 @@ import {
   MessageSquare,
   BarChart3,
   Bookmark,
-  Settings,
   Send,
   BadgeCheck,
   Calendar,
   Mail,
   Target,
+  Building2,
 } from "lucide-react";
 
 
@@ -107,6 +107,11 @@ export const NAV = [
     icon: Briefcase,
   },
   {
+    id: "internal-jobs",
+    label: "Internal Jobs",
+    icon: Building2,
+  },
+  {
     id: "applications",
     label: "Applications",
     icon: FileText,
@@ -116,11 +121,12 @@ export const NAV = [
     label: "Resume",
     icon: FileText,
   },
-  // {
-  //   id: "prep",
-  //   label: "Interview Prep",
-  //   icon: MessageSquare,
-  // },
+  // HIDDEN — Analytics is built and working (pages/Analytics.jsx against
+  // GET /api/analytics), but every figure derives from self-reported status
+  // updates: nothing detects an employer reply, so the numbers are only as
+  // current as the user's own tracker edits. Re-enable this entry, and the
+  // /analytics route in AppShell, once application status can be captured
+  // reliably (an explicit "responded on" field, or mailbox integration).
   // {
   //   id: "analytics",
   //   label: "Analytics",
@@ -131,9 +137,6 @@ export const NAV = [
     label: "Saved Jobs",
     icon: Bookmark,
   },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
-  },
+  // Settings is not a NAV entry — it's reached via the account button at the
+  // bottom of the sidebar (Sidebar.jsx), which links straight to /settings.
 ];

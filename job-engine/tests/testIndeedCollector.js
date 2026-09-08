@@ -1,7 +1,7 @@
 // tests/testIndeedCollector.js
 //
 // Bounded live smoke test for the Indeed collector. The collector itself is
-// config-driven (no query/location args — see config/indeedSearches.js and
+// config-driven (no query/location args — see collectors/config/indeedSearches.js and
 // config/locations.js) and writes straight to Supabase rather than returning
 // a job list, so this drives it through env vars exactly like a real run
 // would, just capped small.

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   Menu,
   X,
-  ArrowRight,
   Linkedin,
   Instagram,
   Twitter,
@@ -19,14 +18,12 @@ export default function Terms({ home, enter, go }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const navLinks = ["Home", "Services", "Products", "Innovation Labs", "Case Studies", "About"];
+  const navLinks = ["Home", "Services", "About", "Contact"];
 
   const NAV_ROUTES = {
     "Services": "services",
-    "Products": "products",
-    "Innovation Labs": "innovation",
-    "Case Studies": "caseStudies",
     "About": "about",
+    "Contact": "contact",
   };
 
   const handleNav = (e, label) => {
@@ -260,48 +257,29 @@ export default function Terms({ home, enter, go }) {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-white border-t border-slate-200">
-        {/* Newsletter band */}
-        <div className="border-b border-slate-200">
-          <div className="max-w-6xl mx-auto px-5 py-10 flex flex-col md:flex-row md:items-center gap-6">
-            <div>
-              <h3 className="font-display text-2xl font-extrabold text-slate-900">
-                Stay ahead with AI insights
-              </h3>
-              <p className="text-slate-500 mt-2">
-                Get the latest on AI innovations delivered to your inbox.
-              </p>
-            </div>
-            <div className="md:ml-auto flex w-full max-w-md gap-3">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-brand transition"
-              />
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-brand-grad px-6 py-3 text-sm font-bold text-white hover:opacity-90 transition"
-              >
-                Subscribe <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
+      <footer className="relative bg-slate-900 overflow-hidden">
+        <div className="h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-64 w-[36rem] rounded-full bg-brand-500/25 blur-3xl"
+        />
 
         {/* Main columns */}
-        <div className="max-w-6xl mx-auto px-5 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="relative max-w-6xl mx-auto px-5 py-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
           <div>
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="AIFAGen Labs" className="h-8 w-8" />
-              <span className="font-display font-extrabold text-slate-900">
-                AIFAGen <span className="brand">Labs</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-500/30">
+                <img src="/logo.png" alt="AIFAGen Labs" className="h-6 w-6 invert" />
+              </div>
+              <span className="font-display text-lg font-extrabold text-white">
+                AIFAGen <span className="text-brand-400">Labs</span>
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-3 max-w-xs">
+            <p className="text-sm text-slate-400 mt-4 max-w-xs leading-relaxed">
               Building Intelligent Ecosystems for the Future. AI for All
               Generations.
             </p>
-            <div className="flex items-center gap-3 mt-5">
+            <div className="flex items-center gap-2.5 mt-5">
               {[
                 [Linkedin, "LinkedIn", "https://www.linkedin.com/company/aifagenlabs/"],
                 [Twitter, "Twitter", "https://x.com/aifagenlabs"],
@@ -315,25 +293,24 @@ export default function Terms({ home, enter, go }) {
                   target={href.startsWith("http") ? "_blank" : undefined}
                   rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
                   onClick={href === "#" ? (e) => e.preventDefault() : undefined}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-[#6d4aff] transition"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-brand-500 hover:text-white hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200"
                 >
-                  <Icon size={17} />
+                  <Icon size={16} />
                 </a>
               ))}
             </div>
           </div>
 
           {[
-            ["Company", ["About Us", "Innovation Labs", "Case Studies", "Careers"]],
-            ["Solutions", ["Services", "Products", "AIFAG Suite", "LifeOS"]],
-            [
-              "Connect",
-              ["Contact", "Collaborate", "Partners", "Privacy Policy", "Terms & Conditions"],
-            ],
+            ["Company", ["About Us", "Careers", "Collaborate", "Terms & Conditions"]],
+            ["Connect", ["Services", "Partners", "Privacy Policy", "Contact"]],
           ].map((col, i) => (
             <div key={i}>
-              <div className="font-bold text-slate-900 text-sm">{col[0]}</div>
-              <ul className="mt-3 space-y-2">
+              <div className="font-bold text-white text-sm">
+                {col[0]}
+                <span className="block mt-2 h-0.5 w-6 rounded-full bg-brand-500" />
+              </div>
+              <ul className="mt-4 space-y-2.5">
                 {col[1].map((l) => (
                   <li key={l}>
                     <a
@@ -342,13 +319,8 @@ export default function Terms({ home, enter, go }) {
                         e.preventDefault();
                         const routes = {
                           "About Us": "about",
-                          "Innovation Labs": "innovation",
-                          "Case Studies": "caseStudies",
                           "Careers": "caseStudies",
                           "Services": "services",
-                          "Products": "products",
-                          "AIFAG Suite": "products",
-                          "LifeOS": "products",
                           "Contact": "contact",
                           "Collaborate": "collaborate",
                           "Partners": "partners",
@@ -358,8 +330,9 @@ export default function Terms({ home, enter, go }) {
                         if (routes[l]) go?.(routes[l]);
                         else home?.();
                       }}
-                      className="text-sm text-slate-500 hover:text-slate-800"
+                      className="group inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-brand-300 transition-colors"
                     >
+                      <span className="h-1 w-1 rounded-full bg-brand-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                       {l}
                     </a>
                   </li>
@@ -370,48 +343,37 @@ export default function Terms({ home, enter, go }) {
         </div>
 
         {/* Contact + locations bar */}
-        <div className="border-t border-slate-200">
-          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col lg:flex-row lg:items-start gap-4">
-            <div className="text-sm text-slate-500 space-y-2">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                <span className="inline-flex items-center gap-2">
-                  <Globe size={15} className="text-slate-400" />
-                  Global Operations
-                </span>
-                <a
-                  href="mailto:pmo@aifagenlabs.com"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Mail size={15} className="text-slate-400" />
-                  pmo@aifagenlabs.com
-                </a>
-                <a
-                  href="tel:+919390693114"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +91 93906 93114
-                </a>
-                <a
-                  href="tel:+14752240417"
-                  className="inline-flex items-center gap-2 hover:text-slate-800 transition"
-                >
-                  <Phone size={15} className="text-slate-400" />
-                  +1 (475) 224-0417
-                </a>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={15} className="text-slate-400" />
-                  Hyderabad, India
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={15} className="text-slate-400" />
-                  USA: New Jersey
-                </span>
-              </div>
+        <div className="relative border-t border-white/10 bg-black/20">
+          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <Globe size={13} className="text-brand-400" />
+                Global Operations
+              </span>
+              <a
+                href="mailto:pmo@aifagenlabs.com"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
+              >
+                <Mail size={13} className="text-brand-400" />
+                pmo@aifagenlabs.com
+              </a>
+              <a
+                href="tel:+14752240417"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
+              >
+                <Phone size={13} className="text-brand-400" />
+                +1 (475) 224-0417
+              </a>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <MapPin size={13} className="text-brand-400" />
+                Hyderabad, India
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
+                <MapPin size={13} className="text-brand-400" />
+                USA: New Jersey
+              </span>
             </div>
-            <div className="text-xs text-slate-400 lg:ml-auto lg:text-right lg:pt-1">
+            <div className="text-xs text-slate-500 lg:ml-auto">
               © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
             </div>
           </div>

@@ -1,0 +1,19 @@
+# Railway config for the backend service.
+#
+# This repo is a monorepo (frontend / backend / job-engine). When creating the
+# Railway service, set "Root Directory" to `backend` in the dashboard so
+# Railway builds only this folder — this file then applies within it.
+#
+# Railway auto-detects the Node app via Nixpacks and would run `npm start` by
+# default anyway; the explicit values below just make that non-obvious to
+# someone reading the dashboard.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

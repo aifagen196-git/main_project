@@ -10,9 +10,11 @@ import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import preferencesRoutes from "./routes/preferences.routes.js";
 import savedJobsRoutes from "./routes/savedJobs.routes.js";
+import internalJobsRoutes from "./routes/internalJobs.routes.js";
 import applicationsRoutes from "./routes/applications.routes.js";
 import resumesRoutes from "./routes/resumes.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
 
@@ -83,9 +85,11 @@ app.use("/api/jobs", requireAuth, jobsRoutes);
 app.use("/api/profile", requireAuth, profileRoutes);
 app.use("/api/preferences", requireAuth, preferencesRoutes);
 app.use("/api/saved-jobs", requireAuth, savedJobsRoutes);
+app.use("/api/internal-jobs", requireAuth, internalJobsRoutes);
 app.use("/api/applications", requireAuth, applicationsRoutes);
 app.use("/api/resumes", requireAuth, resumesRoutes);
 app.use("/api/ai", requireAuth, aiRoutes);
+app.use("/api/analytics", requireAuth, analyticsRoutes);
 app.use("/api/payments", requireAuth, paymentsRoutes);
 
 // =============================

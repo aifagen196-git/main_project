@@ -1,5 +1,5 @@
 import axios from "axios";
-import companies from "../config/greenhouseCompanies.js";
+import companies from "../collectors/config/greenhouseCompanies.js";
 
 const valid = [];
 const invalid = [];

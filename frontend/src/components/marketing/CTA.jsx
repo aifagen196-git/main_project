@@ -1,4 +1,8 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
+
+// Community WhatsApp group — opens in a new tab so it never navigates the
+// user away from the app they're in the middle of using.
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/GjUoKpDEyM415A9WFzuXGP";
 
 export default function CTA({ enter }) {
   return (
@@ -22,6 +26,18 @@ export default function CTA({ enter }) {
           Get Your Career Plan
           <ArrowRight size={18} />
         </button>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <a
+          href={WHATSAPP_GROUP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold text-white bg-[#25D366] hover:bg-[#1EBE5A] transition"
+        >
+          <MessageCircle size={18} />
+          Let's Connect
+        </a>
       </div>
     </section>
   );
