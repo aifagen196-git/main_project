@@ -33,8 +33,10 @@ coverage/
 tmp/
 temp/
 
-# Stale backup archive — duplicates source already tracked as real files
+# Stale backup archives — duplicate source already tracked as real files
 job-engine.zip
+frontend.zip
+job-engine/samples/indeed-search.zip
 
 # Kept locally, not pushed — internal tooling / one-off scripts / docs not
 # meant for the deploy repo (per explicit request). Still present on disk;
