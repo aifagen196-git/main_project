@@ -1,10 +1,18 @@
-import { api } from "./api";
+import { supabase } from "../lib/supabase";
 
 /**
- * Jobs added by hand via the (not yet built) admin page, as opposed to the
- * job-engine's scraped pool. Read-only from the frontend for now.
+ * Active internal (AIFAGen-posted) job listings. Reads straight from
+ * Supabase — no backend route needed — the same pattern most of this app's
+ * simple reads already use. RLS (see supabase/migrations/0012_internal_jobs.sql)
+ * restricts this to is_active rows for anyone who isn't an admin.
  */
 export async function getInternalJobs() {
-  const { jobs } = await api.get("/api/internal-jobs");
-  return jobs || [];
+  const { data, error } = await supabase
+    .from("internal_jobs")
+    .select("*")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
 }
