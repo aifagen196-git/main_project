@@ -97,8 +97,11 @@ export function verifyPaymentSignature({ orderId, paymentId, signature }) {
 /** Verifies a webhook payload signature (raw request body). */
 export function verifyWebhookSignature(rawBody, signature) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret) {
-    console.error("RAZORPAY_WEBHOOK_SECRET not set — rejecting webhook");
+  if (!secret || secret === "REPLACE_WITH_RAZORPAY_WEBHOOK_SECRET") {
+    console.error(
+      "RAZORPAY_WEBHOOK_SECRET not configured — rejecting webhook. " +
+        "Set the real value from Razorpay Dashboard > Settings > Webhooks.",
+    );
     return false;
   }
   try {
