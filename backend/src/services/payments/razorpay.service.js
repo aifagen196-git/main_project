@@ -61,24 +61,54 @@ export async function fetchOrderNotes(orderId) {
   return order.notes || {};
 }
 
+/**
+ * Constant-time compare of two hex strings. `crypto.timingSafeEqual` throws a
+ * RangeError when the buffers differ in length, so a caller passing a
+ * wrong-length signature (or garbage) would otherwise crash the route with an
+ * unhandled exception → 500 + HTML stack trace. Length mismatch simply means
+ * "not a match" here.
+ */
+function safeHexEqual(a, b) {
+  const bufA = Buffer.from(String(a), "hex");
+  const bufB = Buffer.from(String(b), "hex");
+  if (bufA.length !== bufB.length || bufA.length === 0) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 /** Verifies the checkout signature returned to the browser. */
 export function verifyPaymentSignature({ orderId, paymentId, signature }) {
-  const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${orderId}|${paymentId}`)
-    .digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) {
+    console.error("RAZORPAY_KEY_SECRET not set — cannot verify payment signature");
+    return false;
+  }
+  try {
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(`${orderId}|${paymentId}`)
+      .digest("hex");
+    return safeHexEqual(expected, signature);
+  } catch (e) {
+    console.error("Payment signature verification error", e.message);
+    return false;
+  }
 }
 
 /** Verifies a webhook payload signature (raw request body). */
 export function verifyWebhookSignature(rawBody, signature) {
-  const expected = crypto
-    .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
-    .update(rawBody)
-    .digest("hex");
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("RAZORPAY_WEBHOOK_SECRET not set — rejecting webhook");
+    return false;
+  }
   try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
-  } catch {
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody)
+      .digest("hex");
+    return safeHexEqual(expected, signature);
+  } catch (e) {
+    console.error("Webhook signature verification error", e.message);
     return false;
   }
 }

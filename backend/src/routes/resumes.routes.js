@@ -93,10 +93,31 @@ router.post("/", upload.single("file"), async (req, res) => {
   if (upErr) return res.status(500).json({ success: false, message: upErr.message });
 
   let extracted_text = "";
+  let extractionError = null;
   try {
     extracted_text = await extractText(file.buffer, ext);
   } catch (e) {
     console.error("Text extraction failed", e);
+    extractionError = e;
+  }
+
+  // Reject a file we couldn't actually read (M6, M7): a renamed .txt→.pdf
+  // throws in the parser; a scanned/image-only PDF "parses" but yields a few
+  // characters of pdf-parse boilerplate. Either way, creating a resume row
+  // with empty/garbage text silently poisons matching — the role gate can't
+  // classify it, so the feed degrades to ~the whole pool (B2). A resume
+  // needs real, selectable text.
+  const MIN_RESUME_CHARS = 200;
+  const cleanLen = extracted_text.replace(/\s+/g, " ").trim().length;
+  if (extractionError || cleanLen < MIN_RESUME_CHARS) {
+    await supabase.storage.from("resumes").remove([path]).catch(() => {});
+    return res.status(422).json({
+      success: false,
+      code: "UNREADABLE_RESUME",
+      message:
+        "We couldn't read text from that file. Please upload a text-based PDF or DOCX " +
+        "(not a scan or an image), exported directly from your resume editor.",
+    });
   }
 
   // Run the full resume pipeline server-side in ONE Claude call: structured
@@ -314,6 +335,12 @@ router.delete("/:id", async (req, res) => {
 
   if (error) return res.status(500).json({ success: false, message: error.message });
   if (row?.file_path) await supabase.storage.from("resumes").remove([row.file_path]);
+
+  // The cached matches feed was derived from this resume (or, if this was the
+  // latest, from a resume that no longer exists) — drop it so the next load
+  // re-derives from whatever resume is now current (M5).
+  invalidateMatches(req.user.id);
+
   return res.json({ success: true });
 });
 

@@ -6,6 +6,7 @@ import {
   getApplications,
   addApplication,
   deleteApplication,
+  updateApplicationStatus,
   APPLICATION_STATUSES,
 } from "../services/applications";
 
@@ -102,6 +103,22 @@ export default function Applications() {
       await deleteApplication(id);
     } catch (e) {
       console.error(e);
+      setApps(prev);
+    }
+  }
+
+  // M8: move an application between stages. The backend PATCH always
+  // worked and updateApplicationStatus() was written — it just had no call
+  // site, so status could only ever be set at creation time (which in turn
+  // meant the Dashboard's interview/offer counts could never move — M9).
+  async function changeStatus(id, status) {
+    const prev = apps;
+    setApps((a) => a.map((x) => (x.id === id ? { ...x, status } : x)));
+    try {
+      await updateApplicationStatus(id, status);
+    } catch (e) {
+      console.error(e);
+      setErr(e.message);
       setApps(prev);
     }
   }
@@ -649,17 +666,29 @@ export default function Applications() {
                       flexShrink: 0,
                     }}
                   />
-                  <span
+                  <select
+                    value={a.status}
+                    onChange={(e) => changeStatus(a.id, e.target.value)}
+                    aria-label={`Status for ${a.role}`}
                     style={{
                       fontSize: 12.5,
                       fontWeight: 700,
                       fontFamily: "inherit",
                       color: A.body,
                       textTransform: "capitalize",
+                      background: "transparent",
+                      border: `1px solid ${A.line}`,
+                      borderRadius: 8,
+                      padding: "4px 6px",
+                      cursor: "pointer",
                     }}
                   >
-                    {a.status}
-                  </span>
+                    {APPLICATION_STATUSES.map((s) => (
+                      <option key={s} value={s} style={{ textTransform: "capitalize" }}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <span

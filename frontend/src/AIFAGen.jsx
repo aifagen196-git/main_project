@@ -86,7 +86,7 @@ import {
 } from "recharts";
 
 // Theming (fonts, brand colors, .card/.num/.btn-brand) now lives in
-// tailwind.config.js + index.css, the single source of truth — this used to
+// tailwind.config.js + index.css, the single source of truth â this used to
 // duplicate all of it inline with different values (Sora instead of
 // Bricolage Grotesque, a solid .btn-brand instead of the gradient, a
 // different .bg-brand-grad), and since this block renders after Tailwind's
@@ -201,9 +201,9 @@ const CSS = `
 
 /* Dashboard grids. Stats stay two-up, the main row is a single full-width
    column now that its Pipeline rail card is gone, and suggestions go
-   1 → 2 → 3 across. */
+   1 â 2 â 3 across. */
 [data-dashgrid]{display:grid;gap:16px;min-width:0}
-/* Two stat cards (Job Matches, Saved Jobs) — auto-fit keeps them side by side
+/* Two stat cards (Job Matches, Saved Jobs) â auto-fit keeps them side by side
    wherever there's room and drops to one column when there isn't, without
    needing a hardcoded breakpoint. */
 [data-dashgrid="stats"]{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
@@ -312,11 +312,11 @@ const STEPS = [
 const FAQS = [
   {
     q: "Can I change my plan later?",
-    a: "Yes — upgrade, downgrade, or cancel anytime from your billing settings. Changes take effect at your next cycle.",
+    a: "Yes â upgrade, downgrade, or cancel anytime from your billing settings. Changes take effect at your next cycle.",
   },
   {
     q: "Is there a free trial?",
-    a: "Paid plans include a 7-day free trial. No credit card required to start.",
+    a: "There is no free trial — paid plans are billed when you subscribe. You can cancel anytime from Billing.",
   },
   {
     q: "What payment methods do you accept?",
@@ -344,7 +344,7 @@ const JOBS = [
     lg: "S",
     remote: "Remote",
     type: "Full-time",
-    pay: "$140K–$180K",
+    pay: "$140Kâ$180K",
     tags: ["Product Design", "Figma", "User Research", "Prototyping"],
     match: 95,
     featured: true,
@@ -356,7 +356,7 @@ const JOBS = [
     lg: "G",
     remote: "Remote",
     type: "Full-time",
-    pay: "$120K–$160K",
+    pay: "$120Kâ$160K",
     tags: ["Product Design", "UX Design", "Figma"],
     match: 92,
   },
@@ -367,7 +367,7 @@ const JOBS = [
     lg: "A",
     remote: "Remote",
     type: "Full-time",
-    pay: "$110K–$140K",
+    pay: "$110Kâ$140K",
     tags: ["UX Design", "User Research", "Figma"],
     match: 89,
   },
@@ -378,7 +378,7 @@ const JOBS = [
     lg: "M",
     remote: "Redmond, WA (Hybrid)",
     type: "Full-time",
-    pay: "$115K–$150K",
+    pay: "$115Kâ$150K",
     tags: ["Product Design", "Design Systems", "Figma"],
     match: 87,
   },
@@ -389,7 +389,7 @@ const JOBS = [
     lg: "Sp",
     remote: "Remote",
     type: "Full-time",
-    pay: "$100K–$130K",
+    pay: "$100Kâ$130K",
     tags: ["User Research", "Usability Testing"],
     match: 84,
   },
@@ -400,7 +400,7 @@ const JOBS = [
     lg: "N",
     remote: "Remote",
     type: "Full-time",
-    pay: "$120K–$155K",
+    pay: "$120Kâ$155K",
     tags: ["Product Design", "Design Systems"],
     match: 81,
   },
@@ -433,7 +433,7 @@ const DASH_STATS = [
 const TASKS = [
   {
     t: "Prepare for Google interview",
-    s: "Product Designer · In 2 days",
+    s: "Product Designer Â· In 2 days",
     icon: Calendar,
   },
   { t: "Optimize resume for UX roles", s: "High impact", icon: FileText },
@@ -547,7 +547,7 @@ const PERF = [
 
 // NOTE: a `callClaude()` helper used to live here that POSTed straight to
 // api.anthropic.com from the browser. It was dead code and unauthenticated, so
-// it always failed — but leaving it invited someone to "fix" it by adding an
+// it always failed â but leaving it invited someone to "fix" it by adding an
 // API key, which would ship that key in the public JS bundle. All model calls
 // belong on the backend (backend/src/services/ai/*), which holds the keys.
 
@@ -590,7 +590,7 @@ function Switch({ on, onClick }) {
 /* ===================== v3 LANDING =====================
    Exact port of the "AIFAGen v3" design. Palette, type ramp, spacing and
    motion are taken verbatim from the spec, so static properties are written
-   inline rather than as Tailwind utilities — the spec leans on clamp() and
+   inline rather than as Tailwind utilities â the spec leans on clamp() and
    precise hex values that don't map cleanly onto the token scale. Hover and
    keyframe rules live in the CSS block at the top of this file.
    ==================================================== */
@@ -628,7 +628,7 @@ const v3Kicker = (color) => ({
 const v3Score = (score) =>
   score >= 80 ? V3.brand : score >= 60 ? V3.ochre : V3.clay;
 
-// Eased 0→1 ramp that drives the match rings filling on first paint.
+// Eased 0â1 ramp that drives the match rings filling on first paint.
 function useRamp(duration = 1050) {
   const [t, setT] = useState(prefersReducedMotion() ? 1 : 0);
   useEffect(() => {
@@ -938,9 +938,9 @@ function RotatingWord({ words, interval = 2600 }) {
 }
 
 const HERO_ROWS = [
-  { initial: "S", title: "Senior Product Designer", meta: "Stripe · Remote (US)", score: 95 },
-  { initial: "A", title: "Machine Learning Engineer", meta: "Anthropic · San Francisco, CA (Hybrid)", score: 92 },
-  { initial: "V", title: "Frontend Engineer", meta: "Vercel · Remote (US)", score: 89 },
+  { initial: "S", title: "Senior Product Designer", meta: "Stripe Â· Remote (US)", score: 95 },
+  { initial: "A", title: "Machine Learning Engineer", meta: "Anthropic Â· San Francisco, CA (Hybrid)", score: 92 },
+  { initial: "V", title: "Frontend Engineer", meta: "Vercel Â· Remote (US)", score: 89 },
 ];
 
 const PLACED_AT = [
@@ -1005,7 +1005,7 @@ function HeroFeedCard({ t }) {
               color: V3.brand,
             }}
           >
-            resume parsed ✓
+            resume parsed â
           </span>
         </div>
 
@@ -1177,7 +1177,7 @@ function Marketing({ enter, go }) {
   const stepsRef = useRevealChildren("stagger");
   const faqRef = useRevealChildren("stagger");
 
-  // Interview Preparation was removed — no such feature exists in the
+  // Interview Preparation was removed â no such feature exists in the
   // product (the page that once showed it was fabricated data and was
   // deleted outright earlier). Application Tracking replaces it, describing
   // the real Applications screen: log an application, move it through
@@ -1185,7 +1185,7 @@ function Marketing({ enter, go }) {
   const FEATURE_CARDS = [
     { icon: Target, color: V3.brand, t: "Smart Job Matching", d: "AI finds the most relevant jobs based on your skills, experience, and career goals." },
     { icon: FileText, color: V3.ochre, t: "Resume Optimization", d: "Get AI-powered suggestions to improve your resume and pass ATS scans." },
-    { icon: ClipboardList, color: V3.clay, t: "Application Tracking", d: "Log every application and move it through your pipeline — applied, interviewing, assessment, offer." },
+    { icon: ClipboardList, color: V3.clay, t: "Application Tracking", d: "Log every application and move it through your pipeline â applied, interviewing, assessment, offer." },
     { icon: Zap, color: "#334155", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
   ];
 
@@ -1363,7 +1363,7 @@ function Marketing({ enter, go }) {
                   animation: "pulseRing 3.4s ease-out 1.4s infinite",
                 }}
               >
-                Get Your Career Plan <span style={{ fontSize: 17 }}>→</span>
+                Get Your Career Plan <span style={{ fontSize: 17 }}>â</span>
               </button>
               <a
                 href="#how-it-works"
@@ -1484,7 +1484,7 @@ function Marketing({ enter, go }) {
 
       {/* ---------------- FEATURES ---------------- */}
       {/* Full-bleed tinted band (not just a constrained blob inside a white
-          box) — deliberately more saturated than the hero's own aurora, so
+          box) â deliberately more saturated than the hero's own aurora, so
           this section actually reads as "a different, colorful place" while
           scrolling instead of a white gap between two dark sections. */}
       <section
@@ -1539,11 +1539,11 @@ function Marketing({ enter, go }) {
                   perspective: 1400,
                 }}
               >
-                {/* The card itself twists on hover — front shows only the
+                {/* The card itself twists on hover â front shows only the
                     number/icon/title, back reveals the description. Both
                     faces are absolutely positioned on top of each other so
                     the flip has nothing to reflow around. Duration/easing
-                    tuned for a smooth, even twist — no overshoot/bounce. */}
+                    tuned for a smooth, even twist â no overshoot/bounce. */}
                 <div
                   data-feature-flip="1"
                   style={{
@@ -1564,7 +1564,7 @@ function Marketing({ enter, go }) {
                       padding: "38px 32px 42px",
                     }}
                   >
-                    {/* Corner ribbon in the card's own accent color — a
+                    {/* Corner ribbon in the card's own accent color â a
                         visual "there's more here" cue that replaces the old
                         "Hover to read more" caption, no text needed. */}
                     <div
@@ -1860,10 +1860,10 @@ function Marketing({ enter, go }) {
       </section>
 
       {/* ---------------- PRICING ----------------
-          UI only for now — buttons don't charge anything yet. The real
+          UI only for now â buttons don't charge anything yet. The real
           checkout flow (Razorpay) already exists for the separate AI SaaS
           subscription in pages/Pricing.jsx (utils/plan.js's PRICING_CARDS:
-          Basic $210/mo or $1,299/6mo, Premium $2,499/6mo) — these are a
+          Basic $210/mo or $1,299/6mo, Premium $2,499/6mo) â these are a
           DIFFERENT, done-for-you service (job application/interview
           support) at different price points, not a replacement for that
           one. Do not wire this to the same Razorpay flow without also
@@ -1908,7 +1908,7 @@ function Marketing({ enter, go }) {
             }}
           >
             Hands-on help getting your applications, resume, and interviews
-            in front of the right people — pick the level of support that
+            in front of the right people â pick the level of support that
             fits where you are.
           </p>
         </div>
@@ -1939,7 +1939,7 @@ function Marketing({ enter, go }) {
               name: "Basic",
               periodTag: "One-time",
               price: "1,299",
-              tagline: "Job Marketing Program — a full application push.",
+              tagline: "Job Marketing Program â a full application push.",
               popular: false,
               features: [
                 "50+ targeted job applications every day",
@@ -1955,7 +1955,7 @@ function Marketing({ enter, go }) {
               name: "Standard",
               periodTag: "One-time",
               price: "2,499",
-              tagline: "Acceleration Program — everything in Basic, plus interview prep.",
+              tagline: "Acceleration Program â everything in Basic, plus interview prep.",
               popular: true,
               featuresIntro: "Includes everything in Basic, plus:",
               features: [
@@ -2263,7 +2263,7 @@ function Marketing({ enter, go }) {
               cursor: "pointer",
             }}
           >
-            Get Your Career Plan <span style={{ fontSize: 17 }}>→</span>
+            Get Your Career Plan <span style={{ fontSize: 17 }}>â</span>
           </button>
         </div>
 
@@ -2293,7 +2293,7 @@ function Marketing({ enter, go }) {
             }}
           >
             <MessageSquare size={26} />
-            {/* Small "live" indicator — honest signal that this is an active
+            {/* Small "live" indicator â honest signal that this is an active
                 space, without claiming a specific member count we don't have
                 a real number for. */}
             <span
@@ -2333,12 +2333,12 @@ function Marketing({ enter, go }) {
               maxWidth: "34em",
             }}
           >
-            A dedicated space for people on the same job hunt as you —
+            A dedicated space for people on the same job hunt as you â
             not a broadcast channel, an actual community.
           </p>
 
           {/* Three scannable value props instead of burying them in the
-              paragraph above — each is a concrete reason to join, not a
+              paragraph above â each is a concrete reason to join, not a
               vague promise. */}
           <div
             style={{
@@ -2528,7 +2528,7 @@ function Marketing({ enter, go }) {
               </span>
             </div>
             <div className="text-xs text-slate-500 lg:ml-auto">
-              © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
+              Â© 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
             </div>
           </div>
         </div>
@@ -2549,7 +2549,7 @@ export default function AIFAGen() {
 
   // Only a logged-IN user's "app" mode should survive a reload or a new tab.
   // Persisting "app" while logged out is what trapped users on the login
-  // screen — every new tab reopened login with no way back. For logged-out
+  // screen â every new tab reopened login with no way back. For logged-out
   // users we clear the flag, so a fresh tab always defaults to the landing page.
   useEffect(() => {
     if (user && mode === "app") localStorage.setItem("mode", "app");
@@ -2557,9 +2557,9 @@ export default function AIFAGen() {
   }, [mode, user]);
 
   // Detect logout (was authenticated, now isn't) and return to the landing
-  // page. We can't bounce every logged-out user to marketing — clicking
+  // page. We can't bounce every logged-out user to marketing â clicking
   // "Get Started" from the landing page intentionally shows the login screen
-  // with user still null — so we only redirect on the authenticated→null edge.
+  // with user still null â so we only redirect on the authenticatedânull edge.
   const prevUserRef = useRef(user);
   useEffect(() => {
     if (prevUserRef.current && !user) {
@@ -2626,7 +2626,7 @@ export default function AIFAGen() {
     return (
       <div className="font-body">
         <style>{CSS}</style>
-        <Splash text="Loading…" />
+        <Splash text="Loadingâ¦" />
       </div>
     );
   }
@@ -2707,7 +2707,7 @@ export default function AIFAGen() {
           }}
         />
       ) : finalizing ? (
-        <Splash text="Confirming your subscription…" />
+        <Splash text="Confirming your subscriptionâ¦" />
       ) : profileError && !profile ? (
         // A failed profile fetch previously fell through to the loading splash
         // and stuck there forever (no retry path). Surface it instead.
@@ -2732,9 +2732,9 @@ export default function AIFAGen() {
           </div>
         </div>
       ) : profileLoading || !profile ? (
-        <Splash text="Loading your account…" />
+        <Splash text="Loading your accountâ¦" />
       ) : !isSubscribed(profile) ? (
-        // New / lapsed user → must pick a plan before entering the app.
+        // New / lapsed user â must pick a plan before entering the app.
         <Pricing profile={profile} refresh={refresh} onboarding />
       ) : (
         <AppShell

@@ -108,6 +108,54 @@ export function detectSkills(text) {
   return extractSkills(text);
 }
 
+// The ATS analysis shape the UI reads (Resume.jsx). completeStructured pins
+// this for Claude, but analyzeResume() uses completeJson (no schema) — and
+// with Claude off, the open models drift: run to run the same resume scored
+// 92 → 88 → 92 and one run invented a `technical_compliance` key while
+// omitting others the UI expects (m6). Pin it here regardless of provider:
+// keep the known keys, coerce their types, drop everything else.
+const ANALYSIS_DEFAULTS = {
+  resume_score: 0,
+  ats_score: 0,
+  summary: "",
+  strengths: [],
+  weaknesses: [],
+  skills_found: [],
+  skills_missing: [],
+  experience_level: "",
+  recommendations: [],
+};
+
+function clampScore(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(100, Math.max(0, n));
+}
+
+export function coerceAnalysis(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = { ...ANALYSIS_DEFAULTS };
+  for (const k of Object.keys(ANALYSIS_DEFAULTS)) {
+    if (!(k in raw)) continue;
+    if (k === "resume_score" || k === "ats_score") out[k] = clampScore(raw[k]);
+    else if (Array.isArray(ANALYSIS_DEFAULTS[k])) {
+      out[k] = [].concat(raw[k] || []).map((x) => String(x).trim()).filter(Boolean);
+    } else {
+      out[k] = String(raw[k] ?? "");
+    }
+  }
+  // Models frequently fill one score and not the other — mirror so the UI
+  // never shows a spurious 0.
+  if (!out.ats_score && out.resume_score) out.ats_score = out.resume_score;
+  if (!out.resume_score && out.ats_score) out.resume_score = out.ats_score;
+  // Preserve cached sub-objects the analyze path doesn't produce (rewrite,
+  // improvement) — callers merge those back in, but keep any that came through.
+  for (const k of ["rewrite", "improvement"]) {
+    if (raw[k] && typeof raw[k] === "object") out[k] = raw[k];
+  }
+  return out;
+}
+
 /**
  * Stage-0 structured profile used by the matcher.
  *
@@ -132,7 +180,8 @@ export async function extractResumeProfile(text = "") {
 
 /** ATS analysis (scores, strengths, weaknesses, skills). */
 export async function analyzeResume(text = "") {
-  return completeJson(buildAnalysisPrompt(text), ANALYSIS_SYSTEM, 3000);
+  const raw = await completeJson(buildAnalysisPrompt(text), ANALYSIS_SYSTEM, 3000);
+  return coerceAnalysis(raw);
 }
 
 /**
@@ -150,7 +199,7 @@ export async function analyzeAndExtract(text = "") {
   );
   return {
     profile: coerceProfile(res?.profile, text),
-    analysis: res?.analysis ?? null,
+    analysis: coerceAnalysis(res?.analysis),
   };
 }
 

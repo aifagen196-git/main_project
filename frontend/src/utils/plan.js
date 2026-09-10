@@ -56,7 +56,7 @@ export const PRICING_CARDS = [
     periodTag: "Monthly",
     price: 210,
     tagline: "Get started with AI-matched roles.",
-    cta: "Start 7-Day Free Trial",
+    cta: "Get Basic — billed monthly",
     popular: false,
     features: [
       "AI Job Matching (20 / day)",
@@ -72,7 +72,7 @@ export const PRICING_CARDS = [
     periodTag: "Every 6 months",
     price: 1299,
     tagline: "Same Basic features, billed twice a year.",
-    cta: "Start 7-Day Free Trial",
+    cta: "Get Basic — billed every 6 months",
     popular: false,
     features: [
       "AI Job Matching (20 / day)",
@@ -88,7 +88,7 @@ export const PRICING_CARDS = [
     periodTag: "Every 6 months",
     price: 2499,
     tagline: "Everything you need to get more interviews.",
-    cta: "Start 7-Day Free Trial",
+    cta: "Get Premium — billed every 6 months",
     popular: true,
     features: [
       "Unlimited AI Job Matching",

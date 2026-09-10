@@ -1,5 +1,7 @@
 import { supabase } from "../config/supabase.js";
 import { verifyWebhookSignature } from "../services/payments/razorpay.service.js";
+import { periodEndFor } from "./payments.routes.js";
+import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
 
 // Razorpay webhook. Mounted with express.raw so the body is the exact bytes
 // the signature was computed over. Public (no JWT) — authenticity comes from
@@ -27,14 +29,17 @@ export async function razorpayWebhook(req, res) {
       const { userId, plan, billingCycle } = notes;
 
       if (userId && plan) {
+        const cycle = billingCycle || "monthly";
         await supabase
           .from("profiles")
           .update({
             plan,
             subscription_status: "active",
-            billing_cycle: billingCycle || "monthly",
+            billing_cycle: cycle,
+            current_period_end: periodEndFor(cycle),
           })
           .eq("id", userId);
+        invalidatePlanCache(userId);
       }
     }
   } catch (e) {

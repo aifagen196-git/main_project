@@ -257,6 +257,13 @@ const jobCols = () =>
 let poolCache = { jobs: null, expiresAt: 0 };
 const POOL_TTL_MS = Number(process.env.MATCH_POOL_TTL_MINUTES || 10) * 60 * 1000;
 
+// In-flight de-dup: the cold pool load takes 30-60s. Without this, the
+// startup warm-up and the first real user request (and any concurrent
+// requests during the window) each kick off their own full-table scan —
+// multiplying DB load and making every one of them slower. They should all
+// await the SAME load.
+let poolLoadInFlight = null;
+
 /** Drop the shared pool cache (call after a collector run imports new jobs). */
 export function invalidateJobPool() {
   poolCache = { jobs: null, expiresAt: 0 };
@@ -278,6 +285,16 @@ async function withStatementTimeoutRetry(fn, { retries = 2, baseDelayMs = 500 } 
 
 async function fetchAllLiveJobs() {
   if (poolCache.jobs && poolCache.expiresAt > Date.now()) return poolCache.jobs;
+  // Someone is already loading the pool — await their load instead of
+  // starting a second full scan.
+  if (poolLoadInFlight) return poolLoadInFlight;
+  poolLoadInFlight = loadLiveJobsUncached().finally(() => {
+    poolLoadInFlight = null;
+  });
+  return poolLoadInFlight;
+}
+
+async function loadLiveJobsUncached() {
   const now = new Date().toISOString();
   // A job counts as live when a collector CONFIRMED it recently, even if an
   // old expires_at stamp has lapsed. expires_at is written once at insert
@@ -394,6 +411,29 @@ async function attachDescriptions(survivors) {
   }
 }
 
+// Hard ceiling on how many gate survivors get the full (description fetch +
+// IDF + semantic + weighted score) treatment. The strict role gate is
+// SKIPPED when the candidate's own role_family can't be resolved
+// (scoreMatch.js: `if (cf && cf !== "other")`) — a scanned/garbled resume
+// resolves to "other", so nearly the whole US pool "survives", every
+// description is fetched, and the response balloons to 100+ MB after minutes
+// of work (B2). Even a legitimately thin-family candidate matching thousands
+// of jobs would hit this. Cap it; rank the overflow cheaply first so the cap
+// keeps the most promising rows.
+const MAX_SURVIVORS = Number(process.env.MATCH_MAX_SURVIVORS || 1500);
+
+// No-description skill overlap: how many of the candidate's skills appear in
+// the job's own skills array. Cheap enough to run across the whole pool.
+function cheapSkillOverlap(candidateSkillSet, job) {
+  const js = job.skills_required?.length ? job.skills_required : job.skills || [];
+  if (!Array.isArray(js) || !js.length) return 0;
+  let n = 0;
+  for (const s of js) {
+    if (candidateSkillSet.has(String(s).toLowerCase().trim())) n++;
+  }
+  return n;
+}
+
 // Fast, no-LLM pass: gate + weighted score + sort. Returns the internal scored
 // list (with _job attached) so the background judge can enrich it.
 async function computeScored(userId) {
@@ -403,9 +443,24 @@ async function computeScored(userId) {
 
   // Gate first (cheap — no text scanning), then IDF-score the survivors'
   // descriptions against the candidate's skills, then run the weighted scorer.
-  const survivors = (jobs || [])
+  let survivors = (jobs || [])
     .map((row) => ({ row, job: jobView(row) }))
     .filter(({ job }) => !gateJob(candidate, job));
+
+  if (survivors.length > MAX_SURVIVORS) {
+    console.warn(
+      `Match: ${survivors.length} gate survivors for user ${userId} ` +
+        `(role_family="${candidate.role_family}") — capping to ${MAX_SURVIVORS}`,
+    );
+    const candSkillSet = new Set(
+      (candidate.skills || []).map((s) => String(s).toLowerCase().trim()),
+    );
+    survivors = survivors
+      .map((s) => ({ s, ov: cheapSkillOverlap(candSkillSet, s.job) }))
+      .sort((a, b) => b.ov - a.ov)
+      .slice(0, MAX_SURVIVORS)
+      .map(({ s }) => s);
+  }
 
   await attachDescriptions(survivors);
 
@@ -424,15 +479,24 @@ async function computeScored(userId) {
 
 function toUiJobs(scored) {
   return scored
-    .map(({ _job, gated, gateReason, score, label, capReason, match_score: _stale, description: _desc, embedding: _emb, ...rest }) => ({
+    .map(({
+      _job, gated, gateReason, score, label, capReason,
+      match_score: _stale, description: _desc, embedding: _emb,
+      // m5: these were all shipped to the browser and never read there —
+      // `breakdown` was duplicated as `match_breakdown`, `profile` is the
+      // whole jsonb the scorer already unpacked, and the raw skill arrays are
+      // superseded by the card's own `skills`. On the B2 path (thousands of
+      // rows) this padding was a meaningful share of a 100+ MB response.
+      breakdown, profile: _prof,
+      skills_required: _sr, skills_preferred: _sp,
+      ...rest
+    }) => ({
       ...rest,
       // ALWAYS use the computed heuristic score here. The jobs table has a
       // stored match_score column (0 from the collector) which would otherwise
-      // shadow the real score via `rest.match_score ?? score`. The full
-      // description is dropped too — it's ~9KB/job and the UI never renders
-      // it — as is the raw embedding vector (~12KB/job).
+      // shadow the real score via `rest.match_score ?? score`.
       match_score: score,
-      match_breakdown: rest.breakdown,
+      match_breakdown: breakdown,
       // Soft-cap transparency: "capped: needs 8y, you have 4y" on the card.
       cap_reason: capReason || null,
     }))
@@ -536,20 +600,34 @@ export async function searchJobs(userId, q, limit = 100) {
 
   // Reserve slots for out-of-criteria jobs so a flood of in-criteria matches
   // can never hide them — the whole point of searching the DB directly.
+  //
+  // The reservation is a FLOOR, not a cap (M1): give out-of-criteria at least
+  // 25% of the limit, but if the in-criteria list is short, let out-of-criteria
+  // fill the rest of the page rather than leaving slots empty. Someone
+  // searching entirely outside their own role family (all results
+  // out-of-criteria) should get a full page, not exactly 25.
   const byScore = (a, b) => b.score - a.score;
   const inCriteria = ranked.filter((j) => !j.gateReason).sort(byScore);
   const outside = ranked.filter((j) => j.gateReason).sort(byScore);
-  const outsideSlots = Math.min(outside.length, Math.round(limit * 0.25));
+
+  const minOutside = Math.round(limit * 0.25);
+  const inCount = Math.min(inCriteria.length, Math.max(limit - minOutside, limit - outside.length));
+  const outCount = Math.min(outside.length, limit - inCount);
   const scored = [
-    ...inCriteria.slice(0, limit - outsideSlots),
-    ...outside.slice(0, outsideSlots),
+    ...inCriteria.slice(0, inCount),
+    ...outside.slice(0, outCount),
   ];
 
   return scored.map(
-    ({ _job, gated, gateReason, score, label, capReason, match_score: _stale, description: _d, embedding: _emb, ...rest }) => ({
+    ({
+      _job, gated, gateReason, score, label, capReason,
+      match_score: _stale, description: _d, embedding: _emb,
+      breakdown, profile: _prof, skills_required: _sr, skills_preferred: _sp,
+      ...rest
+    }) => ({
       ...rest,
       match_score: score,
-      match_breakdown: rest.breakdown,
+      match_breakdown: breakdown,
       cap_reason: capReason || null,
       outside_criteria: Boolean(gateReason),
       gate_reason: gateReason || null,
@@ -560,4 +638,33 @@ export async function searchJobs(userId, q, limit = 100) {
 /** Invalidate a user's cached matches (call after resume re-upload). */
 export function invalidateMatches(userId) {
   cache.delete(userId);
+}
+
+/**
+ * Score an explicit list of job rows against a user's profile — used by the
+ * Saved Jobs page, which was rendering the jobs table's stored `match_score`
+ * column verbatim (0, written by the collector) so every saved job showed
+ * "0% match" (M10). Uses ignoreGate: the user deliberately saved these, so
+ * show a real score even for a job the personalized feed would filter out.
+ *
+ * @param {string} userId
+ * @param {object[]} jobRows  raw rows from the `jobs` table
+ * @returns {Promise<object[]>} same rows with a real `match_score` +
+ *   `match_breakdown`, stale stored `match_score` stripped
+ */
+export async function scoreJobsForUser(userId, jobRows) {
+  if (!Array.isArray(jobRows) || !jobRows.length) return [];
+  const candidate = await getCandidateProfile(userId);
+  const withDesc = jobRows.map((row) => ({ row, job: jobView(row) }));
+  computeDescSkillScores(candidate, withDesc.map((s) => s.job));
+  return withDesc.map(({ row, job }) => {
+    const m = scoreMatch(candidate, job, undefined, { ignoreGate: true });
+    const { match_score: _stale, description: _d, embedding: _emb, profile: _p, ...rest } = row;
+    return {
+      ...rest,
+      match_score: m.score,
+      match_breakdown: m.breakdown,
+      cap_reason: m.capReason || null,
+    };
+  });
 }

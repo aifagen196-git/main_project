@@ -22,11 +22,11 @@ import { signOut } from "../services/auth";
  *  - in-app (/pricing route, inside AppShell): plain section, no header,
  *    reached from "Manage subscription" on Billing.
  *
- * Checkout itself (startCheckout — real Razorpay order + verify flow, see
- * services/subscription.js) is unchanged: it still charges the card
- * immediately. The "Start 7-Day Free Trial" CTA copy predates this pass and
- * does not reflect a real delayed-charge trial — see the note in
- * subscription.js before assuming otherwise.
+ * Checkout (startCheckout — real Razorpay order + verify flow, see
+ * services/subscription.js) charges the card immediately. CTA and body copy
+ * now say so plainly — the old "Start 7-Day Free Trial" wording was removed
+ * because no delayed-charge / trial-period mechanism exists (that would be a
+ * Razorpay Subscriptions integration, not the one-time Orders flow here).
  *
  * Trust strip corrected: it previously said "Payments handled securely by
  * Stripe", but this app's payment processor is Razorpay; there is no Stripe
@@ -102,8 +102,8 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           }}
         >
           {onboarding
-            ? "Pick a plan to unlock your dashboard. Every plan includes a 7-day free trial."
-            : "Change plans anytime — every plan includes a 7-day free trial."}
+            ? "Pick a plan to unlock your dashboard. You're charged today; cancel anytime from Billing."
+            : "Change plans anytime. Charges apply immediately for the new plan."}
         </p>
       </div>
 
@@ -292,8 +292,8 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
         }}
       >
         {[
-          [Shield, "7-day free trial", "Try every premium feature risk-free."],
-          [CreditCard, "Cancel anytime", "No lock-in — change your plan whenever."],
+          [Shield, "Full access on day one", "Every feature in your plan, unlocked immediately."],
+          [CreditCard, "Cancel anytime", "No lock-in — manage your plan from Billing."],
           [Lock, "Secure payments", "Handled by Razorpay, not stored on our servers."],
           [HelpCircle, "Real support", "Email us and a person answers."],
         ].map(([Icon, title, desc]) => (

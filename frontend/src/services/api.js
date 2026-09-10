@@ -32,6 +32,20 @@ async function authHeader() {
 // of leaving the UI spinning forever.
 const DEFAULT_TIMEOUT_MS = 20000;
 
+// Endpoints that legitimately take longer than the default. The matches feed
+// does a full job-pool load on a cold backend (30-60s) — capping it at 20s
+// meant every user who opened Job Matches in the ~30s after any
+// deploy/restart got a timeout even though the backend would have answered
+// (B1). The backend now de-dups the in-flight load and warms it at startup,
+// but a request that lands mid-warm-up still needs room to wait it out.
+const SLOW_ENDPOINTS = [
+  { test: (p) => p.startsWith("/api/jobs/matches"), timeoutMs: 70000 },
+  { test: (p) => p.startsWith("/api/jobs/search"), timeoutMs: 45000 },
+];
+function timeoutFor(path) {
+  return SLOW_ENDPOINTS.find((e) => e.test(path))?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+}
+
 async function fetchWithTimeout(url, options, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -82,11 +96,15 @@ export async function apiRequest(path, { method = "GET", body, _retried } = {}) 
   const headers = { ...(await authHeader()) };
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
-  const res = await fetchWithTimeout(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const res = await fetchWithTimeout(
+    `${API_URL}${path}`,
+    {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    },
+    timeoutFor(path),
+  );
 
   // Expired access token: refresh the Supabase session once and retry.
   if (res.status === 401 && !_retried) {
@@ -95,6 +113,17 @@ export async function apiRequest(path, { method = "GET", body, _retried } = {}) 
       return apiRequest(path, { method, body, _retried: true });
     }
   }
+
+  // 402 = the server-side paywall (requireActivePlan). The plan lapsed or was
+  // never active — send the user to Pricing. Signal it distinctly so callers
+  // (and AIFAGen.jsx) can react rather than showing a generic error.
+  if (res.status === 402) {
+    const err = new Error("An active plan is required.");
+    err.status = 402;
+    err.code = "PLAN_REQUIRED";
+    throw err;
+  }
+
   return handle(res);
 }
 

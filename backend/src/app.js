@@ -3,9 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
+import multer from "multer";
 
 import { requireAuth } from "./middleware/auth.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
+import { requireActivePlan } from "./middleware/requireActivePlan.js";
 
 import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -83,17 +85,22 @@ app.get("/api/health", (req, res) => {
 // Routes (all require a valid Supabase JWT)
 // =============================
 
-app.use("/api/jobs", requireAuth, jobsRoutes);
+// Profile + payments are reachable WITHOUT an active plan — a new user must
+// be able to read their own status and complete checkout. Everything else is
+// a paid product feature and requires an active plan server-side (B3), the
+// same gate the frontend app shell already enforces (isSubscribed()).
 app.use("/api/profile", requireAuth, profileRoutes);
-app.use("/api/preferences", requireAuth, preferencesRoutes);
-app.use("/api/saved-jobs", requireAuth, savedJobsRoutes);
-app.use("/api/internal-jobs", requireAuth, internalJobsRoutes);
-app.use("/api/applications", requireAuth, applicationsRoutes);
-app.use("/api/resumes", requireAuth, resumesRoutes);
-app.use("/api/ai", requireAuth, aiRoutes);
-app.use("/api/analytics", requireAuth, analyticsRoutes);
 app.use("/api/payments", requireAuth, paymentsRoutes);
 app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
+
+app.use("/api/jobs", requireAuth, requireActivePlan, jobsRoutes);
+app.use("/api/preferences", requireAuth, requireActivePlan, preferencesRoutes);
+app.use("/api/saved-jobs", requireAuth, requireActivePlan, savedJobsRoutes);
+app.use("/api/internal-jobs", requireAuth, requireActivePlan, internalJobsRoutes);
+app.use("/api/applications", requireAuth, requireActivePlan, applicationsRoutes);
+app.use("/api/resumes", requireAuth, requireActivePlan, resumesRoutes);
+app.use("/api/ai", requireAuth, requireActivePlan, aiRoutes);
+app.use("/api/analytics", requireAuth, requireActivePlan, analyticsRoutes);
 
 // =============================
 // 404
@@ -101,6 +108,44 @@ app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Endpoint not found." });
+});
+
+// =============================
+// Error handler (must be last, and must have 4 args to be recognized by
+// Express as an error handler). Without this, any thrown/forwarded error —
+// a multer "file too large", a route that throws instead of returning a
+// response — falls through to Express's default handler, which sends an
+// HTML page with a full stack trace (leaking absolute server paths). Every
+// error out of this API should be JSON.
+// =============================
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  if (err instanceof multer.MulterError) {
+    const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "That file is too large — the limit is 10 MB."
+        : `Upload error: ${err.message}`;
+    return res.status(status).json({ success: false, message });
+  }
+
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ success: false, message: "Request body too large." });
+  }
+
+  console.error("Unhandled error:", err);
+  const status = Number.isInteger(err?.status) ? err.status : 500;
+  // Never echo err.message to the client in production — it can carry file
+  // paths, SQL, or stack fragments. A fixed string is safe; the real error
+  // is in the server log above.
+  const message =
+    process.env.NODE_ENV === "production"
+      ? "Something went wrong on our end. Please try again."
+      : String(err?.message || "Internal error");
+  res.status(status).json({ success: false, message });
 });
 
 export default app;

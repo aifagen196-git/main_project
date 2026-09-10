@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: "Is there a free trial?",
-    a: "Paid plans include a 7-day free trial. No credit card required to start.",
+    a: "There is no free trial — paid plans are billed when you subscribe. You can cancel anytime from Billing.",
   },
   {
     q: "What payment methods do you accept?",

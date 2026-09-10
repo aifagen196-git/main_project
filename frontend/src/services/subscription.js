@@ -25,13 +25,13 @@ function loadRazorpay() {
  * from anything this function claims. That closes the gap where a client
  * could pay Basic's cheaper cycle and claim the pricier one got activated.
  *
- * NOTE ON THE "7-DAY FREE TRIAL" CTA COPY (utils/plan.js): this function
- * charges the card immediately on checkout, exactly like before this pass.
- * There is no delayed-first-charge / trial-period mechanism implemented —
- * that would need Razorpay Subscriptions (recurring plans with a
- * trial_period), a materially different integration from the one-time
- * Orders flow this file wraps. Flagged, not silently built or silently
- * dropped from the copy — ask before changing either.
+ * This function charges the card IMMEDIATELY on checkout (one-time Razorpay
+ * Order). There is no trial-period mechanism — the CTA and pricing copy
+ * (utils/plan.js, Pricing.jsx, the FAQ) were updated to say so plainly after
+ * the old "Start 7-Day Free Trial" wording was found to be misleading (a
+ * real trial would need Razorpay Subscriptions with a trial_period, a
+ * different integration). The backend now also stamps current_period_end so
+ * the plan actually expires (see payments.routes.js periodEndFor).
  *
  * @param {"basic"|"premium"} plan
  * @param {"monthly"|"semiannual"} billingCycle

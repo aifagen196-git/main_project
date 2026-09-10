@@ -5,8 +5,19 @@ import {
   verifyPaymentSignature,
   fetchOrderNotes,
 } from "../services/payments/razorpay.service.js";
+import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
 
 const router = express.Router();
+
+// How long a paid term lasts, by billing cycle. Used to stamp
+// current_period_end so a plan actually expires (B5) rather than granting
+// permanent access off a single payment.
+export function periodEndFor(billingCycle, from = new Date()) {
+  const d = new Date(from);
+  if (billingCycle === "semiannual") d.setMonth(d.getMonth() + 6);
+  else d.setMonth(d.getMonth() + 1); // "monthly" / anything else
+  return d.toISOString();
+}
 
 // Two paid tiers — Basic can be billed monthly or every 6 months (same
 // features either way); Premium is 6-monthly only. See razorpay.service.js's
@@ -111,6 +122,7 @@ router.post("/verify", async (req, res) => {
       plan,
       subscription_status: "active",
       billing_cycle: billingCycle,
+      current_period_end: periodEndFor(billingCycle),
       razorpay_payment_id,
       razorpay_order_id,
     })
@@ -123,6 +135,7 @@ router.post("/verify", async (req, res) => {
     return res.status(500).json({ success: false, message: "Could not activate plan" });
   }
 
+  invalidatePlanCache(req.user.id);
   return res.json({ success: true, profile: data });
 });
 

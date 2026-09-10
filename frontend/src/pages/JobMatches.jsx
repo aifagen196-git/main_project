@@ -246,6 +246,7 @@ const DATE_OPTIONS = [
 export default function JobMatches({ saved, toggle }) {
   const [matches, setMatches] = useState([]); // personalized feed
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null); // feed fetch failed (M2)
   const [currentPage, setCurrentPage] = useState(1);
   const [appliedIds, setAppliedIds] = useState([]);
   const [openFilter, setOpenFilter] = useState(""); // which filter dropdown is open
@@ -303,9 +304,21 @@ export default function JobMatches({ saved, toggle }) {
     async function loadJobs() {
       try {
         const data = await getMatchedJobs();
-        if (!cancelled) setMatches(data || []);
+        if (!cancelled) {
+          setMatches(data || []);
+          setLoadError(null);
+        }
       } catch (err) {
         console.error("Failed to load jobs", err);
+        // M2: the request failed (timeout / 500 / offline). Surface it as an
+        // ERROR with a retry — not the "no jobs match your filters" empty
+        // state, which blames the user's filters for a backend problem.
+        if (!cancelled) {
+          setLoadError(
+            err?.message ||
+              "We couldn't load your matches just now. Please try again.",
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -697,29 +710,33 @@ export default function JobMatches({ saved, toggle }) {
             const skills = Array.isArray(j.skills) ? j.skills : [];
             const years = minYearsOf(j);
             const posted = j.posted_date || j.created_at;
-            const reasons = [
-              {
-                label: "Skills overlap",
-                pct: Math.min(99, score + 4),
-                note: skills.length
-                  ? `${skills.slice(0, 2).join(" and ")} match your top strengths.`
-                  : "Scored on your resume's overall profile.",
-              },
-              {
-                label: "Experience fit",
-                pct: Math.max(20, score - 9),
-                note: years
-                  ? `${years} years expected for this role.`
-                  : "No explicit experience requirement listed.",
-              },
-              {
-                label: "Location & pay",
-                pct: Math.max(25, score - 3),
-                note: /remote/i.test(j.location || "")
-                  ? "Remote, inside your stated range."
-                  : `On-site in ${(j.location || "the listed location").split(",")[0]}.`,
-              },
+            // M4: real per-dimension scores from the backend scorer
+            // (`match_breakdown`, each 0..1), NOT arithmetic off the overall
+            // score. Falls back to the overall score only if the breakdown
+            // is missing (older cached entries).
+            const bd = j.match_breakdown || {};
+            const DIMENSIONS = [
+              ["skills", "Skills overlap", "How many of the role's required skills your resume shows."],
+              ["domain", "Role fit", "How closely this role matches your professional focus."],
+              ["experience", "Experience", years ? `Role expects ~${years} years.` : "Experience level vs. the role's stated requirement."],
+              ["location", "Location", "US-based / remote-US alignment with your resume."],
+              ["education", "Education", "Degree level vs. the role's stated minimum."],
             ];
+            const reasons = DIMENSIONS
+              .filter(([k]) => typeof bd[k] === "number")
+              .map(([k, label, note]) => ({
+                label,
+                pct: Math.round(bd[k] * 100),
+                note,
+              }));
+            // M3: judge output — matched strengths, gaps, deal-breakers, and
+            // the one-line verdict. Populated once the background LLM judge
+            // finishes (re-run matching to refresh); absent until then.
+            const matchReasons = Array.isArray(j.match_reasons) ? j.match_reasons : [];
+            const gaps = Array.isArray(j.gaps) ? j.gaps : [];
+            const redFlags = Array.isArray(j.red_flags) ? j.red_flags : [];
+            const verdict = j.match_verdict || "";
+            const verdictNote = j.match_reasoning || "";
 
             return (
               <div
@@ -813,6 +830,45 @@ export default function JobMatches({ saved, toggle }) {
                           }}
                         >
                           Stretch
+                        </span>
+                      )}
+                      {/* m2: search can surface jobs outside the user's own
+                          criteria (wrong role family, non-US, etc.) — they
+                          used to render identical to real matches. Label them. */}
+                      {j.outside_criteria && (
+                        <span
+                          title={j.gate_reason || "Outside your usual match criteria"}
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".1em",
+                            textTransform: "uppercase",
+                            background: "#FFF7ED",
+                            color: "#B45309",
+                            border: "1px solid #FED7AA",
+                            borderRadius: 6,
+                            padding: "3px 7px",
+                          }}
+                        >
+                          {j.gate_reason || "Outside your criteria"}
+                        </span>
+                      )}
+                      {j.cap_reason && (
+                        <span
+                          title={j.cap_reason}
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            letterSpacing: ".1em",
+                            textTransform: "uppercase",
+                            background: "#F1F5F9",
+                            color: M.muted,
+                            border: `1px solid ${M.line}`,
+                            borderRadius: 6,
+                            padding: "3px 7px",
+                          }}
+                        >
+                          Capped: {j.cap_reason}
                         </span>
                       )}
                     </div>
@@ -1044,6 +1100,72 @@ export default function JobMatches({ saved, toggle }) {
                         </div>
                       ))}
                     </div>
+
+                    {reasons.length === 0 && (
+                      <p style={{ fontSize: 12.5, color: M.muted, lineHeight: 1.5 }}>
+                        This job scored {score}% on your resume overall. A
+                        detailed breakdown wasn't available for this entry —
+                        re-run matching to refresh it.
+                      </p>
+                    )}
+
+                    {/* M3: LLM judge verdict + matched strengths / gaps /
+                        deal-breakers. Shown once the background judge has run. */}
+                    {verdict && (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          background: M.page,
+                          border: `1px solid ${M.lineSoft}`,
+                        }}
+                      >
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: M.ink }}>
+                          {verdict}
+                        </div>
+                        {verdictNote && (
+                          <div style={{ fontSize: 12, color: M.muted, marginTop: 4, lineHeight: 1.5 }}>
+                            {verdictNote}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(matchReasons.length > 0 || gaps.length > 0 || redFlags.length > 0) && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, marginTop: 14 }}>
+                        {matchReasons.length > 0 && (
+                          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#059669", marginBottom: 6 }}>
+                              Why you fit
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: M.body, lineHeight: 1.55 }}>
+                              {matchReasons.slice(0, 4).map((t, k) => <li key={k}>{t}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {gaps.length > 0 && (
+                          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#B45309", marginBottom: 6 }}>
+                              Gaps to address
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: M.body, lineHeight: 1.55 }}>
+                              {gaps.slice(0, 4).map((t, k) => <li key={k}>{t}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {redFlags.length > 0 && (
+                          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#DC2626", marginBottom: 6 }}>
+                              🚩 Deal-breakers
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: M.body, lineHeight: 1.55 }}>
+                              {redFlags.slice(0, 4).map((t, k) => <li key={k}>{t}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1052,8 +1174,53 @@ export default function JobMatches({ saved, toggle }) {
         </div>
       )}
 
+      {/* ---------------- ERROR (feed fetch failed — M2) ---------------- */}
+      {!busy && !isSearch && loadError && (
+        <div
+          style={{
+            background: "#FEF2F2",
+            border: "1px solid #FECACA",
+            borderRadius: 20,
+            padding: "40px 24px",
+            textAlign: "center",
+            marginTop: 14,
+            animation: "v3FadeIn .3s ease both",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: M.display,
+              fontSize: 19,
+              fontWeight: 700,
+              letterSpacing: "-.02em",
+              color: "#991B1B",
+            }}
+          >
+            Couldn't load your matches
+          </div>
+          <p style={{ margin: "8px 0 18px", fontSize: 14, color: "#B91C1C" }}>
+            {loadError}
+          </p>
+          <button
+            onClick={rerun}
+            style={{
+              background: "#DC2626",
+              border: "none",
+              borderRadius: 11,
+              padding: "12px 22px",
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* ---------------- EMPTY ---------------- */}
-      {!busy && jobs.length === 0 && (
+      {!busy && !loadError && jobs.length === 0 && (
         <div
           style={{
             background: "#fff",
@@ -1074,26 +1241,36 @@ export default function JobMatches({ saved, toggle }) {
               color: M.ink,
             }}
           >
-            No jobs match those filters
+            {isSearch
+              ? "No jobs found"
+              : anyFilter
+              ? "No jobs match those filters"
+              : "No matches yet"}
           </div>
           <p style={{ margin: "8px 0 18px", fontSize: 14, color: M.muted }}>
-            Widen the workplace or experience range to see more.
+            {isSearch
+              ? "Try a different search term."
+              : anyFilter
+              ? "Widen the workplace or experience range to see more."
+              : "Upload a resume so we can match jobs to your profile."}
           </p>
-          <button
-            onClick={clearFilters}
-            style={{
-              background: M.ink,
-              border: "none",
-              borderRadius: 11,
-              padding: "12px 20px",
-              fontSize: 13.5,
-              fontWeight: 700,
-              color: M.page,
-              cursor: "pointer",
-            }}
-          >
-            Clear filters
-          </button>
+          {anyFilter && !isSearch && (
+            <button
+              onClick={clearFilters}
+              style={{
+                background: M.ink,
+                border: "none",
+                borderRadius: 11,
+                padding: "12px 20px",
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: M.page,
+                cursor: "pointer",
+              }}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 

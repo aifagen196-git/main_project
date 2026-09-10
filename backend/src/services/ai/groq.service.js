@@ -3,8 +3,15 @@
 // Groq provider (OpenAI-compatible REST, no SDK dependency). Used by the AI
 // layer in anthropic.service.js according to which provider keys are set.
 // Configure with GROQ_API_KEY (+ optional GROQ_MODEL) in backend/.env.
-
-const GROQ_MODEL = () => process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+//
+// MODEL NAMES GO STALE. Groq retires hosted models on a rolling basis — the
+// previous default (`llama-3.3-70b-versatile`) was decommissioned and 404'd
+// every call, which silently fell through to the rate-limited Gemini key
+// (see the fallthrough in anthropic.service.js). If AI calls start failing
+// with a 404 / "model does not exist", set GROQ_MODEL in backend/.env to a
+// current one from https://console.groq.com/docs/models.
+const GROQ_MODEL = () =>
+  process.env.GROQ_MODEL || "meta-llama/llama-4-maverick-17b-128e-instruct";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // Per-request deadline. Must stay well under the frontend's upload timeout so a
 // stalled provider surfaces as a fast, clear failure instead of a hung request.

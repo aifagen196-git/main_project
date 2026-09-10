@@ -1,9 +1,13 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { scoreJobsForUser } from "../services/jobs/matching.service.js";
 
 const router = express.Router();
 
-// List saved jobs (full job rows), newest first.
+// List saved jobs (full job rows), newest first. The raw jobs row carries a
+// stored `match_score` of 0 (written by the collector) — rendering it
+// verbatim made every saved job show "0% match" (M10). Re-score each one
+// against the user's current profile instead.
 router.get("/", async (req, res) => {
   const { data, error } = await supabase
     .from("saved_jobs")
@@ -12,10 +16,20 @@ router.get("/", async (req, res) => {
     .order("created_at", { ascending: false });
 
   if (error) return res.status(500).json({ success: false, message: error.message });
-  return res.json({
-    success: true,
-    jobs: (data || []).map((r) => r.jobs).filter(Boolean),
-  });
+
+  const rows = (data || []).map((r) => r.jobs).filter(Boolean);
+  try {
+    const scored = await scoreJobsForUser(req.user.id, rows);
+    return res.json({ success: true, jobs: scored });
+  } catch (e) {
+    // Scoring needs a resume profile; if there's none yet (or it fails),
+    // still return the saved jobs — just without a computed match score.
+    console.error("Saved-jobs scoring failed, returning unscored", e.message);
+    return res.json({
+      success: true,
+      jobs: rows.map(({ match_score, ...rest }) => rest),
+    });
+  }
 });
 
 // Just the saved job ids (for bookmark state).
