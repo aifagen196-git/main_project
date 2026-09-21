@@ -3,22 +3,37 @@ import { DEV_PREVIEW, previewApi } from "../devPreview";
 
 // Base URL of the Express backend, resolved per environment.
 //
-//  1. VITE_API_URL wins when set — use it to point a deployed frontend at a
-//     backend on a different host (e.g. https://api.aifagenlabs.com).
-//  2. In dev, fall back to the page's own host on port 5000, so localhost
-//     stays localhost and opening the app from a phone on the LAN hits the
-//     backend on that same IP. (A hardcoded LAN IP in .env broke the whole app
-//     when DHCP reassigned the address — never pin IPs here.)
-//  3. In a production build with no VITE_API_URL, fall back to SAME-ORIGIN
-//     (empty base → requests go to "/api/..."), which is what a reverse proxy
-//     or platform rewrite serves. The previous code fell back to port 5000 in
-//     production too, so a deployed site would have called
-//     https://yourdomain.com:5000 and failed every request.
-const API_URL = import.meta.env.VITE_API_URL
-  ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, "")
-  : import.meta.env.DEV
-    ? `${window.location.protocol}//${window.location.hostname}:5000`
-    : "";
+// PRODUCTION IS ALWAYS SAME-ORIGIN — VITE_API_URL is deliberately ignored in a
+// production build. Requests go to "/api/..." on the page's own origin, which
+// the reverse proxy forwards to this backend.
+//
+// Why it's forced rather than merely defaulted: the deployment builds with
+// VITE_API_URL=https://api.aifagenlabs.com, which makes every call
+// cross-origin and therefore CORS-preflighted. The Caddy vhost for that
+// subdomain answers OPTIONS itself:
+//
+//     @options { method OPTIONS }
+//     handle @options { respond "" 204 }
+//
+// so the preflight never reaches Express, comes back with no
+// Access-Control-Allow-Origin, and the browser blocks every authenticated
+// request ("Response to preflight request doesn't pass access control
+// check"). Plain GETs still worked, which made it look intermittent — only
+// preflighted requests (anything sending Authorization) failed.
+//
+// Same-origin requests are never preflighted, so this sidesteps the proxy bug
+// entirely. If that Caddy block is ever fixed and a separate API host is
+// genuinely wanted, restore the old behaviour by honouring VITE_API_URL here.
+//
+// In dev, VITE_API_URL still wins when set; otherwise fall back to the page's
+// own host on port 5000, so localhost stays localhost and opening the app from
+// a phone on the LAN hits the backend on that same IP. (A hardcoded LAN IP in
+// .env broke the whole app when DHCP reassigned the address — never pin IPs.)
+const API_URL = import.meta.env.DEV
+  ? import.meta.env.VITE_API_URL
+    ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, "")
+    : `${window.location.protocol}//${window.location.hostname}:5000`
+  : "";
 
 async function authHeader() {
   const {

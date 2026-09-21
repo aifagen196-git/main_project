@@ -62,6 +62,29 @@ app.use(helmet());
 app.use(compression());
 app.use(morgan("dev"));
 
+// Restore the /api prefix when a reverse proxy has stripped it.
+//
+// The Caddy vhost for the main domain routes API traffic with
+// `handle_path /api/*`, and handle_path REMOVES the matched prefix before
+// proxying. So a browser request for /api/jobs arrives at this service as
+// /jobs, which 404s — every route below is mounted under /api. (Verified
+// against production: GET https://aifagenlabs.com/api/health returned this
+// app's own "Endpoint not found." 404.)
+//
+// Requests that still carry /api — the api.aifagenlabs.com vhost proxies
+// without stripping — are passed through untouched, so both routes work and
+// this stays correct if the proxy config is fixed later. req.originalUrl is
+// unaffected, so logging still shows what the client actually asked for.
+//
+// Sits above the webhook and body parsers so every route below, including the
+// raw-body Razorpay webhook, sees a normalized path.
+app.use((req, res, next) => {
+  if (req.url !== "/api" && !req.url.startsWith("/api/")) {
+    req.url = req.url === "/" ? "/api" : `/api${req.url}`;
+  }
+  next();
+});
+
 // Razorpay webhook needs the raw body for HMAC verification — register it
 // BEFORE the JSON parser so express.json() doesn't consume the stream.
 app.post(
