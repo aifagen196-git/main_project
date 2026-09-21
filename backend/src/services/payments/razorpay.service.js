@@ -85,6 +85,19 @@ export async function listPayments({ from, to, count = 100, skip = 0 } = {}) {
 }
 
 /**
+ * Refunds a captured payment. `amount` is in the major unit (dollars) and is
+ * converted here; omit it for a full refund. Razorpay rejects a refund on an
+ * uncaptured or already-refunded payment, so the caller surfaces its error
+ * rather than guessing.
+ */
+export async function refundPayment(paymentId, { amount, notes } = {}) {
+  const payload = {};
+  if (amount != null) payload.amount = Math.round(Number(amount) * 100);
+  if (notes) payload.notes = notes;
+  return client().payments.refund(paymentId, payload);
+}
+
+/**
  * Constant-time compare of two hex strings. `crypto.timingSafeEqual` throws a
  * RangeError when the buffers differ in length, so a caller passing a
  * wrong-length signature (or garbage) would otherwise crash the route with an
