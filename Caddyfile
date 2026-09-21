@@ -1,0 +1,107 @@
+{
+    email admin@aifagenlabs.com
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+# Frontend - Main domain
+aifagenlabs.com, www.aifagenlabs.com {
+    encode gzip
+
+    # Reverse proxy to frontend
+    reverse_proxy frontend:80 {
+        # Preserve original request headers
+        header_up X-Real-IP {http.request.remote.host}
+        header_up X-Forwarded-For {http.request.remote.host}
+        header_up X-Forwarded-Proto {http.request.proto}
+        header_up X-Forwarded-Host {http.request.host}
+    }
+
+    # API requests to backend
+    handle_path /api/* {
+        reverse_proxy backend:3000 {
+            header_up X-Real-IP {http.request.remote.host}
+            header_up X-Forwarded-For {http.request.remote.host}
+            header_up X-Forwarded-Proto {http.request.proto}
+            header_up X-Forwarded-Host {http.request.host}
+        }
+    }
+
+    # Security headers
+    header {
+        # HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Enable XSS protection
+        X-XSS-Protection "1; mode=block"
+        # Clickjacking protection
+        X-Frame-Options "SAMEORIGIN"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Feature policy
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    }
+
+    # Gzip compression
+    encode gzip {
+        match {
+            header Content-Type text/*
+            header Content-Type application/json
+            header Content-Type application/javascript
+            header Content-Type application/xml
+            header Content-Type application/xml+rss
+        }
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# API subdomain - Backend API
+api.aifagenlabs.com {
+    encode gzip
+
+    # Reverse proxy to backend
+    reverse_proxy backend:3000 {
+        header_up X-Real-IP {http.request.remote.host}
+        header_up X-Forwarded-For {http.request.remote.host}
+        header_up X-Forwarded-Proto {http.request.proto}
+        header_up X-Forwarded-Host {http.request.host}
+        # Increase timeout for long-running requests
+        transport http {
+            read_timeout 60s
+            write_timeout 60s
+        }
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        # CORS headers for API
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+
+    # Handle OPTIONS requests for CORS preflight
+    @options {
+        method OPTIONS
+    }
+    handle @options {
+        respond "" 204
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/api-access.log
+        format json
+    }
+}
