@@ -10,10 +10,17 @@ import crypto from "node:crypto";
 // cycle). Premium has exactly one.
 //
 // MUST stay in sync with frontend/src/utils/plan.js's PRICING_CARDS (display).
-const PRICING = {
+export const PRICING = {
   basic: { monthly: 210, semiannual: 1299 },
   premium: { semiannual: 2499 },
 };
+
+// Monthly-equivalent price per plan+cycle, for the admin MRR figure.
+export function monthlyEquivalent(plan, billingCycle) {
+  const price = PRICING[plan]?.[billingCycle];
+  if (!price) return 0;
+  return billingCycle === "semiannual" ? price / 6 : price;
+}
 
 const CURRENCY = process.env.RAZORPAY_CURRENCY || "USD";
 
@@ -59,6 +66,22 @@ export async function createOrder({ plan, billingCycle, userId }) {
 export async function fetchOrderNotes(orderId) {
   const order = await client().orders.fetch(orderId);
   return order.notes || {};
+}
+
+/**
+ * Lists payments from the Razorpay account (admin Payments panel).
+ *
+ * Razorpay is the source of truth here: profiles only keeps the LAST
+ * razorpay_payment_id per user, so it can't show a real transaction history,
+ * failed attempts, or refunds. `from`/`to` are unix seconds; `count` caps at
+ * 100 per the API.
+ */
+export async function listPayments({ from, to, count = 100, skip = 0 } = {}) {
+  const params = { count: Math.min(100, Math.max(1, count)), skip: Math.max(0, skip) };
+  if (from) params.from = from;
+  if (to) params.to = to;
+  const res = await client().payments.all(params);
+  return res?.items || [];
 }
 
 /**
