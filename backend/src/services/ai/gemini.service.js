@@ -1,3 +1,4 @@
+import { reportAiCall } from "./usage.js";
 // backend/src/services/ai/gemini.service.js
 //
 // BACKUP provider: Google Gemini, used only when the Claude call fails
@@ -68,6 +69,14 @@ async function callModel(model, body) {
       err.tryNextModel = true;
       throw err;
     }
+    // Reported here rather than in the caller: Gemini walks a model chain, so
+    // only this scope knows which model actually answered.
+    await reportAiCall({
+      provider: "gemini",
+      model,
+      inputTokens: data.usageMetadata?.promptTokenCount,
+      outputTokens: data.usageMetadata?.candidatesTokenCount,
+    });
     return text;
   }
   lastErr.tryNextModel = true;

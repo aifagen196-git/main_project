@@ -78,7 +78,7 @@ router.get("/overview", async (req, res) => {
       subsActive, subsTrialing, subsPastDue, subsCanceled,
       planBasic, planPremium,
       basicMonthly, basicSemi, premiumSemi,
-      jobsLive, jobsTotal, jobs24h, internalJobs,
+      jobsLive, jobsTotal, jobs24h, internalJobs, jobsInactive, jobsStale,
       applications, savedJobs, resumes,
       aiCalls30d,
     ] = await Promise.all([
@@ -98,6 +98,11 @@ router.get("/overview", async (req, res) => {
       countRows("jobs"),
       countRows("jobs", (q) => q.gte("created_at", d1)),
       countRows("internal_jobs"),
+      // Deactivated rows are never removed by the retention policy (it keys on
+      // expires_at / last_seen, not is_active), so they accumulate silently.
+      countRows("jobs", (q) => q.eq("is_active", false)),
+      // Stale enough that cleanup_old_jobs() would take them, if it ran.
+      countRows("jobs", (q) => q.lt("last_seen", isoDaysAgo(14))),
       countRows("applications"),
       countRows("saved_jobs"),
       countRows("resumes"),
@@ -150,7 +155,7 @@ router.get("/overview", async (req, res) => {
         arr: Math.round(mrr * 12),
         currency: process.env.RAZORPAY_CURRENCY || "USD",
       },
-      content: { jobsLive, jobsTotal, jobs24h, internalJobs },
+      content: { jobsLive, jobsTotal, jobs24h, internalJobs, jobsInactive, jobsStale },
       engagement: { applications, savedJobs, resumes, aiCalls30d },
       collectors: {
         sources: latestRuns.length,
@@ -311,6 +316,8 @@ router.get("/users", async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 25));
   const search = (req.query.search || "").trim();
+  const plan = (req.query.plan || "").trim();
+  const status = (req.query.status || "").trim();
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -324,8 +331,16 @@ router.get("/users", async (req, res) => {
     .range(from, to);
 
   if (search) {
-    query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`);
+    // Escape PostgREST's or() delimiters so a comma or paren can't break out
+    // of the filter expression.
+    const safe = search.replace(/[,()]/g, " ");
+    query = query.or(`email.ilike.%${safe}%,full_name.ilike.%${safe}%`);
   }
+  // Plan and status filter server-side, across the whole table. Doing this in
+  // the browser only ever filtered the 25 rows already on screen, so "show me
+  // every past_due account" silently skipped everyone on another page.
+  if (plan) query = query.eq("plan", plan);
+  if (status) query = query.eq("subscription_status", status);
 
   const { data: profiles, error, count } = await query;
   if (error) return res.status(500).json({ success: false, message: error.message });

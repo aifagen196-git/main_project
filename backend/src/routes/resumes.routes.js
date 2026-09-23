@@ -12,7 +12,7 @@ import {
   buildImprovedResumeDocx,
   buildFullResumeDocx,
 } from "../services/resume/improvedResumeDoc.service.js";
-import { consumeAiUsage } from "../services/ai/usage.js";
+import { consumeAiUsage, withAiContext } from "../services/ai/usage.js";
 import { invalidateMatches } from "../services/jobs/matching.service.js";
 
 const router = express.Router();
@@ -174,6 +174,9 @@ router.post("/:id/analyze", async (req, res) => {
   }
 
   try {
+    // Context spans consume + the AI call so the provider that answers
+    // can attribute the usage row it created.
+    return await withAiContext({ userId: req.user.id, feature: "resume_analyze" }, async () => {
     if (!(await consumeAiUsage(req.user.id))) {
       return res.status(429).json({ success: false, message: "AI plan inactive or daily limit reached" });
     }
@@ -187,6 +190,7 @@ router.post("/:id/analyze", async (req, res) => {
       .eq("id", req.params.id)
       .eq("user_id", req.user.id);
     return res.json({ success: true, analysis });
+    });
   } catch (e) {
     console.error("analyze failed", e.message);
     return res.status(502).json({ success: false, message: "Analysis unavailable" });
@@ -237,6 +241,9 @@ router.post("/:id/rewrite/docx", async (req, res) => {
   }
 
   try {
+    // Context spans consume + the AI call so the provider that answers
+    // can attribute the usage row it created.
+    return await withAiContext({ userId: req.user.id, feature: "resume_rewrite" }, async () => {
     let rewritten = row.ai_analysis?.rewrite;
     if (!rewritten || typeof rewritten !== "object" || !rewritten.experience) {
       if (!(await consumeAiUsage(req.user.id))) {
@@ -259,6 +266,7 @@ router.post("/:id/rewrite/docx", async (req, res) => {
     );
     res.setHeader("Content-Disposition", `attachment; filename="${safeName} - Improved.docx"`);
     return res.send(buffer);
+    });
   } catch (e) {
     console.error("resume rewrite failed", e.message);
     return res.status(502).json({ success: false, message: "Could not generate the improved resume." });
@@ -279,6 +287,9 @@ router.post("/:id/improve", async (req, res) => {
   }
 
   try {
+    // Context spans consume + the AI call so the provider that answers
+    // can attribute the usage row it created.
+    return await withAiContext({ userId: req.user.id, feature: "resume_improve" }, async () => {
     const cached = row.ai_analysis?.improvement;
     if (cached && typeof cached === "object") {
       return res.json({ success: true, improvement: cached, cached: true });
@@ -294,6 +305,7 @@ router.post("/:id/improve", async (req, res) => {
       .eq("user_id", req.user.id);
     if (cErr) console.error("improvement cache write failed", cErr.message);
     return res.json({ success: true, improvement });
+    });
   } catch (e) {
     console.error("improve failed", e.message);
     return res.status(502).json({ success: false, message: "Improvement unavailable" });

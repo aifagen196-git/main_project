@@ -1,3 +1,4 @@
+import { reportAiCall } from "./usage.js";
 // backend/src/services/ai/groq.service.js
 //
 // Groq provider (OpenAI-compatible REST, no SDK dependency). Used by the AI
@@ -103,6 +104,14 @@ export async function groqCompleteText(prompt, system, maxTokens = 3000, opts = 
     const data = await res.json();
     const text = (data.choices?.[0]?.message?.content || "").trim();
     if (!text) throw new Error("Groq returned an empty response");
+    // Reported here rather than in the caller: only this scope knows which
+    // model the request actually used.
+    await reportAiCall({
+      provider: "groq",
+      model: data.model || GROQ_MODEL(),
+      inputTokens: data.usage?.prompt_tokens,
+      outputTokens: data.usage?.completion_tokens,
+    });
     return text;
   }
   throw lastErr;

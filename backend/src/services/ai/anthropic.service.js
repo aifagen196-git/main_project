@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { geminiAvailable, geminiCompleteText } from "./gemini.service.js";
 import { groqAvailable, groqCompleteText } from "./groq.service.js";
+import { reportAiCall } from "./usage.js";
 
 // Anthropic client. Credentials live only on the server (ANTHROPIC_API_KEY).
 // Created lazily: constructing the SDK without a key throws, and the key may
@@ -73,9 +74,18 @@ export async function completeText(
         ...(system ? { system } : {}),
         messages: [{ role: "user", content: prompt }],
       });
+      // Attribution is recorded by whichever provider actually answered, so a
+      // fallback chain reports the one that worked, not the one tried first.
+      await reportAiCall({
+        provider: "anthropic",
+        model,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+      });
       return textOf(response);
     } catch (e) {
       lastErr = e;
+      await reportAiCall({ provider: "anthropic", model, success: false, error: e.status || e.message });
       console.warn(`[ai] Claude failed (${e.status || e.message}) — trying next provider`);
     }
   }
@@ -85,6 +95,7 @@ export async function completeText(
       return await groqCompleteText(prompt, system, maxTokens, { json: opts.json });
     } catch (e) {
       lastErr = e;
+      await reportAiCall({ provider: "groq", success: false, error: e.message });
       console.warn(`[ai] Groq failed (${String(e.message).slice(0, 80)}) — trying next provider`);
     }
   }
@@ -94,6 +105,7 @@ export async function completeText(
       return await geminiCompleteText(prompt, system, maxTokens, { json: opts.json });
     } catch (e) {
       lastErr = e;
+      await reportAiCall({ provider: "gemini", success: false, error: e.message });
       console.warn(`[ai] Gemini failed (${String(e.message).slice(0, 80)})`);
     }
   }
