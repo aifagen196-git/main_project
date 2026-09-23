@@ -65,23 +65,46 @@ export async function consumeAiUsage(userId) {
   return data === true;
 }
 
-// Per-1M-token prices for the models this app actually calls, used to turn
-// token counts into the Dashboard's cost figure. Approximate and hand-kept:
-// providers change pricing, so treat the result as an estimate, not billing.
-// Unknown models simply produce no cost rather than a wrong one.
-const PRICE_PER_MTOK = {
+// Per-1M-token prices, used to turn token counts into the admin's cost
+// figure. Only Anthropic's published rates are hardcoded — Groq and Gemini
+// prices are not included because guessing them would produce a confident
+// wrong number, and both providers change tiers often.
+//
+// Since Claude is currently disabled and Groq/Gemini serve every call, that
+// means no cost is recorded by default. Set AI_MODEL_PRICES to fix that, e.g.
+//
+//   AI_MODEL_PRICES={"gemini-3.1-flash-lite":{"in":0.1,"out":0.4}}
+//
+// Keys match on prefix, so a dated snapshot (claude-haiku-4-5-20251001) hits
+// its base entry. Treat every figure here as an estimate, not billing.
+const DEFAULT_PRICE_PER_MTOK = {
   "claude-haiku-4-5": { in: 1, out: 5 },
   "claude-sonnet-5": { in: 2, out: 10 },
   "claude-opus-5": { in: 5, out: 25 },
   "claude-opus-4-8": { in: 5, out: 25 },
 };
 
+let priceTable = null;
+function prices() {
+  if (priceTable) return priceTable;
+  priceTable = { ...DEFAULT_PRICE_PER_MTOK };
+  const raw = process.env.AI_MODEL_PRICES;
+  if (raw) {
+    try {
+      Object.assign(priceTable, JSON.parse(raw));
+    } catch (e) {
+      console.warn("[usage] AI_MODEL_PRICES is not valid JSON — ignoring it:", e.message);
+    }
+  }
+  return priceTable;
+}
+
 function estimateCost(model, inputTokens, outputTokens) {
   if (!model || (!inputTokens && !outputTokens)) return null;
-  // Match on prefix so dated snapshots (claude-haiku-4-5-20251001) still hit.
-  const key = Object.keys(PRICE_PER_MTOK).find((k) => String(model).startsWith(k));
+  const table = prices();
+  const key = Object.keys(table).find((k) => String(model).startsWith(k));
   if (!key) return null;
-  const p = PRICE_PER_MTOK[key];
+  const p = table[key];
   const cost = ((inputTokens || 0) / 1e6) * p.in + ((outputTokens || 0) / 1e6) * p.out;
   return Math.round(cost * 1e6) / 1e6;
 }

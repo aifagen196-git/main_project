@@ -517,6 +517,11 @@ router.get("/ai-usage", async (req, res) => {
 
   const totalCost = rows.reduce((s, r) => s + (Number(r.cost_usd) || 0), 0);
   const failures = rows.filter((r) => r.success === false).length;
+  // A call is "priced" only if we had a rate for its model. Reporting the
+  // split stops a $0 total from reading as "these calls were free" when it
+  // actually means "no rate configured for the model that served them".
+  const attributed = rows.filter((r) => r.provider);
+  const pricedCalls = rows.filter((r) => r.cost_usd != null).length;
 
   return res.json({
     success: true,
@@ -530,6 +535,8 @@ router.get("/ai-usage", async (req, res) => {
     byFeature: tally("feature"),
     byModel: tally("model"),
     totalCost: Math.round(totalCost * 10000) / 10000,
+    pricedCalls,
+    attributedCalls: attributed.length,
     failures,
     tokens: {
       input: rows.reduce((s, r) => s + (Number(r.input_tokens) || 0), 0),
