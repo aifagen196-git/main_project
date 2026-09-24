@@ -15,14 +15,14 @@ const D = {
   brand: "#6D4AFF",
   ochre: "#F59E0B",
   clay: "#F43F5E",
-  track: "#EDF0F8",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  track: "var(--surface-3)",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -379,7 +379,7 @@ export default function Dashboard({ profile }) {
             style={{
               position: "relative",
               overflow: "hidden",
-              background: `radial-gradient(ellipse at top right,${s.color}12,transparent 60%),#fff`,
+              background: `radial-gradient(ellipse at top right,${s.color}12,transparent 60%),var(--surface)`,
               border: `1px solid ${D.line}`,
               borderRadius: 18,
               padding: 20,
@@ -447,7 +447,7 @@ export default function Dashboard({ profile }) {
         <div
           style={{
             minWidth: 0,
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${D.line}`,
             borderRadius: 20,
             padding: 22,
@@ -624,7 +624,7 @@ export default function Dashboard({ profile }) {
               key={s.title}
               className="v3-card"
               style={{
-                background: "#fff",
+                background: "var(--surface)",
                 border: `1px solid ${D.line}`,
                 borderRadius: 20,
                 padding: 24,

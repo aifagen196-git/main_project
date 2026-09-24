@@ -15,14 +15,14 @@ import { matchHex } from "../utils/matchHex";
 const R = {
   brand: "#6D4AFF",
   clay: "#F43F5E",
-  track: "#EDF0F8",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  lineMid: "#DDE3EE",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  track: "var(--surface-3)",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  lineMid: "var(--line)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -171,7 +171,7 @@ export default function Resume() {
 
   const cardStyle = (delay) => ({
     minWidth: 0,
-    background: "#fff",
+    background: "var(--surface)",
     border: `1px solid ${R.line}`,
     borderRadius: 20,
     padding: 26,
@@ -224,7 +224,7 @@ export default function Resume() {
             disabled={busy}
             className="v3-btn-outline"
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: `1px solid ${R.lineMid}`,
               borderRadius: 12,
               padding: "13px 19px",
@@ -242,13 +242,13 @@ export default function Resume() {
             disabled={busy || !hasResume}
             className="v3-btn-dark"
             style={{
-              background: R.ink,
+              background: "var(--inverse)",
               border: "none",
               borderRadius: 12,
               padding: "13px 19px",
               fontSize: 14,
               fontWeight: 700,
-              color: R.page,
+              color: "var(--on-inverse)",
               cursor: busy || !hasResume ? "default" : "pointer",
               opacity: busy || !hasResume ? 0.65 : 1,
             }}
@@ -277,7 +277,7 @@ export default function Resume() {
       {!hasResume ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px dashed ${R.lineMid}`,
             borderRadius: 20,
             padding: "64px 24px",
@@ -327,7 +327,7 @@ export default function Resume() {
                       position: "absolute",
                       inset: 15,
                       borderRadius: "50%",
-                      background: "#fff",
+                      background: "var(--surface)",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
@@ -566,7 +566,7 @@ export default function Resume() {
                         fontSize: 12,
                         fontWeight: 600,
                         color: R.brand,
-                        background: "#F0EDFF",
+                        background: "var(--brand-wash)",
                         borderRadius: 8,
                         padding: "6px 11px",
                       }}
@@ -614,13 +614,13 @@ export default function Resume() {
                   disabled={downloading}
                   style={{
                     marginLeft: "auto",
-                    background: R.ink,
+                    background: "var(--inverse)",
                     border: "none",
                     borderRadius: 10,
                     padding: "9px 15px",
                     fontSize: 12.5,
                     fontWeight: 700,
-                    color: R.page,
+                    color: "var(--on-inverse)",
                     cursor: downloading ? "default" : "pointer",
                     opacity: downloading ? 0.65 : 1,
                   }}

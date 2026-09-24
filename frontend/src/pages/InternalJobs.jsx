@@ -11,12 +11,12 @@ import { getInternalJobs } from "../services/internalJobs";
 
 const S = {
   brand: "#6D4AFF",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -101,7 +101,7 @@ export default function InternalJobs() {
       {loading ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${S.line}`,
             borderRadius: 20,
             padding: 48,
@@ -115,7 +115,7 @@ export default function InternalJobs() {
       ) : jobs.length === 0 ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px dashed ${S.line}`,
             borderRadius: 20,
             padding: "64px 24px",
@@ -157,7 +157,7 @@ export default function InternalJobs() {
                 flexDirection: "column",
                 gap: 10,
                 padding: 22,
-                background: "#fff",
+                background: "var(--surface)",
                 border: `1px solid ${S.line}`,
                 borderRadius: 20,
                 boxShadow: "0 1px 2px rgba(15,23,42,.04)",
@@ -223,7 +223,7 @@ export default function InternalJobs() {
                         fontSize: 11,
                         fontWeight: 700,
                         color: S.brand,
-                        background: "#F3F0FF",
+                        background: "var(--brand-wash)",
                         borderRadius: 999,
                         padding: "3px 9px",
                       }}

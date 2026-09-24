@@ -8,12 +8,12 @@ import { signIn, signUp } from "../services/auth";
 
 const C = {
   brand: "#6D4AFF",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineMid: "#DDE3EE",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineMid: "var(--line)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -30,7 +30,7 @@ const fieldLabel = {
 const fieldInput = {
   width: "100%",
   marginTop: 8,
-  background: "#fff",
+  background: "var(--surface)",
   border: `1px solid ${C.lineMid}`,
   borderRadius: 12,
   padding: "14px 15px",
@@ -147,8 +147,8 @@ export default function AuthScreen({ onBack }) {
         style={{
           position: "relative",
           overflow: "hidden",
-          background: C.ink,
-          color: C.page,
+          background: "var(--inverse)",
+          color: "var(--on-inverse)",
           padding: "clamp(32px,5vw,64px)",
           display: "flex",
           flexDirection: "column",
@@ -250,7 +250,7 @@ export default function AuthScreen({ onBack }) {
               fontSize: 26,
               fontWeight: 700,
               letterSpacing: "-.03em",
-              color: C.page,
+              color: "var(--on-inverse)",
             }}
           >
             AIFAGen <span style={{ color: C.brand }}>Labs</span>
@@ -322,7 +322,7 @@ export default function AuthScreen({ onBack }) {
           alignItems: "center",
           justifyContent: "center",
           padding: "clamp(32px,5vw,64px)",
-          background: "#fff",
+          background: "var(--surface)",
         }}
       >
         <div
@@ -447,13 +447,13 @@ export default function AuthScreen({ onBack }) {
               disabled={loading}
               className="v3-btn-dark"
               style={{
-                background: C.ink,
+                background: "var(--inverse)",
                 border: "none",
                 borderRadius: 12,
                 padding: 15,
                 fontSize: 15,
                 fontWeight: 700,
-                color: C.page,
+                color: "var(--on-inverse)",
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.65 : 1,
               }}

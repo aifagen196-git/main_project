@@ -13,14 +13,14 @@ import { PLAN_LABEL } from "../../utils/plan";
 
 const H = {
   brand: "#6D4AFF",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -110,7 +110,7 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 22,
           boxShadow: "0 40px 80px -32px rgba(15,23,42,.5)",
           animation: "riseIn .28s cubic-bezier(.2,.7,.2,1) both",
@@ -149,7 +149,7 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
             aria-label="Close help"
             className="v3-iconbtn"
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: `1px solid ${H.line}`,
               borderRadius: 10,
               padding: "6px 10px",
@@ -228,10 +228,10 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
         <div
           style={{
             marginTop: 22,
-            background: H.ink,
+            background: "var(--inverse)",
             borderRadius: 17,
             padding: 20,
-            color: H.page,
+            color: "var(--on-inverse)",
           }}
         >
           <div
@@ -289,7 +289,7 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
               padding: 12,
               fontSize: 13.5,
               fontWeight: 700,
-              color: H.page,
+              color: "var(--on-inverse)",
               textAlign: "center",
               textDecoration: "none",
             }}

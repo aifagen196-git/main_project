@@ -5,12 +5,101 @@
 @tailwind utilities;
 
 @layer base {
+  /* Semantic tokens. The dark set is chosen for the dark surface, not an
+     inverted light theme — a flipped palette produces muddy mid-greys and
+     blown-out whites. */
+  :root {
+    --surface: #ffffff;
+    --surface-2: #F8F9FE;
+    --surface-3: #EEF0F6;
+    --ink: #0F172A;
+    --ink-2: #52525B;
+    --ink-3: #8A8F99;
+    --line: #E8ECF5;
+    --line-soft: #EFF2FA;
+    --brand-wash: #F3F0FF;
+    --sidebar-a: #FDFCFF;
+    --sidebar-b: #F6F3FF;
+    /* Deliberately-inverted accent cards (the dark rail on Settings, dark
+       CTA bands). These are dark in BOTH themes — flipping them with the
+       surface would turn a designed dark panel light. */
+    --inverse: #0F172A;
+    --on-inverse: #F8F9FE;
+  }
+
+  html.dark {
+    --surface: #15161A;
+    --surface-2: #1B1D22;
+    --surface-3: #23262D;
+    --ink: #F4F5F7;
+    --ink-2: #A9AEB8;
+    --ink-3: #7B818C;
+    --line: #24262C;
+    --line-soft: #1F2126;
+    --brand-wash: #221C3D;
+    --sidebar-a: #17181D;
+    --sidebar-b: #191622;
+    /* Slightly lifted from the page so an inverted card still separates
+       from a dark background instead of disappearing into it. */
+    --inverse: #23262D;
+    --on-inverse: #F4F5F7;
+  }
+
   html {
     color-scheme: light;
   }
-  body {
-    @apply bg-white text-slate-800 font-sans;
+  html.dark {
+    color-scheme: dark;
   }
+
+  body {
+    @apply font-sans;
+    background: var(--surface);
+    color: var(--ink);
+  }
+}
+
+/* Dark remapping for the surface / ink / line utilities actually used in this
+   app (36 distinct color classes — see the audit in git history).
+ *
+ * Only unambiguous *page chrome* is remapped. Deliberately NOT remapped:
+ *   - text-white, border-white, bg-black — these sit on brand-colored or
+ *     already-dark elements where white stays white in both themes
+ *   - bg-brand-*, text-brand-*, border-brand-* — brand identity is constant
+ *   - any /opacity variant (bg-white/10 …) — Tailwind emits those as separate
+ *     class names, so these selectors never touch them
+ *
+ * `.dark .x` is specificity (0,2,0) against a utility's (0,1,0), so it wins
+ * without !important regardless of source order. */
+@layer utilities {
+  .dark .bg-white { background-color: var(--surface); }
+  .dark .bg-slate-50 { background-color: var(--surface-2); }
+  .dark .bg-slate-100 { background-color: var(--surface-3); }
+  .dark .bg-slate-300 { background-color: var(--line); }
+  .dark .bg-brand-50 { background-color: var(--brand-wash); }
+
+  .dark .text-slate-900,
+  .dark .text-slate-800 { color: var(--ink); }
+  .dark .text-slate-700,
+  .dark .text-slate-600 { color: var(--ink-2); }
+  .dark .text-slate-500,
+  .dark .text-slate-400,
+  .dark .text-slate-300 { color: var(--ink-3); }
+
+  .dark .border-slate-200 { border-color: var(--line); }
+  .dark .border-slate-100 { border-color: var(--line-soft); }
+  .dark .placeholder-slate-400::placeholder { color: var(--ink-3); }
+
+  /* Status washes need their own dark steps — a light wash under dark ink
+     inverts the contrast and becomes unreadable. */
+  .dark .bg-emerald-50 { background-color: #122A15; }
+  .dark .text-emerald-600 { color: #35c035; }
+  .dark .bg-amber-50 { background-color: #2E2412; }
+  .dark .text-amber-600 { color: #fab219; }
+
+  /* Card lift reads as a halo on dark; soften it to a shadow that still
+     separates the card from the page. */
+  .dark .card:hover { box-shadow: 0 18px 40px -26px rgba(0,0,0,.8); }
 }
 
 @layer utilities {

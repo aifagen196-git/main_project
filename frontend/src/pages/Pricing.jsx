@@ -36,13 +36,13 @@ import { signOut } from "../services/auth";
 const P = {
   brand: "#6D4AFF",
   clay: "#F43F5E",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -145,7 +145,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
               key={key}
               style={{
                 position: "relative",
-                background: "#fff",
+                background: "var(--surface)",
                 border: `1.5px solid ${p.popular ? P.brand : P.line}`,
                 boxShadow: p.popular
                   ? "0 24px 54px -28px rgba(109,74,255,.4)"
@@ -240,7 +240,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  background: isCurrent ? P.page : p.popular ? P.brand : "#fff",
+                  background: isCurrent ? P.page : p.popular ? P.brand : "var(--surface)",
                   border: `1px solid ${isCurrent ? P.line : p.popular ? P.brand : P.lineMid}`,
                   borderRadius: 12,
                   padding: 13,
@@ -283,7 +283,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       <div
         style={{
           marginTop: 36,
-          background: "#F0EDFF",
+          background: "var(--brand-wash)",
           borderRadius: 20,
           padding: 24,
           display: "grid",
@@ -303,7 +303,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                 width: 40,
                 height: 40,
                 borderRadius: 11,
-                background: "#fff",
+                background: "var(--surface)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

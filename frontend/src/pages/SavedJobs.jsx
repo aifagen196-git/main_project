@@ -9,13 +9,13 @@ import { getSavedJobs } from "../services/savedJobs";
 
 const S = {
   clay: "#F43F5E",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -81,7 +81,7 @@ export default function SavedJobs({ saved, toggle }) {
       {loading ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${S.line}`,
             borderRadius: 20,
             padding: 48,
@@ -95,7 +95,7 @@ export default function SavedJobs({ saved, toggle }) {
       ) : list.length === 0 ? (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px dashed ${S.lineMid}`,
             borderRadius: 20,
             padding: "64px 24px",
@@ -121,13 +121,13 @@ export default function SavedJobs({ saved, toggle }) {
           <button
             onClick={() => navigate("/matches")}
             style={{
-              background: S.ink,
+              background: "var(--inverse)",
               border: "none",
               borderRadius: 11,
               padding: "12px 20px",
               fontSize: 13.5,
               fontWeight: 700,
-              color: S.page,
+              color: "var(--on-inverse)",
               cursor: "pointer",
             }}
           >
@@ -150,7 +150,7 @@ export default function SavedJobs({ saved, toggle }) {
                 key={j.id}
                 className="v3-savedcard"
                 style={{
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${S.line}`,
                   borderRadius: 20,
                   padding: 22,
@@ -233,13 +233,13 @@ export default function SavedJobs({ saved, toggle }) {
                     style={{
                       flex: 1,
                       textAlign: "center",
-                      background: S.ink,
+                      background: "var(--inverse)",
                       border: "none",
                       borderRadius: 11,
                       padding: 11,
                       fontSize: 13,
                       fontWeight: 700,
-                      color: S.page,
+                      color: "var(--on-inverse)",
                       cursor: "pointer",
                       transition: "background .2s",
                     }}
@@ -250,7 +250,7 @@ export default function SavedJobs({ saved, toggle }) {
                     onClick={() => toggle(j.id)}
                     className="v3-removecard"
                     style={{
-                      background: "#fff",
+                      background: "var(--surface)",
                       border: `1px solid ${S.lineMid}`,
                       borderRadius: 11,
                       padding: "11px 15px",

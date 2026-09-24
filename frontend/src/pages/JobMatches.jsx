@@ -10,21 +10,21 @@ import { matchHex } from "../utils/matchHex";
 const M = {
   brand: "#6D4AFF",
   clay: "#F43F5E",
-  track: "#EDF0F8",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  track: "var(--surface-3)",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
 
 const pagerStyle = (disabled) => ({
-  background: "#fff",
+  background: "var(--surface)",
   border: `1px solid ${M.line}`,
   borderRadius: 10,
   padding: "9px 15px",
@@ -95,7 +95,7 @@ function FilterDropdown({ group, open, setOpen }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
-          background: "#fff",
+          background: "var(--surface)",
           cursor: "pointer",
           textAlign: "left",
           border: `1.5px solid ${open ? M.brand : active ? "#C9BEFF" : M.line}`,
@@ -136,7 +136,7 @@ function FilterDropdown({ group, open, setOpen }) {
             left: 0,
             right: 0,
             minWidth: "100%",
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${M.line}`,
             borderRadius: 14,
             padding: 6,
@@ -163,7 +163,7 @@ function FilterDropdown({ group, open, setOpen }) {
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 10,
-                  background: picked ? "#F0EDFF" : "transparent",
+                  background: picked ? "var(--brand-wash)" : "transparent",
                   border: "none",
                   borderRadius: 10,
                   padding: "10px 11px",
@@ -503,7 +503,7 @@ export default function JobMatches({ saved, toggle }) {
           className="v3-search"
           style={{
             width: "100%",
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${M.line}`,
             borderRadius: 14,
             padding: "14px 44px 14px 42px",
@@ -578,7 +578,7 @@ export default function JobMatches({ saved, toggle }) {
           gap: 12,
           marginTop: 14,
           padding: 16,
-          background: "#fff",
+          background: "var(--surface)",
           border: `1px solid ${M.line}`,
           borderRadius: 18,
           boxShadow: "0 1px 2px rgba(15,23,42,.04)",
@@ -639,7 +639,7 @@ export default function JobMatches({ saved, toggle }) {
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            background: busy ? "#F0EDFF" : "#fff",
+            background: busy ? "var(--brand-wash)" : "var(--surface)",
             border: `1px solid ${busy ? "#C9BEFF" : M.line}`,
             borderRadius: 10,
             padding: "8px 14px",
@@ -681,7 +681,7 @@ export default function JobMatches({ saved, toggle }) {
                   display: "flex",
                   alignItems: "center",
                   gap: 16,
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${M.line}`,
                   borderRadius: 18,
                   padding: 20,
@@ -745,7 +745,7 @@ export default function JobMatches({ saved, toggle }) {
                 style={{
                   position: "relative",
                   overflow: "hidden",
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${M.line}`,
                   borderRadius: 18,
                   padding: "18px 20px",
@@ -806,8 +806,8 @@ export default function JobMatches({ saved, toggle }) {
                             fontWeight: 700,
                             letterSpacing: ".12em",
                             textTransform: "uppercase",
-                            background: M.ink,
-                            color: M.page,
+                            background: "var(--inverse)",
+                            color: "var(--on-inverse)",
                             borderRadius: 6,
                             padding: "3px 7px",
                           }}
@@ -861,7 +861,7 @@ export default function JobMatches({ saved, toggle }) {
                             fontWeight: 700,
                             letterSpacing: ".1em",
                             textTransform: "uppercase",
-                            background: "#F1F5F9",
+                            background: "var(--surface-3)",
                             color: M.muted,
                             border: `1px solid ${M.line}`,
                             borderRadius: 6,
@@ -931,7 +931,7 @@ export default function JobMatches({ saved, toggle }) {
                           position: "absolute",
                           inset: 6,
                           borderRadius: "50%",
-                          background: "#fff",
+                          background: "var(--surface)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -960,7 +960,7 @@ export default function JobMatches({ saved, toggle }) {
                             padding: "7px 13px",
                             fontSize: 12,
                             fontWeight: 700,
-                            color: M.page,
+                            color: "var(--on-inverse)",
                             cursor: "pointer",
                             transition: "background .18s, opacity .18s",
                             whiteSpace: "nowrap",
@@ -976,7 +976,7 @@ export default function JobMatches({ saved, toggle }) {
                       <button
                         onClick={() => toggle(j.id)}
                         style={{
-                          background: isSaved ? "#F0EDFF" : "#fff",
+                          background: isSaved ? "var(--brand-wash)" : "var(--surface)",
                           border: `1px solid ${isSaved ? "#C9BEFF" : M.line}`,
                           borderRadius: 9,
                           padding: "7px 13px",
@@ -993,7 +993,7 @@ export default function JobMatches({ saved, toggle }) {
                       <button
                         onClick={() => !isApplied && markApplied(j)}
                         style={{
-                          background: isApplied ? M.ink : "#fff",
+                          background: isApplied ? M.ink : "var(--surface)",
                           border: `1px solid ${isApplied ? M.ink : M.line}`,
                           borderRadius: 9,
                           padding: "7px 13px",
@@ -1223,7 +1223,7 @@ export default function JobMatches({ saved, toggle }) {
       {!busy && !loadError && jobs.length === 0 && (
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px dashed ${M.lineMid}`,
             borderRadius: 20,
             padding: "56px 24px",
@@ -1258,13 +1258,13 @@ export default function JobMatches({ saved, toggle }) {
             <button
               onClick={clearFilters}
               style={{
-                background: M.ink,
+                background: "var(--inverse)",
                 border: "none",
                 borderRadius: 11,
                 padding: "12px 20px",
                 fontSize: 13.5,
                 fontWeight: 700,
-                color: M.page,
+                color: "var(--on-inverse)",
                 cursor: "pointer",
               }}
             >

@@ -50,8 +50,8 @@ export default function AppShell({ profile, refresh, exit }) {
       className="font-body"
       style={{
         background:
-          "radial-gradient(1200px 600px at 100% -10%,rgba(109,74,255,.07),transparent 55%),radial-gradient(900px 500px at 0% 110%,rgba(245,158,11,.05),transparent 55%),#F8F9FE",
-        color: "#0F172A",
+          "radial-gradient(1200px 600px at 100% -10%,rgba(109,74,255,.07),transparent 55%),radial-gradient(900px 500px at 0% 110%,rgba(245,158,11,.05),transparent 55%),var(--surface-2)",
+        color: "var(--ink)",
       }}
     >
       <div style={{ display: "flex", minHeight: "100vh" }}>
@@ -91,9 +91,9 @@ export default function AppShell({ profile, refresh, exit }) {
               boxShadow: "0 8px 24px -12px rgba(15,23,42,.28)",
             }}
           >
-            <span style={{ display: "block", width: 16, height: 1.8, background: "#0F172A" }} />
-            <span style={{ display: "block", width: 16, height: 1.8, background: "#0F172A" }} />
-            <span style={{ display: "block", width: 11, height: 1.8, background: "#0F172A" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: "var(--inverse)" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: "var(--inverse)" }} />
+            <span style={{ display: "block", width: 11, height: 1.8, background: "var(--inverse)" }} />
           </button>
 
           <main

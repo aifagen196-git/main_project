@@ -130,9 +130,9 @@ const CSS = `
 @keyframes cardFlip{0%{opacity:0;transform:perspective(900px) rotateY(-100deg)}60%{opacity:1}100%{opacity:1;transform:perspective(900px) rotateY(0)}}
 
 .v3-navlink{transition:color .18s}
-.v3-navlink:hover{color:#0F172A}
+.v3-navlink:hover{color:var(--ink)}
 .v3-btn-outline{transition:background .18s,border-color .18s}
-.v3-btn-outline:hover{background:#fff;border-color:#0F172A}
+.v3-btn-outline:hover{background:var(--surface);border-color:var(--inverse)}
 .v3-btn-dark{transition:transform .2s cubic-bezier(.2,.7,.2,1),background .2s}
 .v3-btn-dark:hover{background:#6D4AFF;transform:translateY(-2px)}
 .v3-join-cta:hover{background:#6D4AFF!important;transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(109,74,255,.6)!important}
@@ -160,37 +160,37 @@ const CSS = `
   [data-feature-flip]{transition:none!important}
 }
 .v3-footlink{transition:color .18s}
-.v3-footlink:hover{color:#0F172A}
+.v3-footlink:hover{color:var(--ink)}
 .v3-input:focus{border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
-.v3-search:focus{background:#fff!important;border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.1)}
+.v3-search:focus{background:var(--surface)!important;border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.1)}
 .v3-navbtn{transition:background .22s,color .22s}
-.v3-navbtn[data-active-nav="0"]:hover{background:#F8F9FE}
+.v3-navbtn[data-active-nav="0"]:hover{background:var(--surface-2)}
 .v3-softbtn{transition:background .18s}
-.v3-softbtn:hover{background:#F8F9FE}
+.v3-softbtn:hover{background:var(--surface-2)}
 .v3-dangerbtn{transition:background .18s}
 .v3-dangerbtn:hover{background:#FFF0F3}
 .v3-iconbtn{transition:border-color .2s}
-.v3-iconbtn:hover{border-color:#0F172A}
+.v3-iconbtn:hover{border-color:var(--inverse)}
 
 .v3-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
 .v3-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px -26px rgba(15,23,42,.28)}
 .v3-matchrow{transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.7,.2,1)}
 .v3-matchrow:hover{border-color:#DDE3EE;background:#FBFCFF;transform:translateX(3px)}
 .v3-trackerbtn{transition:background .2s,border-color .2s}
-.v3-trackerbtn:hover{background:#fff;border-color:#0F172A}
+.v3-trackerbtn:hover{background:var(--surface);border-color:var(--inverse)}
 .v3-jobcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s,border-color .24s}
 .v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:#DDE3EE}
 .v3-ddrow:hover{background:#F3F6FD!important}
 .v3-approw{transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s}
 .v3-approw:hover{transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(15,23,42,.3)}
 .v3-removebtn:hover{background:#FFF0F3;color:#F43F5E}
-.v3-field:focus{background:#fff!important;border-color:#6D4AFF!important}
+.v3-field:focus{background:var(--surface)!important;border-color:#6D4AFF!important}
 .v3-savedcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s}
 .v3-savedcard:hover{transform:translateY(-4px);box-shadow:0 24px 48px -28px rgba(15,23,42,.3)}
 .v3-applybtn:hover{background:#6D4AFF!important}
 .v3-removecard:hover{border-color:#F43F5E!important;color:#F43F5E!important}
 .v3-dangerzone:hover{background:#FFF0F3!important}
-.v3-backlink:hover{color:#0F172A!important}
+.v3-backlink:hover{color:var(--ink)!important}
 /* Settings: the profile card spans both rail columns once there's room. */
 @media (min-width:760px){.v3-settings-wide{grid-column:span 2}}
 @media (max-width:759px){.v3-settings-wide{grid-column:auto!important}}
@@ -595,19 +595,28 @@ function Switch({ on, onClick }) {
    keyframe rules live in the CSS block at the top of this file.
    ==================================================== */
 
+// Theme tokens. Brand/accent hues are constant across themes; surfaces, ink
+// and lines resolve through the CSS variables in index.css so the whole
+// marketing + app shell follows the Appearance setting.
 const V3 = {
   brand: "#6D4AFF",
   ochre: "#F59E0B",
   clay: "#F43F5E",
-  track: "#EDF0F8",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  track: "var(--surface-3)",
+  // Cards designed to be dark in the light theme stay dark in the dark
+  // theme — flipping them with the surface would invert the intent.
+  inverse: "var(--inverse)",
+  onInverse: "var(--on-inverse)",
+
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  surface: "var(--surface)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -855,8 +864,8 @@ function MarketingNav({ enter }) {
               height: 38,
             }}
           >
-            <span style={{ display: "block", width: 16, height: 1.8, background: V3.ink, margin: "0 auto" }} />
-            <span style={{ display: "block", width: 16, height: 1.8, background: V3.ink, margin: "0 auto" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: V3.inverse, margin: "0 auto" }} />
+            <span style={{ display: "block", width: 16, height: 1.8, background: V3.inverse, margin: "0 auto" }} />
           </button>
         </div>
       </div>
@@ -869,7 +878,7 @@ function MarketingNav({ enter }) {
             gap: 2,
             padding: "8px 16px 16px",
             borderTop: `1px solid ${V3.line}`,
-            background: "#fff",
+            background: "var(--surface)",
           }}
         >
           {LINKS.map(([label, id], i) => (
@@ -970,7 +979,7 @@ function HeroFeedCard({ t }) {
     >
       <div
         style={{
-          background: "#fff",
+          background: "var(--surface)",
           border: `1px solid ${V3.line}`,
           borderRadius: 22,
           boxShadow:
@@ -1082,7 +1091,7 @@ function HeroFeedCard({ t }) {
                     position: "absolute",
                     inset: 5,
                     borderRadius: "50%",
-                    background: "#fff",
+                    background: "var(--surface)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1133,8 +1142,8 @@ function HeroFeedCard({ t }) {
           position: "absolute",
           right: 22,
           top: -24,
-          background: V3.ink,
-          color: V3.page,
+          background: V3.inverse,
+          color: V3.onInverse,
           borderRadius: 14,
           padding: "12px 18px",
           boxShadow: "0 20px 40px -22px rgba(15,23,42,.5)",
@@ -1352,13 +1361,13 @@ function Marketing({ enter, go }) {
                   alignItems: "center",
                   gap: 10,
                   whiteSpace: "nowrap",
-                  background: V3.ink,
+                  background: V3.inverse,
                   border: "none",
                   borderRadius: 13,
                   padding: "16px 26px",
                   fontSize: 15,
                   fontWeight: 700,
-                  color: V3.page,
+                  color: V3.onInverse,
                   cursor: "pointer",
                   animation: "pulseRing 3.4s ease-out 1.4s infinite",
                 }}
@@ -1372,7 +1381,7 @@ function Marketing({ enter, go }) {
                   alignItems: "center",
                   gap: 8,
                   whiteSpace: "nowrap",
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${V3.lineMid}`,
                   borderRadius: 13,
                   padding: "16px 24px",
@@ -1493,7 +1502,7 @@ function Marketing({ enter, go }) {
           position: "relative",
           overflow: "hidden",
           background:
-            "radial-gradient(1100px 520px at 85% -8%,rgba(109,74,255,.16),transparent 60%),radial-gradient(900px 460px at 5% 105%,rgba(245,158,11,.14),transparent 60%),linear-gradient(180deg,#F8F9FE 0%,#F3F1FF 100%)",
+            "radial-gradient(1100px 520px at 85% -8%,rgba(109,74,255,.16),transparent 60%),radial-gradient(900px 460px at 5% 105%,rgba(245,158,11,.14),transparent 60%),linear-gradient(180deg,var(--surface-2) 0%,#F3F1FF 100%)",
         }}
       >
         <div
@@ -1531,7 +1540,7 @@ function Marketing({ enter, go }) {
                 style={{
                   position: "relative",
                   overflow: "hidden",
-                  background: `radial-gradient(ellipse at top left,${f.color}14,transparent 60%),#fff`,
+                  background: `radial-gradient(ellipse at top left,${f.color}14,transparent 60%),var(--surface)`,
                   border: `1px solid ${V3.line}`,
                   borderRadius: 22,
                   boxShadow: "0 1px 2px rgba(15,23,42,.04)",
@@ -1697,8 +1706,8 @@ function Marketing({ enter, go }) {
         style={{
           position: "relative",
           overflow: "hidden",
-          background: V3.ink,
-          color: V3.page,
+          background: V3.inverse,
+          color: V3.onInverse,
         }}
       >
         <div
@@ -1841,7 +1850,7 @@ function Marketing({ enter, go }) {
                         width: 24,
                         height: 24,
                         borderRadius: "50%",
-                        background: V3.ink,
+                        background: V3.inverse,
                         border: "1px solid rgba(255,255,255,.14)",
                         display: "flex",
                         alignItems: "center",
@@ -1974,7 +1983,7 @@ function Marketing({ enter, go }) {
               key={p.name}
               style={{
                 position: "relative",
-                background: "#fff",
+                background: "var(--surface)",
                 border: `1.5px solid ${p.popular ? V3.brand : V3.line}`,
                 boxShadow: p.popular
                   ? "0 24px 54px -28px rgba(109,74,255,.4)"
@@ -2069,7 +2078,7 @@ function Marketing({ enter, go }) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  background: p.popular ? V3.brand : "#fff",
+                  background: p.popular ? V3.brand : "var(--surface)",
                   border: `1px solid ${p.popular ? V3.brand : V3.lineMid}`,
                   borderRadius: 12,
                   padding: 13,
@@ -2211,7 +2220,7 @@ function Marketing({ enter, go }) {
         <div
           style={{
             background: V3.brand,
-            color: V3.page,
+            color: V3.onInverse,
             borderRadius: 24,
             padding: "clamp(34px,4vw,56px)",
             display: "flex",
@@ -2362,7 +2371,7 @@ function Marketing({ enter, go }) {
                   gap: 8,
                   padding: "9px 16px",
                   borderRadius: 999,
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${V3.line}`,
                   fontSize: 13.5,
                   fontWeight: 600,

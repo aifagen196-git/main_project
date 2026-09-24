@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { signOut, updatePassword } from "../services/auth";
 import { updateProfile, uploadAvatar, removeAvatar, validateAvatarFile } from "../services/profile";
 import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
+import { getPreference, setPreference, resolveTheme } from "../lib/theme";
 
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
  * exact port: an identity strip (avatar, name, email) heads the Profile
@@ -19,15 +20,24 @@ import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
  * The danger-zone treatment is kept and carries log-out, which is real.
  * Restore both once the backend supports them. */
 
+// This page is inline-styled rather than Tailwind, so its tokens point at the
+// same CSS variables index.css defines — that way it follows the theme without
+// every style object needing a dark branch.
 const T = {
   brand: "#6D4AFF",
   clay: "#F43F5E",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  surface: "var(--surface)",
+  // Cards designed to be dark in the light theme stay dark in the dark
+  // theme — flipping them with the surface would invert the intent.
+  inverse: "var(--inverse)",
+  onInverse: "var(--on-inverse)",
+
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -48,6 +58,9 @@ export default function SettingsView({ profile, refresh }) {
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarErr, setAvatarErr] = useState("");
+
+  // Device preference, not a profile field — see lib/theme.js.
+  const [theme, setTheme] = useState(getPreference);
 
   const [pw, setPw] = useState({ next: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
@@ -236,7 +249,7 @@ export default function SettingsView({ profile, refresh }) {
         <div
           style={{
             minWidth: 0,
-            background: "#fff",
+            background: T.surface,
             border: `1px solid ${T.line}`,
             borderRadius: 20,
             padding: 26,
@@ -263,7 +276,7 @@ export default function SettingsView({ profile, refresh }) {
                 height: 104,
                 borderRadius: 26,
                 background: avatarUrl ? T.page : T.brand,
-                color: T.page,
+                color: T.onInverse,
                 border: "none",
                 padding: 0,
                 display: "flex",
@@ -296,8 +309,8 @@ export default function SettingsView({ profile, refresh }) {
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: T.ink,
-                  border: `2.5px solid #fff`,
+                  background: T.inverse,
+                  border:`2.5px solid var(--surface)`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -436,13 +449,13 @@ export default function SettingsView({ profile, refresh }) {
               disabled={saving}
               className="v3-btn-dark"
               style={{
-                background: T.ink,
+                background: T.inverse,
                 border: "none",
                 borderRadius: 11,
                 padding: "12px 20px",
                 fontSize: 13.5,
                 fontWeight: 700,
-                color: T.page,
+                color: T.onInverse,
                 cursor: saving ? "default" : "pointer",
                 opacity: saving ? 0.65 : 1,
               }}
@@ -464,7 +477,7 @@ export default function SettingsView({ profile, refresh }) {
         <div
           style={{
             minWidth: 0,
-            background: "#fff",
+            background: T.surface,
             border: `1px solid ${T.line}`,
             borderRadius: 20,
             padding: 26,
@@ -530,13 +543,13 @@ export default function SettingsView({ profile, refresh }) {
               disabled={pwSaving || !pw.next || !pw.confirm}
               className="v3-btn-dark"
               style={{
-                background: T.ink,
+                background: T.inverse,
                 border: "none",
                 borderRadius: 11,
                 padding: "12px 20px",
                 fontSize: 13.5,
                 fontWeight: 700,
-                color: T.page,
+                color: T.onInverse,
                 cursor: pwSaving ? "default" : "pointer",
                 opacity: pwSaving || !pw.next || !pw.confirm ? 0.65 : 1,
               }}
@@ -553,6 +566,83 @@ export default function SettingsView({ profile, refresh }) {
             )}
           </div>
         </div>
+
+        {/* ---------------- APPEARANCE ---------------- */}
+        <div
+          style={{
+            minWidth: 0,
+            background: T.surface,
+            border: `1px solid ${T.line}`,
+            borderRadius: 20,
+            padding: 26,
+            boxShadow: "0 1px 2px rgba(15,23,42,.04)",
+            animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .14s both",
+          }}
+        >
+          <h2 style={h2Style}>Appearance</h2>
+          <p style={{ margin: "6px 0 0", fontSize: 13.5, color: T.muted }}>
+            Applies to this browser only, so you can keep a different theme on each device.
+          </p>
+
+          <div
+            role="radiogroup"
+            aria-label="Theme"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+              gap: 12,
+              marginTop: 20,
+            }}
+          >
+            {[
+              { id: "light", label: "Light", hint: "Always light" },
+              { id: "dark", label: "Dark", hint: "Always dark" },
+              { id: "system", label: "System", hint: "Follow your device" },
+            ].map((opt) => {
+              const on = theme === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => {
+                    setPreference(opt.id);
+                    setTheme(opt.id);
+                  }}
+                  style={{
+                    textAlign: "left",
+                    cursor: "pointer",
+                    background: on ? "var(--brand-wash)" : T.page,
+                    border: `1.5px solid ${on ? T.brand : T.line}`,
+                    borderRadius: 14,
+                    padding: "13px 14px",
+                    transition: "background .18s, border-color .18s",
+                  }}
+                >
+                  <ThemeSwatch variant={opt.id} />
+                  <div
+                    style={{
+                      marginTop: 10,
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      color: on ? T.brand : T.ink,
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                  <div style={{ fontSize: 12, color: T.faint, marginTop: 2 }}>{opt.hint}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {theme === "system" && (
+            <p style={{ margin: "14px 0 0", fontSize: 12.5, color: T.faint }}>
+              Your device is currently set to <strong style={{ color: T.muted }}>{resolveTheme("system")}</strong>.
+            </p>
+          )}
+        </div>
         </div>
 
         {/* ---------------- RAIL ---------------- */}
@@ -565,7 +655,7 @@ export default function SettingsView({ profile, refresh }) {
             animation: "riseIn .6s cubic-bezier(.2,.7,.2,1) .16s both",
           }}
         >
-          <div style={{ background: T.ink, borderRadius: 20, padding: 26, color: T.page }}>
+          <div style={{ background: T.inverse, borderRadius: 20, padding: 26, color: T.onInverse }}>
             <div
               style={{
                 fontFamily: T.mono,
@@ -630,7 +720,7 @@ export default function SettingsView({ profile, refresh }) {
 
           <div
             style={{
-              background: "#fff",
+              background: T.surface,
               border: `1px solid ${T.line}`,
               borderRadius: 20,
               padding: 26,
@@ -666,7 +756,7 @@ export default function SettingsView({ profile, refresh }) {
               style={{
                 width: "100%",
                 marginTop: 16,
-                background: "#fff",
+                background: T.surface,
                 border: "1px solid #FFD3DB",
                 borderRadius: 11,
                 padding: 12,
@@ -682,6 +772,28 @@ export default function SettingsView({ profile, refresh }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Miniature of what each option looks like — a label alone makes the user
+ *  guess. "System" is split down the middle to show it follows the device. */
+function ThemeSwatch({ variant }) {
+  const light = { page: "#FFFFFF", bar: "#E8ECF5", ink: "#0F172A" };
+  const dark = { page: "#15161A", bar: "#2E313A", ink: "#F4F5F7" };
+  const half = (side, c) => (
+    <div style={{ flex: 1, background: c.page, padding: 6, display: "flex", flexDirection: "column", gap: 4,
+      borderTopLeftRadius: side === "l" ? 8 : 0, borderBottomLeftRadius: side === "l" ? 8 : 0,
+      borderTopRightRadius: side === "r" ? 8 : 0, borderBottomRightRadius: side === "r" ? 8 : 0 }}>
+      <div style={{ height: 4, width: "70%", borderRadius: 2, background: c.ink, opacity: .85 }} />
+      <div style={{ height: 4, width: "45%", borderRadius: 2, background: c.bar }} />
+      <div style={{ height: 4, width: "58%", borderRadius: 2, background: c.bar }} />
+    </div>
+  );
+  return (
+    <div aria-hidden style={{ display: "flex", height: 44, borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)" }}>
+      {variant === "dark" ? half("l", dark) : half("l", light)}
+      {variant === "system" ? half("r", dark) : null}
     </div>
   );
 }

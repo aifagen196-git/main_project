@@ -26,15 +26,15 @@ const A = {
   ochre: "#F59E0B",
   clay: "#F43F5E",
   slate: "#334155",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineSoft: "#EFF2FA",
-  lineMid: "#DDE3EE",
-  track: "#EDF0F8",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineSoft: "var(--line-soft)",
+  lineMid: "var(--line)",
+  track: "var(--surface-3)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -58,7 +58,7 @@ const kicker = {
 
 const card = (delay = 0) => ({
   minWidth: 0,
-  background: "#fff",
+  background: "var(--surface)",
   border: `1px solid ${A.line}`,
   borderRadius: 20,
   padding: 26,
@@ -163,9 +163,9 @@ export default function Analytics({ plan }) {
           style={{
             ...card(80),
             marginTop: 26,
-            background: A.ink,
+            background: "var(--inverse)",
             border: "none",
-            color: A.page,
+            color: "var(--on-inverse)",
             textAlign: "center",
             padding: "56px 26px",
           }}
@@ -259,7 +259,7 @@ export default function Analytics({ plan }) {
         {header}
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px dashed ${A.lineMid}`,
             borderRadius: 20,
             padding: "64px 24px",
@@ -285,13 +285,13 @@ export default function Analytics({ plan }) {
           <button
             onClick={() => navigate("/matches")}
             style={{
-              background: A.ink,
+              background: "var(--inverse)",
               border: "none",
               borderRadius: 11,
               padding: "12px 20px",
               fontSize: 13.5,
               fontWeight: 700,
-              color: A.page,
+              color: "var(--on-inverse)",
               cursor: "pointer",
             }}
           >

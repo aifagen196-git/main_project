@@ -18,13 +18,13 @@ import {
 const A = {
   brand: "#6D4AFF",
   clay: "#F43F5E",
-  ink: "#0F172A",
-  page: "#F8F9FE",
-  line: "#E8ECF5",
-  lineMid: "#DDE3EE",
-  body: "#475569",
-  muted: "#64748B",
-  faint: "#94A3B8",
+  ink: "var(--ink)",
+  page: "var(--surface-2)",
+  line: "var(--line)",
+  lineMid: "var(--line)",
+  body: "var(--ink-2)",
+  muted: "var(--ink-2)",
+  faint: "var(--ink-3)",
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
@@ -300,13 +300,13 @@ export default function Applications() {
             display: "inline-flex",
             alignItems: "center",
             gap: 9,
-            background: A.ink,
+            background: "var(--inverse)",
             border: "none",
             borderRadius: 12,
             padding: "13px 20px",
             fontSize: 14,
             fontWeight: 700,
-            color: A.page,
+            color: "var(--on-inverse)",
             cursor: "pointer",
           }}
         >
@@ -321,7 +321,7 @@ export default function Applications() {
           onSubmit={handleAdd}
           style={{
             marginTop: 22,
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${A.line}`,
             borderRadius: 18,
             padding: 20,
@@ -382,7 +382,7 @@ export default function Applications() {
                 padding: 13,
                 fontSize: 14,
                 fontWeight: 700,
-                color: A.page,
+                color: "var(--on-inverse)",
                 cursor: saving ? "default" : "pointer",
                 opacity: saving ? 0.65 : 1,
               }}
@@ -405,7 +405,7 @@ export default function Applications() {
           display: "flex",
           alignItems: "center",
           gap: 16,
-          background: "#fff",
+          background: "var(--surface)",
           border: `1px solid ${A.line}`,
           borderRadius: 18,
           padding: "20px 22px",
@@ -451,7 +451,7 @@ export default function Applications() {
           className="v3-search"
           style={{
             width: "100%",
-            background: "#fff",
+            background: "var(--surface)",
             border: `1px solid ${A.line}`,
             borderRadius: 14,
             padding: "14px 44px 14px 42px",
@@ -534,7 +534,7 @@ export default function Applications() {
         {loading ? (
           <div
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: `1px solid ${A.line}`,
               borderRadius: 16,
               padding: 40,
@@ -547,7 +547,7 @@ export default function Applications() {
         ) : visible.length === 0 ? (
           <div
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: `1px dashed ${A.lineMid}`,
               borderRadius: 20,
               padding: "56px 24px",
@@ -581,13 +581,13 @@ export default function Applications() {
                 onClick={() => setSearch("")}
                 style={{
                   marginTop: 16,
-                  background: A.ink,
+                  background: "var(--inverse)",
                   border: "none",
                   borderRadius: 11,
                   padding: "11px 18px",
                   fontSize: 13.5,
                   fontWeight: 700,
-                  color: A.page,
+                  color: "var(--on-inverse)",
                   cursor: "pointer",
                 }}
               >
@@ -608,7 +608,7 @@ export default function Applications() {
                   alignItems: "center",
                   gap: 14,
                   flexWrap: "wrap",
-                  background: "#fff",
+                  background: "var(--surface)",
                   border: `1px solid ${A.line}`,
                   borderRadius: 16,
                   padding: "15px 18px",
@@ -744,7 +744,7 @@ export default function Applications() {
           {/* ---------------- MONTH GRID ---------------- */}
           <div
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: `1px solid ${A.line}`,
               borderRadius: 18,
               padding: 16,
@@ -824,7 +824,7 @@ export default function Applications() {
                       padding: 4,
                       borderRadius: 9,
                       cursor: "pointer",
-                      background: isSelected ? "#F3F0FF" : "#fff",
+                      background: isSelected ? "var(--brand-wash)" : "var(--surface)",
                       border: `1px solid ${isSelected ? A.brand : A.line}`,
                       opacity: inMonth ? 1 : 0.4,
                       transition: "background .15s, border-color .15s",
@@ -892,7 +892,7 @@ export default function Applications() {
             {selectedApps.length === 0 ? (
               <div
                 style={{
-                  background: "#fff", border: `1px dashed ${A.lineMid}`, borderRadius: 16,
+                  background: "var(--surface)", border: `1px dashed ${A.lineMid}`, borderRadius: 16,
                   padding: "32px 18px", textAlign: "center", fontSize: 13, color: A.muted,
                 }}
               >
@@ -907,7 +907,7 @@ export default function Applications() {
                     <div
                       key={a.id}
                       style={{
-                        background: "#fff", border: `1px solid ${A.line}`, borderRadius: 14,
+                        background: "var(--surface)", border: `1px solid ${A.line}`, borderRadius: 14,
                         padding: "12px 14px", boxShadow: "0 1px 2px rgba(15,23,42,.04)",
                       }}
                     >

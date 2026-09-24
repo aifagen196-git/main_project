@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Class-based, not media-based: the theme is a user setting in Settings →
+  // Appearance, and "System" is resolved in JS before the class is applied.
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
