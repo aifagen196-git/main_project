@@ -161,6 +161,26 @@ const CSS = `
 }
 .v3-footlink{transition:color .18s}
 .v3-footlink:hover{color:var(--ink)}
+/* AuthScreen's decorative company marquee is absolutely positioned at
+   top:80% of its panel. On desktop the grid stretches both auth columns to
+   equal height, so that lands in genuine empty space below the text. Below
+   the grid's single-column breakpoint (auto-fit minmax(340px,1fr) collapses
+   under ~680px) the panel only grows to fit its own content, so 80% down
+   lands inside the real headline/paragraph text instead — hide it there. */
+@media (max-width: 767px) {
+  .v3-auth-marquee{display:none!important}
+}
+/* Applications page calendar view: month grid + a fixed 260px day-detail
+   panel side by side. At mobile widths the 260px panel alone eats most of
+   the viewport, squeezing the 7-column month grid into a sliver too narrow
+   for its own day-number cells — the numbers then visually spill into the
+   panel next to it rather than the grid track itself overflowing (grid
+   track sizing is still satisfied; it's the cell CONTENT that doesn't fit).
+   Stack to one column below the width where 260px stops leaving reasonable
+   room for the calendar. */
+@media (max-width: 640px) {
+  .v3-app-calendar-grid{grid-template-columns:1fr!important}
+}
 .v3-input:focus{border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
 .v3-search:focus{background:var(--surface)!important;border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.1)}
 .v3-navbtn{transition:background .22s,color .22s}

@@ -731,6 +731,7 @@ export default function Applications() {
 
       {view === "calendar" && (
         <div
+          className="v3-app-calendar-grid"
           style={{
             marginTop: 24,
             maxWidth: 760,

@@ -62,6 +62,7 @@ function CompanyMarqueeRow({ duration, reverse, top }) {
   return (
     <div
       aria-hidden="true"
+      className="v3-auth-marquee"
       style={{
         position: "absolute",
         top,
