@@ -1972,7 +1972,6 @@ function Marketing({ enter, go }) {
                 "Advanced resume crafting tailored to 70-80 targeted job descriptions",
                 "Customized cover letters specific to each role",
                 "Background Verification (BGV) support",
-                "Proxy interview support sessions",
                 "Evaluation calls with expert hiring mentors",
                 "LinkedIn optimization and portfolio website building",
                 "Advanced interview training with performance feedback",
@@ -2428,87 +2427,49 @@ function Marketing({ enter, go }) {
           className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-64 w-[36rem] rounded-full bg-brand-500/25 blur-3xl"
         />
 
-        {/* Main columns */}
-        <div className="relative max-w-6xl mx-auto px-5 py-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-500/30">
-                <img src="/logo.png" alt="AIFAGen Labs" className="h-6 w-6 invert" />
-              </div>
-              <span className="font-display text-lg font-extrabold text-white">
-                AIFAGen <span className="text-brand-400">Labs</span>
-              </span>
+        {/* Brand block — centered now that the Company/Connect link columns
+            (About, Careers, Collaborate, Terms, Services, Partners, Privacy,
+            Contact) have been removed; a single block in a 3-col grid would
+            sit lopsided against a wall of empty space. */}
+        <div className="relative max-w-6xl mx-auto px-5 py-14 flex flex-col items-center text-center">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-500/30">
+              <img src="/logo.png" alt="AIFAGen Labs" className="h-6 w-6 invert" />
             </div>
-            <p className="text-sm text-slate-400 mt-4 max-w-xs leading-relaxed">
-              Building Intelligent Ecosystems for the Future. AI for All
-              Generations.
-            </p>
-            <div className="flex items-center gap-2.5 mt-5">
-              {[
-                [Linkedin, "LinkedIn", "https://www.linkedin.com/company/aifagenlabs/"],
-                [Twitter, "Twitter", "https://x.com/aifagenlabs"],
-                [Instagram, "Instagram", "https://www.instagram.com/aifagen_labs?igsh=Y3hqcWJoZWgxMDU0"],
-                [Mail, "Email", "mailto:pmo@aifagenlabs.com"],
-              ].map(([Icon, label, href], i) => (
-                <a
-                  key={i}
-                  href={href}
-                  aria-label={label}
-                  target={href.startsWith("http") ? "_blank" : undefined}
-                  rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  onClick={href === "#" ? (e) => e.preventDefault() : undefined}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-brand-500 hover:text-white hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200"
-                >
-                  <Icon size={16} />
-                </a>
-              ))}
-            </div>
+            <span className="font-display text-lg font-extrabold text-white">
+              AIFAGen <span className="text-brand-400">Labs</span>
+            </span>
           </div>
-
-          {[
-            ["Company", ["About Us", "Careers", "Collaborate", "Terms & Conditions"]],
-            ["Connect", ["Services", "Partners", "Privacy Policy", "Contact"]],
-          ].map((col, i) => (
-            <div key={i}>
-              <div className="font-bold text-white text-sm">
-                {col[0]}
-                <span className="block mt-2 h-0.5 w-6 rounded-full bg-brand-500" />
-              </div>
-              <ul className="mt-4 space-y-2.5">
-                {col[1].map((l) => (
-                  <li key={l}>
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const routes = {
-                          "About Us": "about",
-                          "Careers": "caseStudies",
-                          "Services": "services",
-                          "Contact": "contact",
-                          "Collaborate": "collaborate",
-                          "Partners": "partners",
-                          "Privacy Policy": "privacy",
-                          "Terms & Conditions": "terms",
-                        };
-                        if (routes[l]) go?.(routes[l]);
-                      }}
-                      className="group inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-brand-300 transition-colors"
-                    >
-                      <span className="h-1 w-1 rounded-full bg-brand-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {l}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <p className="text-sm text-slate-400 mt-4 max-w-sm leading-relaxed">
+            Building Intelligent Ecosystems for the Future. AI for All
+            Generations.
+          </p>
+          <div className="flex items-center gap-2.5 mt-5">
+            {[
+              [Linkedin, "LinkedIn", "https://www.linkedin.com/company/aifagenlabs/"],
+              [Twitter, "Twitter", "https://x.com/aifagenlabs"],
+              [Instagram, "Instagram", "https://www.instagram.com/aifagen_labs?igsh=Y3hqcWJoZWgxMDU0"],
+              [Mail, "Email", "mailto:pmo@aifagenlabs.com"],
+            ].map(([Icon, label, href], i) => (
+              <a
+                key={i}
+                href={href}
+                aria-label={label}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-brand-500 hover:text-white hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200"
+              >
+                <Icon size={16} />
+              </a>
+            ))}
+          </div>
         </div>
 
-        {/* Contact + locations bar */}
+        {/* Contact + locations bar — centered to match the brand block above,
+            now that the link columns that used to balance this row are gone. */}
         <div className="relative border-t border-white/10 bg-black/20">
-          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col lg:flex-row lg:items-center gap-4">
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-slate-400">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
                 <Globe size={13} className="text-brand-400" />
                 Global Operations
@@ -2536,7 +2497,7 @@ function Marketing({ enter, go }) {
                 USA: New Jersey
               </span>
             </div>
-            <div className="text-xs text-slate-500 lg:ml-auto">
+            <div className="text-xs text-slate-500">
               © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
             </div>
           </div>
