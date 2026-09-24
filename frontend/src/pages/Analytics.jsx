@@ -25,7 +25,7 @@ const A = {
   brand: "#6D4AFF",
   ochre: "#F59E0B",
   clay: "#F43F5E",
-  slate: "#334155",
+  slate: "var(--ink-2)",
   ink: "var(--ink)",
   page: "var(--surface-2)",
   line: "var(--line)",
@@ -236,14 +236,14 @@ export default function Analytics({ plan }) {
           style={{
             ...card(80),
             marginTop: 26,
-            background: "#FFFBEB",
-            border: "1px solid #FDE68A",
+            background: "var(--amber-wash)",
+            border: "1px solid var(--amber-line)",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#92400E" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--amber-ink)" }}>
             Couldn't load analytics
           </div>
-          <p style={{ margin: "6px 0 0", fontSize: 13.5, color: "#92400E" }}>{err}</p>
+          <p style={{ margin: "6px 0 0", fontSize: 13.5, color: "var(--amber-ink)" }}>{err}</p>
         </div>
       </div>
     );

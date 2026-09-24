@@ -164,7 +164,7 @@ export default function SavedJobs({ saved, toggle }) {
                       width: 44,
                       height: 44,
                       borderRadius: 12,
-                      background: "#F3F6FD",
+                      background: "var(--surface-3)",
                       border: `1px solid ${S.line}`,
                       display: "flex",
                       alignItems: "center",

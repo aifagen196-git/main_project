@@ -262,12 +262,12 @@ export default function Resume() {
         <div
           style={{
             marginTop: 20,
-            background: "#FFFBEB",
-            border: "1px solid #FDE68A",
+            background: "var(--amber-wash)",
+            border: "1px solid var(--amber-line)",
             borderRadius: 14,
             padding: "12px 14px",
             fontSize: 13.5,
-            color: "#92400E",
+            color: "var(--amber-ink)",
           }}
         >
           {improveError}
@@ -544,7 +544,7 @@ export default function Resume() {
                       >
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <span style={{ fontSize: 14, lineHeight: 1.6, color: "#334155" }}>
+                      <span style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>
                         {typeof item === "string" ? item : JSON.stringify(item)}
                       </span>
                     </div>
@@ -591,7 +591,7 @@ export default function Resume() {
                         fontSize: 12,
                         fontWeight: 600,
                         color: R.clay,
-                        background: "#FFF0F3",
+                        background: "var(--rose-wash)",
                         borderRadius: 8,
                         padding: "6px 11px",
                       }}
@@ -635,7 +635,7 @@ export default function Resume() {
                   fontFamily: "inherit",
                   fontSize: 14,
                   lineHeight: 1.65,
-                  color: "#334155",
+                  color: "var(--ink-2)",
                 }}
               >
                 {out}

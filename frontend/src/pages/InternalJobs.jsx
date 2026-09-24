@@ -86,12 +86,12 @@ export default function InternalJobs() {
         <div
           style={{
             marginTop: 20,
-            background: "#FFFBEB",
-            border: "1px solid #FDE68A",
+            background: "var(--amber-wash)",
+            border: "1px solid var(--amber-line)",
             borderRadius: 14,
             padding: "12px 14px",
             fontSize: 13.5,
-            color: "#92400E",
+            color: "var(--amber-ink)",
           }}
         >
           {error}
@@ -170,7 +170,7 @@ export default function InternalJobs() {
                     width: 44,
                     height: 44,
                     borderRadius: 12,
-                    background: "#F3F6FD",
+                    background: "var(--surface-3)",
                     border: `1px solid ${S.line}`,
                     display: "flex",
                     alignItems: "center",

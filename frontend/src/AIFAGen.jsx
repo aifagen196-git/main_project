@@ -94,8 +94,8 @@ import {
 // What's left here is everything Tailwind's config doesn't cover.
 const CSS = `
 .font-body{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-.page-bg{background:#f6f6fb}
-.hero-bg{background:radial-gradient(900px 500px at 80% 0%,rgba(124,91,255,.10),transparent 60%),radial-gradient(700px 400px at 60% 40%,rgba(244,114,182,.06),transparent 60%),#f8f8fc}
+.page-bg{background:var(--surface-3)}
+.hero-bg{background:radial-gradient(900px 500px at 80% 0%,rgba(124,91,255,.10),transparent 60%),radial-gradient(700px 400px at 60% 40%,rgba(244,114,182,.06),transparent 60%),var(--surface-3)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .fadeUp{animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
@@ -150,7 +150,7 @@ const CSS = `
 .v3-btn-outline-light{transition:background .2s,border-color .2s}
 .v3-btn-outline-light:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)!important}
 .v3-feedrow{transition:background .2s}
-.v3-feedrow:hover{background:#F6F8FF}
+.v3-feedrow:hover{background:var(--surface-3)}
 [data-feature-card]:hover [data-feature-flip]{transform:rotateY(180deg)}
 .v3-feature-card{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}
 .v3-feature-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px -22px rgba(15,23,42,.28)}
@@ -168,28 +168,28 @@ const CSS = `
 .v3-softbtn{transition:background .18s}
 .v3-softbtn:hover{background:var(--surface-2)}
 .v3-dangerbtn{transition:background .18s}
-.v3-dangerbtn:hover{background:#FFF0F3}
+.v3-dangerbtn:hover{background:var(--rose-wash)}
 .v3-iconbtn{transition:border-color .2s}
 .v3-iconbtn:hover{border-color:var(--inverse)}
 
 .v3-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
 .v3-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px -26px rgba(15,23,42,.28)}
 .v3-matchrow{transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.7,.2,1)}
-.v3-matchrow:hover{border-color:#DDE3EE;background:#FBFCFF;transform:translateX(3px)}
+.v3-matchrow:hover{border-color:var(--line);background:var(--surface);transform:translateX(3px)}
 .v3-trackerbtn{transition:background .2s,border-color .2s}
 .v3-trackerbtn:hover{background:var(--surface);border-color:var(--inverse)}
 .v3-jobcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s,border-color .24s}
-.v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:#DDE3EE}
-.v3-ddrow:hover{background:#F3F6FD!important}
+.v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:var(--line)}
+.v3-ddrow:hover{background:var(--surface-3)!important}
 .v3-approw{transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s}
 .v3-approw:hover{transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(15,23,42,.3)}
-.v3-removebtn:hover{background:#FFF0F3;color:#F43F5E}
+.v3-removebtn:hover{background:var(--rose-wash);color:#F43F5E}
 .v3-field:focus{background:var(--surface)!important;border-color:#6D4AFF!important}
 .v3-savedcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s}
 .v3-savedcard:hover{transform:translateY(-4px);box-shadow:0 24px 48px -28px rgba(15,23,42,.3)}
 .v3-applybtn:hover{background:#6D4AFF!important}
 .v3-removecard:hover{border-color:#F43F5E!important;color:#F43F5E!important}
-.v3-dangerzone:hover{background:#FFF0F3!important}
+.v3-dangerzone:hover{background:var(--rose-wash)!important}
 .v3-backlink:hover{color:var(--ink)!important}
 /* Settings: the profile card spans both rail columns once there's room. */
 @media (min-width:760px){.v3-settings-wide{grid-column:span 2}}
@@ -1036,7 +1036,7 @@ function HeroFeedCard({ t }) {
                   width: 42,
                   height: 42,
                   borderRadius: 12,
-                  background: "#F3F6FD",
+                  background: "var(--surface-3)",
                   border: `1px solid ${V3.line}`,
                   display: "flex",
                   alignItems: "center",
@@ -1116,7 +1116,7 @@ function HeroFeedCard({ t }) {
             gap: 10,
             padding: "14px 20px",
             borderTop: `1px solid ${V3.lineSoft}`,
-            background: "#FBFCFF",
+            background: "var(--surface)",
           }}
         >
           <span style={{ fontSize: 12.5, color: V3.muted }}>
@@ -1195,7 +1195,7 @@ function Marketing({ enter, go }) {
     { icon: Target, color: V3.brand, t: "Smart Job Matching", d: "AI finds the most relevant jobs based on your skills, experience, and career goals." },
     { icon: FileText, color: V3.ochre, t: "Resume Optimization", d: "Get AI-powered suggestions to improve your resume and pass ATS scans." },
     { icon: ClipboardList, color: V3.clay, t: "Application Tracking", d: "Log every application and move it through your pipeline — applied, interviewing, assessment, offer." },
-    { icon: Zap, color: "#334155", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
+    { icon: Zap, color: "var(--ink-2)", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
   ];
 
   const STEP_CARDS = [
@@ -1428,7 +1428,7 @@ function Marketing({ enter, go }) {
         style={{
           borderTop: `1px solid ${V3.line}`,
           borderBottom: `1px solid ${V3.line}`,
-          background: "#F2F5FC",
+          background: "var(--surface-3)",
           overflow: "hidden",
         }}
       >
@@ -1502,7 +1502,7 @@ function Marketing({ enter, go }) {
           position: "relative",
           overflow: "hidden",
           background:
-            "radial-gradient(1100px 520px at 85% -8%,rgba(109,74,255,.16),transparent 60%),radial-gradient(900px 460px at 5% 105%,rgba(245,158,11,.14),transparent 60%),linear-gradient(180deg,var(--surface-2) 0%,#F3F1FF 100%)",
+            "radial-gradient(1100px 520px at 85% -8%,rgba(109,74,255,.16),transparent 60%),radial-gradient(900px 460px at 5% 105%,rgba(245,158,11,.14),transparent 60%),linear-gradient(180deg,var(--surface-2) 0%,var(--brand-wash) 100%)",
         }}
       >
         <div
@@ -2283,7 +2283,7 @@ function Marketing({ enter, go }) {
             padding: "clamp(30px,4vw,44px)",
             textAlign: "center",
             background:
-              "radial-gradient(ellipse at top,rgba(109,74,255,.08),transparent 65%),#F8F9FE",
+              "radial-gradient(ellipse at top,rgba(109,74,255,.08),transparent 65%),var(--surface-2)",
             border: `1px solid ${V3.line}`,
           }}
         >

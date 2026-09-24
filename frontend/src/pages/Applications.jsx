@@ -32,7 +32,7 @@ const A = {
 const COLS = [
   { k: "applied", label: "Applied", hex: A.brand },
   { k: "interviewing", label: "Interviewing", hex: "#F59E0B" },
-  { k: "assessment", label: "Assessment", hex: "#334155" },
+  { k: "assessment", label: "Assessment", hex: "var(--ink-2)" },
   { k: "offer", label: "Offer", hex: A.clay },
   { k: "rejected", label: "Closed", hex: A.faint },
 ];
@@ -621,7 +621,7 @@ export default function Applications() {
                     width: 38,
                     height: 38,
                     borderRadius: 11,
-                    background: "#F3F6FD",
+                    background: "var(--surface-3)",
                     border: `1px solid ${A.line}`,
                     display: "flex",
                     alignItems: "center",
@@ -914,7 +914,7 @@ export default function Applications() {
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                         <div
                           style={{
-                            width: 32, height: 32, borderRadius: 9, background: "#F3F6FD",
+                            width: 32, height: 32, borderRadius: 9, background: "var(--surface-3)",
                             border: `1px solid ${A.line}`, display: "flex", alignItems: "center",
                             justifyContent: "center", fontFamily: A.display, fontSize: 13, fontWeight: 700,
                             color: A.ink, flexShrink: 0,

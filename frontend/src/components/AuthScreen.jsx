@@ -431,8 +431,8 @@ export default function AuthScreen({ onBack }) {
                 style={{
                   fontSize: 13,
                   lineHeight: 1.5,
-                  color: "#B4232F",
-                  background: "#FFF0F3",
+                  color: "var(--rose-ink)",
+                  background: "var(--rose-wash)",
                   border: "1px solid #FBD5DC",
                   borderRadius: 10,
                   padding: "10px 12px",

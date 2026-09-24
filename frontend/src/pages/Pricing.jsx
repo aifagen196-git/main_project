@@ -114,7 +114,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
             maxWidth: 460,
             marginLeft: "auto",
             marginRight: "auto",
-            background: "#FFF0F3",
+            background: "var(--rose-wash)",
             border: "1px solid #FFD3DB",
             borderRadius: 13,
             padding: "12px 15px",

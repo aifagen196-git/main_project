@@ -84,7 +84,7 @@ export default function AppShell({ profile, refresh, exit }) {
               background: "rgba(255,255,255,.92)",
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid #DDE3EE",
+              border: "1px solid var(--line)",
               borderRadius: 12,
               padding: 11,
               cursor: "pointer",

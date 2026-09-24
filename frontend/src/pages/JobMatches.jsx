@@ -172,7 +172,7 @@ function FilterDropdown({ group, open, setOpen }) {
                   fontSize: 13.5,
                   fontFamily: "inherit",
                   fontWeight: picked ? 700 : 500,
-                  color: picked ? M.brand : "#334155",
+                  color: picked ? M.brand : "var(--ink-2)",
                   transition: "background .15s",
                 }}
               >
@@ -670,7 +670,7 @@ export default function JobMatches({ saved, toggle }) {
           {[0, 1, 2, 3, 4].map((i) => {
             const shimmer = {
               background:
-                "linear-gradient(90deg,#F2F5FC 8%,#F6F8FF 22%,#F2F5FC 36%)",
+                "linear-gradient(90deg,var(--surface-3) 8%,var(--surface-3) 22%,var(--surface-3) 36%)",
               backgroundSize: "460px 100%",
               animation: `shimmer 1.15s linear ${i * 90}ms infinite`,
             };
@@ -770,7 +770,7 @@ export default function JobMatches({ saved, toggle }) {
                       width: 48,
                       height: 48,
                       borderRadius: 13,
-                      background: "#F3F6FD",
+                      background: "var(--surface-3)",
                       border: `1px solid ${M.line}`,
                       display: "flex",
                       alignItems: "center",
@@ -823,7 +823,7 @@ export default function JobMatches({ saved, toggle }) {
                             fontWeight: 700,
                             letterSpacing: ".12em",
                             textTransform: "uppercase",
-                            background: "#FFF0F3",
+                            background: "var(--rose-wash)",
                             color: M.clay,
                             borderRadius: 6,
                             padding: "3px 7px",
@@ -843,8 +843,8 @@ export default function JobMatches({ saved, toggle }) {
                             fontWeight: 700,
                             letterSpacing: ".1em",
                             textTransform: "uppercase",
-                            background: "#FFF7ED",
-                            color: "#B45309",
+                            background: "var(--amber-wash)",
+                            color: "var(--amber-ink)",
                             border: "1px solid #FED7AA",
                             borderRadius: 6,
                             padding: "3px 7px",
@@ -1033,7 +1033,7 @@ export default function JobMatches({ saved, toggle }) {
                     style={{
                       marginTop: 14,
                       paddingTop: 16,
-                      borderTop: "1px solid #F3F6FD",
+                      borderTop: "1px solid var(--surface-3)",
                       animation: "expand .34s cubic-bezier(.2,.7,.2,1) both",
                     }}
                   >
@@ -1146,7 +1146,7 @@ export default function JobMatches({ saved, toggle }) {
                         )}
                         {gaps.length > 0 && (
                           <div style={{ flex: "1 1 200px", minWidth: 0 }}>
-                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#B45309", marginBottom: 6 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--amber-ink)", marginBottom: 6 }}>
                               Gaps to address
                             </div>
                             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: M.body, lineHeight: 1.55 }}>
@@ -1156,7 +1156,7 @@ export default function JobMatches({ saved, toggle }) {
                         )}
                         {redFlags.length > 0 && (
                           <div style={{ flex: "1 1 200px", minWidth: 0 }}>
-                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#DC2626", marginBottom: 6 }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--rose-ink)", marginBottom: 6 }}>
                               🚩 Deal-breakers
                             </div>
                             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: M.body, lineHeight: 1.55 }}>
@@ -1178,7 +1178,7 @@ export default function JobMatches({ saved, toggle }) {
       {!busy && !isSearch && loadError && (
         <div
           style={{
-            background: "#FEF2F2",
+            background: "var(--rose-wash)",
             border: "1px solid #FECACA",
             borderRadius: 20,
             padding: "40px 24px",
@@ -1193,18 +1193,18 @@ export default function JobMatches({ saved, toggle }) {
               fontSize: 19,
               fontWeight: 700,
               letterSpacing: "-.02em",
-              color: "#991B1B",
+              color: "var(--rose-ink)",
             }}
           >
             Couldn't load your matches
           </div>
-          <p style={{ margin: "8px 0 18px", fontSize: 14, color: "#B91C1C" }}>
+          <p style={{ margin: "8px 0 18px", fontSize: 14, color: "var(--rose-ink)" }}>
             {loadError}
           </p>
           <button
             onClick={rerun}
             style={{
-              background: "#DC2626",
+              background: "var(--rose-ink)",
               border: "none",
               borderRadius: 11,
               padding: "12px 22px",

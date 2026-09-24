@@ -342,12 +342,12 @@ export default function Dashboard({ profile }) {
             display: "flex",
             alignItems: "center",
             gap: 12,
-            background: "#FFFBEB",
-            border: "1px solid #FDE68A",
+            background: "var(--amber-wash)",
+            border: "1px solid var(--amber-line)",
             borderRadius: 14,
             padding: "12px 14px",
             fontSize: 13.5,
-            color: "#92400E",
+            color: "var(--amber-ink)",
           }}
         >
           <span style={{ flex: 1 }}>{loadError}</span>
@@ -355,13 +355,13 @@ export default function Dashboard({ profile }) {
             onClick={() => setReloadKey((k) => k + 1)}
             style={{
               flexShrink: 0,
-              background: "#FDE68A",
+              background: "var(--amber-line)",
               border: "none",
               borderRadius: 9,
               padding: "6px 12px",
               fontSize: 12.5,
               fontWeight: 700,
-              color: "#92400E",
+              color: "var(--amber-ink)",
               cursor: "pointer",
             }}
           >
@@ -541,7 +541,7 @@ export default function Dashboard({ profile }) {
                         width: 40,
                         height: 40,
                         borderRadius: 11,
-                        background: "#F3F6FD",
+                        background: "var(--surface-3)",
                         border: `1px solid ${D.line}`,
                         display: "flex",
                         alignItems: "center",

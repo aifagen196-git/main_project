@@ -779,8 +779,8 @@ export default function SettingsView({ profile, refresh }) {
 /** Miniature of what each option looks like — a label alone makes the user
  *  guess. "System" is split down the middle to show it follows the device. */
 function ThemeSwatch({ variant }) {
-  const light = { page: "#FFFFFF", bar: "#E8ECF5", ink: "#0F172A" };
-  const dark = { page: "#15161A", bar: "#2E313A", ink: "#F4F5F7" };
+  const light = { page: "var(--surface)", bar: "var(--line)", ink: "#0F172A" };
+  const dark = { page: "#15161A", bar: "#2E313A", ink: "var(--surface-2)" };
   const half = (side, c) => (
     <div style={{ flex: 1, background: c.page, padding: 6, display: "flex", flexDirection: "column", gap: 4,
       borderTopLeftRadius: side === "l" ? 8 : 0, borderBottomLeftRadius: side === "l" ? 8 : 0,

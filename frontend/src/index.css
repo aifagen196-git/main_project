@@ -20,6 +20,13 @@
     --brand-wash: #F3F0FF;
     --sidebar-a: #FDFCFF;
     --sidebar-b: #F6F3FF;
+    /* Status washes. On dark these are deep tints of the same hue, not the
+       light wash dimmed — a pale wash under light ink loses all contrast. */
+    --rose-wash: #FFF0F3;
+    --rose-ink: #BE123C;
+    --amber-wash: #FFFBEB;
+    --amber-line: #FDE68A;
+    --amber-ink: #92400E;
     /* Deliberately-inverted accent cards (the dark rail on Settings, dark
        CTA bands). These are dark in BOTH themes — flipping them with the
        surface would turn a designed dark panel light. */
@@ -39,6 +46,11 @@
     --brand-wash: #221C3D;
     --sidebar-a: #17181D;
     --sidebar-b: #191622;
+    --rose-wash: #2E1620;
+    --rose-ink: #FB7185;
+    --amber-wash: #2E2412;
+    --amber-line: #5C4415;
+    --amber-ink: #FAB219;
     /* Slightly lifted from the page so an inverted card still separates
        from a dark background instead of disappearing into it. */
     --inverse: #23262D;

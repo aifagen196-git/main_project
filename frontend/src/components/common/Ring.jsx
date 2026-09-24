@@ -30,7 +30,7 @@ export default function Ring({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="#eceaf6"
+          stroke="var(--surface-3)"
           strokeWidth={stroke}
         />
 
