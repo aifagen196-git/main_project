@@ -22,6 +22,9 @@
     --sidebar-b: #F6F3FF;
     /* Status washes. On dark these are deep tints of the same hue, not the
        light wash dimmed — a pale wash under light ink loses all contrast. */
+    /* Sticky nav sits over scrolling content, so it needs alpha — a solid
+       surface token can't express that. */
+    --nav-bg: rgba(248,249,254,.86);
     --rose-wash: #FFF0F3;
     --rose-ink: #BE123C;
     --amber-wash: #FFFBEB;
@@ -46,6 +49,7 @@
     --brand-wash: #221C3D;
     --sidebar-a: #17181D;
     --sidebar-b: #191622;
+    --nav-bg: rgba(21,22,26,.86);
     --rose-wash: #2E1620;
     --rose-ink: #FB7185;
     --amber-wash: #2E2412;

@@ -747,7 +747,7 @@ function MarketingNav({ enter }) {
         position: "sticky",
         top: 0,
         zIndex: 40,
-        background: "rgba(248,249,254,.86)",
+        background: "var(--nav-bg)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
         borderBottom: `1px solid ${V3.line}`,
@@ -1195,7 +1195,7 @@ function Marketing({ enter, go }) {
     { icon: Target, color: V3.brand, t: "Smart Job Matching", d: "AI finds the most relevant jobs based on your skills, experience, and career goals." },
     { icon: FileText, color: V3.ochre, t: "Resume Optimization", d: "Get AI-powered suggestions to improve your resume and pass ATS scans." },
     { icon: ClipboardList, color: V3.clay, t: "Application Tracking", d: "Log every application and move it through your pipeline — applied, interviewing, assessment, offer." },
-    { icon: Zap, color: "var(--ink-2)", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
+    { icon: Zap, color: "#3987e5", t: "Application Accelerator", d: "Apply smarter and faster with AI-generated cover letters and tailored applications." },
   ];
 
   const STEP_CARDS = [
@@ -1883,7 +1883,7 @@ function Marketing({ enter, go }) {
           position: "relative",
           overflow: "hidden",
           background:
-            "radial-gradient(1000px 480px at 50% -10%,rgba(109,74,255,.16),transparent 62%),#fff",
+            "radial-gradient(1000px 480px at 50% -10%,rgba(109,74,255,.16),transparent 62%),var(--surface)",
         }}
       >
         <div
