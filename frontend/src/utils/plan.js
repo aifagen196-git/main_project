@@ -54,7 +54,7 @@ export const PRICING_CARDS = [
     billingCycle: "monthly",
     name: "Basic",
     periodTag: "Monthly",
-    price: 210,
+    price: 229,
     tagline: "Get started with AI-matched roles.",
     cta: "Get Basic — billed monthly",
     popular: false,

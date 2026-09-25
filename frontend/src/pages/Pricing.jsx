@@ -7,7 +7,7 @@ import { signOut } from "../services/auth";
 
 /* Pricing screen in the "AIFAGen v3" design language.
  *
- * Three cards, no free tier: Basic monthly ($210), Basic every 6 months
+ * Three cards, no free tier: Basic monthly ($229), Basic every 6 months
  * ($1299 — same features as monthly, just a different commitment), and
  * Premium every 6 months ($2499). PRICING_CARDS (utils/plan.js) is the
  * display list; each card carries both `id` (the plan tier) and

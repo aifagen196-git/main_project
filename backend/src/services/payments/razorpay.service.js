@@ -11,7 +11,7 @@ import crypto from "node:crypto";
 //
 // MUST stay in sync with frontend/src/utils/plan.js's PRICING_CARDS (display).
 export const PRICING = {
-  basic: { monthly: 210, semiannual: 1299 },
+  basic: { monthly: 229, semiannual: 1299 },
   premium: { semiannual: 2499 },
 };
 

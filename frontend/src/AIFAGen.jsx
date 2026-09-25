@@ -1892,7 +1892,7 @@ function Marketing({ enter, go }) {
           UI only for now — buttons don't charge anything yet. The real
           checkout flow (Razorpay) already exists for the separate AI SaaS
           subscription in pages/Pricing.jsx (utils/plan.js's PRICING_CARDS:
-          Basic $210/mo or $1,299/6mo, Premium $2,499/6mo) — these are a
+          Basic $229/mo or $1,299/6mo, Premium $2,499/6mo) — these are a
           DIFFERENT, done-for-you service (job application/interview
           support) at different price points, not a replacement for that
           one. Do not wire this to the same Razorpay flow without also
@@ -1955,7 +1955,7 @@ function Marketing({ enter, go }) {
             {
               name: "Monthly",
               periodTag: "Per month",
-              price: "189",
+              price: "229",
               tagline: "Ongoing support while you're actively job hunting.",
               popular: false,
               features: [
