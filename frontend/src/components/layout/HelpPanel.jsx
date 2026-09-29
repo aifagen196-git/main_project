@@ -42,7 +42,7 @@ const FAQS = [
   },
   {
     q: "How do I change or cancel my plan?",
-    a: "Open Settings and use the plan card, or Billing for invoices. To cancel, email support and we'll take care of it.",
+    a: "Open Billing and choose View plans to switch plans or billing cycle — the new plan starts right away. To cancel, use Email to cancel on the Billing page and we'll take care of it.",
   },
 ];
 

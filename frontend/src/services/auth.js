@@ -35,6 +35,13 @@ export async function signIn(email, password) {
   return data
 }
 
+export async function sendPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/?recovery=1`
+  })
+  if (error) throw error
+}
+
 export async function updatePassword(newPassword) {
   if (DEV_PREVIEW) {
     // The preview user has no real Supabase session (see devPreview.js), so

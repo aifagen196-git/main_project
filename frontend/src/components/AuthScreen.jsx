@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signIn, signUp } from "../services/auth";
+import { signIn, signUp, sendPasswordReset } from "../services/auth";
 
 /* Exact port of the "AIFAGen v3" auth screen. Palette, type ramp and spacing
    come from the design spec, so static properties are written inline; hover
@@ -106,6 +106,29 @@ function CompanyMarqueeRow({ duration, reverse, top }) {
   );
 }
 
+function friendlyAuthError(err) {
+  const msg = err?.message || "";
+  if (/rate limit|too many/i.test(msg))
+    return "Too many attempts right now. Please wait a few minutes and try again.";
+  if (/invalid login credentials/i.test(msg))
+    return "That email and password don't match. Try again or reset your password.";
+  if (/email not confirmed/i.test(msg))
+    return "Please confirm your email first — check your inbox for the confirmation link.";
+  if (/already registered|already exists/i.test(msg))
+    return "An account with this email already exists. Log in instead.";
+  return msg || "Something went wrong. Please try again.";
+}
+
+const messageBox = (tone) => ({
+  fontSize: 13,
+  lineHeight: 1.5,
+  color: tone === "ok" ? "#047857" : "var(--rose-ink)",
+  background: tone === "ok" ? "rgba(16,185,129,.1)" : "var(--rose-wash)",
+  border: `1px solid ${tone === "ok" ? "rgba(16,185,129,.35)" : "rgba(244,63,94,.3)"}`,
+  borderRadius: 10,
+  padding: "10px 12px",
+});
+
 export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState("login");
   const [name, setName] = useState("");
@@ -113,22 +136,36 @@ export default function AuthScreen({ onBack }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const isSignup = mode === "signup";
+  const isForgot = mode === "forgot";
+
+  function switchMode(next) {
+    setError("");
+    setNotice("");
+    setMode(next);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setNotice("");
     try {
       setLoading(true);
-      if (isSignup) {
-        await signUp(email, password, name);
-        setError("Account created — check your email to confirm.");
+      if (isForgot) {
+        await sendPasswordReset(email.trim());
+        setNotice(
+          "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
+        );
+      } else if (isSignup) {
+        await signUp(email.trim(), password, name.trim());
+        setNotice("Account created — check your email to confirm, then log in.");
       } else {
-        await signIn(email, password);
+        await signIn(email.trim(), password);
       }
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -371,12 +408,18 @@ export default function AuthScreen({ onBack }) {
               color: C.ink,
             }}
           >
-            {isSignup ? "Create your account" : "Welcome back"}
+            {isForgot
+              ? "Reset your password"
+              : isSignup
+                ? "Create your account"
+                : "Welcome back"}
           </h1>
           <p style={{ margin: "10px 0 0", fontSize: 14.5, color: C.muted }}>
-            {isSignup
-              ? "Start matching with roles built for you."
-              : "Log in to pick up where you left off."}
+            {isForgot
+              ? "Enter your account email and we'll send you a link to set a new password."
+              : isSignup
+                ? "Start matching with roles built for you."
+                : "Log in to pick up where you left off."}
           </p>
 
           <form
@@ -393,6 +436,9 @@ export default function AuthScreen({ onBack }) {
                 <span style={fieldLabel}>Full name</span>
                 <input
                   type="text"
+                  required
+                  autoComplete="name"
+                  maxLength={100}
                   placeholder="Jane Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -406,6 +452,8 @@ export default function AuthScreen({ onBack }) {
               <span style={fieldLabel}>Email</span>
               <input
                 type="email"
+                required
+                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -414,32 +462,51 @@ export default function AuthScreen({ onBack }) {
               />
             </label>
 
-            <label style={{ display: "block" }}>
-              <span style={fieldLabel}>Password</span>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="v3-input"
-                style={fieldInput}
-              />
-            </label>
+            {!isForgot && (
+              <label style={{ display: "block" }}>
+                <span
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <span style={fieldLabel}>Password</span>
+                  {!isSignup && (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        switchMode("forgot");
+                      }}
+                      style={{ fontSize: 12.5, fontWeight: 600, color: C.brand }}
+                    >
+                      Forgot password?
+                    </a>
+                  )}
+                </span>
+                <input
+                  type="password"
+                  required
+                  minLength={isSignup ? 8 : undefined}
+                  autoComplete={isSignup ? "new-password" : "current-password"}
+                  placeholder={isSignup ? "At least 8 characters" : "••••••••"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="v3-input"
+                  style={fieldInput}
+                />
+              </label>
+            )}
 
             {error && (
-              <div
-                role="alert"
-                style={{
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  color: "var(--rose-ink)",
-                  background: "var(--rose-wash)",
-                  border: "1px solid #FBD5DC",
-                  borderRadius: 10,
-                  padding: "10px 12px",
-                }}
-              >
+              <div role="alert" style={messageBox("error")}>
                 {error}
+              </div>
+            )}
+            {notice && (
+              <div role="status" style={messageBox("ok")}>
+                {notice}
               </div>
             )}
 
@@ -461,24 +528,29 @@ export default function AuthScreen({ onBack }) {
             >
               {loading
                 ? "Please wait…"
-                : isSignup
-                  ? "Create account"
-                  : "Log in"}
+                : isForgot
+                  ? "Send reset link"
+                  : isSignup
+                    ? "Create account"
+                    : "Log in"}
             </button>
           </form>
 
           <p style={{ margin: "26px 0 0", fontSize: 13.5, color: C.muted }}>
-            {isSignup ? "Already have an account? " : "New here? "}
+            {isForgot
+              ? "Remembered it? "
+              : isSignup
+                ? "Already have an account? "
+                : "New here? "}
             <a
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                setError("");
-                setMode(isSignup ? "login" : "signup");
+                switchMode(isSignup || isForgot ? "login" : "signup");
               }}
               style={{ fontWeight: 700, color: C.brand }}
             >
-              {isSignup ? "Log in" : "Create an account"}
+              {isSignup || isForgot ? "Log in" : "Create an account"}
             </a>
           </p>
 

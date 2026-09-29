@@ -8,6 +8,7 @@ import multer from "multer";
 import { requireAuth } from "./middleware/auth.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
 import { requireActivePlan } from "./middleware/requireActivePlan.js";
+import { apiRateLimiter, heavyRateLimiter } from "./middleware/rateLimiter.js";
 
 import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -16,7 +17,6 @@ import savedJobsRoutes from "./routes/savedJobs.routes.js";
 import internalJobsRoutes from "./routes/internalJobs.routes.js";
 import applicationsRoutes from "./routes/applications.routes.js";
 import resumesRoutes from "./routes/resumes.routes.js";
-import aiRoutes from "./routes/ai.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
@@ -112,18 +112,21 @@ app.get("/api/health", (req, res) => {
 // be able to read their own status and complete checkout. Everything else is
 // a paid product feature and requires an active plan server-side (B3), the
 // same gate the frontend app shell already enforces (isSubscribed()).
-app.use("/api/profile", requireAuth, profileRoutes);
-app.use("/api/payments", requireAuth, paymentsRoutes);
+// Uploads and AI calls cost money per request — tighter limit on writes there.
+const heavyWrites = (req, res, next) =>
+  req.method === "GET" ? next() : heavyRateLimiter(req, res, next);
+
+app.use("/api/profile", requireAuth, apiRateLimiter, heavyWrites, profileRoutes);
+app.use("/api/payments", requireAuth, apiRateLimiter, paymentsRoutes);
 app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
 
-app.use("/api/jobs", requireAuth, requireActivePlan, jobsRoutes);
-app.use("/api/preferences", requireAuth, requireActivePlan, preferencesRoutes);
-app.use("/api/saved-jobs", requireAuth, requireActivePlan, savedJobsRoutes);
-app.use("/api/internal-jobs", requireAuth, requireActivePlan, internalJobsRoutes);
-app.use("/api/applications", requireAuth, requireActivePlan, applicationsRoutes);
-app.use("/api/resumes", requireAuth, requireActivePlan, resumesRoutes);
-app.use("/api/ai", requireAuth, requireActivePlan, aiRoutes);
-app.use("/api/analytics", requireAuth, requireActivePlan, analyticsRoutes);
+app.use("/api/jobs", requireAuth, apiRateLimiter, requireActivePlan, jobsRoutes);
+app.use("/api/preferences", requireAuth, apiRateLimiter, requireActivePlan, preferencesRoutes);
+app.use("/api/saved-jobs", requireAuth, apiRateLimiter, requireActivePlan, savedJobsRoutes);
+app.use("/api/internal-jobs", requireAuth, apiRateLimiter, requireActivePlan, internalJobsRoutes);
+app.use("/api/applications", requireAuth, apiRateLimiter, requireActivePlan, applicationsRoutes);
+app.use("/api/resumes", requireAuth, apiRateLimiter, heavyWrites, requireActivePlan, resumesRoutes);
+app.use("/api/analytics", requireAuth, apiRateLimiter, requireActivePlan, analyticsRoutes);
 
 // =============================
 // 404

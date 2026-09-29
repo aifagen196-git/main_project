@@ -11,6 +11,9 @@ import { supabase } from "../config/supabase.js";
 // to pay), /api/admin (its own requireAdmin), or /api/health.
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
+// Status alone isn't enough: the old free-tier path set status='active' with
+// plan='free'. 'professional' is a legacy paid tier a few accounts still hold.
+const PAID_PLANS = new Set(["basic", "premium", "professional"]);
 
 // Tiny per-user cache so we don't hit the DB on every single request. Short
 // TTL so a just-activated plan is picked up quickly; invalidated explicitly
@@ -39,15 +42,17 @@ export async function requireActivePlan(req, res, next) {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("subscription_status, current_period_end")
+    .select("plan, subscription_status, current_period_end")
     .eq("id", req.user.id)
     .maybeSingle();
 
   if (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("requireActivePlan lookup failed", error);
+    return res.status(500).json({ success: false, message: "Could not check your plan. Please try again." });
   }
 
-  const statusOk = ACTIVE_STATUSES.has(data?.subscription_status);
+  const statusOk =
+    ACTIVE_STATUSES.has(data?.subscription_status) && PAID_PLANS.has(data?.plan);
   // If an expiry is set and has passed, the plan is no longer active even if
   // the status column still says so (a lapsed subscription nobody downgraded).
   const notExpired =

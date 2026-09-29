@@ -8,6 +8,16 @@ const router = express.Router();
 // deliberately excluded (only Razorpay/webhook code may touch those).
 const EDITABLE = ["full_name", "headline", "location"];
 
+function sniffImageType(buf) {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])))
+    return "image/png";
+  if (buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP")
+    return "image/webp";
+  return null;
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
@@ -29,7 +39,12 @@ router.get("/", async (req, res) => {
 router.patch("/", async (req, res) => {
   const update = {};
   for (const key of EDITABLE) {
-    if (key in req.body) update[key] = req.body[key];
+    if (!(key in req.body)) continue;
+    const v = req.body[key];
+    if (v != null && typeof v !== "string") {
+      return res.status(400).json({ success: false, message: `${key} must be text.` });
+    }
+    update[key] = v == null ? null : v.trim().slice(0, key === "headline" ? 160 : 100);
   }
   if (Object.keys(update).length === 0) {
     return res.status(400).json({ success: false, message: "No editable fields provided." });
@@ -52,14 +67,17 @@ router.patch("/", async (req, res) => {
 router.post("/avatar", upload.single("file"), async (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).json({ success: false, message: "No file uploaded." });
-  if (!ALLOWED_IMAGE_TYPES.has(file.mimetype)) {
+  // The declared mimetype is client-controlled; check the file's real header
+  // too, since this lands in a PUBLIC bucket.
+  const sniffed = sniffImageType(file.buffer);
+  if (!ALLOWED_IMAGE_TYPES.has(file.mimetype) || !sniffed) {
     return res.status(400).json({ success: false, message: "Please upload a JPG, PNG or WEBP image." });
   }
 
   const path = `${req.user.id}/avatar`;
   const { error: upErr } = await supabase.storage
     .from("avatars")
-    .upload(path, file.buffer, { contentType: file.mimetype, upsert: true });
+    .upload(path, file.buffer, { contentType: sniffed, upsert: true });
 
   if (upErr) {
     console.error("Avatar upload failed", upErr);

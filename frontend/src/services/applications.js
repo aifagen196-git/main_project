@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { formatCompany } from "../utils/jobDisplay";
 
 export const APPLICATION_STATUSES = [
   "applied",
@@ -27,7 +28,7 @@ export async function getAppliedJobIds() {
 /** One-click "I applied" from a job card. Backend dedupes per job. */
 export async function markJobApplied(job) {
   const { application } = await api.post("/api/applications", {
-    company: job.company || "Unknown",
+    company: formatCompany(job.company) || "Unknown",
     role: job.title || "Unknown role",
     status: "applied",
     match_score: job.match_score ?? null,

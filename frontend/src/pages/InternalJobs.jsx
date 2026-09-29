@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { getInternalJobs } from "../services/internalJobs";
+import { safeUrl } from "../utils/safeUrl";
 
 /* Standalone page for postings added by hand via the admin page — moved
    out of Dashboard.jsx into its own sidebar entry so it's not tucked away
@@ -252,7 +253,7 @@ export default function InternalJobs() {
               )}
 
               <a
-                href={job.apply_url}
+                href={safeUrl(job.apply_url) || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

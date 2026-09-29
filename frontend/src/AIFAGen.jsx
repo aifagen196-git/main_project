@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
+import ResetPasswordScreen from "./components/ResetPasswordScreen";
+import { supabase } from "./lib/supabase";
 import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
 import { DEV_PREVIEW } from "./devPreview";
@@ -332,15 +334,15 @@ const STEPS = [
 const FAQS = [
   {
     q: "Can I change my plan later?",
-    a: "Yes — upgrade, downgrade, or cancel anytime from your billing settings. Changes take effect at your next cycle.",
+    a: "Yes. Switch plans or billing cycle anytime from Billing — the new plan starts right away. To cancel, email info@aifagenlabs.com and we'll handle it.",
   },
   {
     q: "Is there a free trial?",
-    a: "There is no free trial — paid plans are billed when you subscribe. You can cancel anytime from Billing.",
+    a: "There is no free trial — plans are billed when you subscribe, and you can cancel anytime.",
   },
   {
     q: "What payment methods do you accept?",
-    a: "All major cards via Razorpay, plus regional methods. Annual billing saves 20%.",
+    a: "All major credit and debit cards, processed securely by Razorpay.",
   },
 ];
 
@@ -827,7 +829,7 @@ function MarketingNav({ enter }) {
           }}
         >
           <a
-            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen.I%20would%20like%20to%20connect%3F"
+            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen%20and%20would%20like%20to%20connect."
             target="_blank"
             rel="noopener noreferrer"
             className="v3-narrowhide"
@@ -918,7 +920,7 @@ function MarketingNav({ enter }) {
             </a>
           ))}
           <a
-            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen.I%20would%20like%20to%20connect%3F"
+            href="https://wa.me/918978939314?text=Hi%2C%20I%27m%20interested%20in%20AIFAGen%20and%20would%20like%20to%20connect."
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -1889,14 +1891,9 @@ function Marketing({ enter, go }) {
       </section>
 
       {/* ---------------- PRICING ----------------
-          UI only for now — buttons don't charge anything yet. The real
-          checkout flow (Razorpay) already exists for the separate AI SaaS
-          subscription in pages/Pricing.jsx (utils/plan.js's PRICING_CARDS:
-          Basic $229/mo or $1,299/6mo, Premium $2,499/6mo) — these are a
-          DIFFERENT, done-for-you service (job application/interview
-          support) at different price points, not a replacement for that
-          one. Do not wire this to the same Razorpay flow without also
-          reconciling which product these three cards actually are. */}
+          Names, prices and billing periods mirror utils/plan.js's
+          PRICING_CARDS (what checkout actually charges) — keep them in sync.
+          "Get Started" enters the app; sign-up then lands on the plan picker. */}
       <section
         id="pricing"
         style={{
@@ -1953,8 +1950,8 @@ function Marketing({ enter, go }) {
         >
           {[
             {
-              name: "Monthly",
-              periodTag: "Per month",
+              name: "Basic",
+              periodTag: "Billed monthly",
               price: "229",
               tagline: "Ongoing support while you're actively job hunting.",
               popular: false,
@@ -1966,7 +1963,7 @@ function Marketing({ enter, go }) {
             },
             {
               name: "Basic",
-              periodTag: "One-time",
+              periodTag: "Billed every 6 months",
               price: "1,299",
               tagline: "Job Marketing Program — a full application push.",
               popular: false,
@@ -1981,8 +1978,8 @@ function Marketing({ enter, go }) {
               ],
             },
             {
-              name: "Standard",
-              periodTag: "One-time",
+              name: "Premium",
+              periodTag: "Billed every 6 months",
               price: "2,499",
               tagline: "Acceleration Program — everything in Basic, plus interview prep.",
               popular: true,
@@ -1999,7 +1996,7 @@ function Marketing({ enter, go }) {
             },
           ].map((p) => (
             <div
-              key={p.name}
+              key={`${p.name}-${p.periodTag}`}
               style={{
                 position: "relative",
                 background: "var(--surface)",
@@ -2089,7 +2086,7 @@ function Marketing({ enter, go }) {
               </div>
 
               <button
-                onClick={(e) => e.preventDefault()}
+                onClick={enter}
                 style={{
                   width: "100%",
                   marginTop: 20,
@@ -2136,7 +2133,7 @@ function Marketing({ enter, go }) {
             color: V3.faint,
           }}
         >
-          Split payments accepted for Basic and Standard packages.
+          Prices in USD. Cancel anytime — plans renew until you cancel.
         </p>
         </div>
       </section>
@@ -2517,8 +2514,28 @@ function Marketing({ enter, go }) {
                 USA: New Jersey
               </span>
             </div>
-            <div className="text-xs text-slate-500">
-              © 2025 AIFAGen Labs Pvt. Ltd. All rights reserved.
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-500">
+              <span>© {new Date().getFullYear()} AIFAGen Labs Pvt. Ltd. All rights reserved.</span>
+              <button
+                type="button"
+                onClick={() => {
+                  go("privacy");
+                  window.scrollTo(0, 0);
+                }}
+                className="hover:text-white underline-offset-2 hover:underline"
+              >
+                Privacy Policy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  go("terms");
+                  window.scrollTo(0, 0);
+                }}
+                className="hover:text-white underline-offset-2 hover:underline"
+              >
+                Terms &amp; Conditions
+              </button>
             </div>
           </div>
         </div>
@@ -2527,8 +2544,29 @@ function Marketing({ enter, go }) {
   );
 }
 
+// Read synchronously at load: supabase-js strips the recovery tokens from the
+// URL once it has parsed them, which can happen before the root mounts.
+const RECOVERY_AT_LOAD =
+  /(^|[#&])type=recovery(&|$)/.test(window.location.hash) ||
+  new URLSearchParams(window.location.search).has("recovery");
+
 /* ===================== ROOT ===================== */
 export default function AIFAGen() {
+  const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD);
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  const endRecovery = (toApp) => {
+    setRecovering(false);
+    window.history.replaceState({}, "", window.location.pathname);
+    if (toApp) setMode("app");
+  };
+
   const [mode, setMode] = useState(() =>
     // ?preview opens straight into the signed-in app (see src/devPreview.js).
     DEV_PREVIEW ? "app" : localStorage.getItem("mode") || "marketing",
@@ -2617,6 +2655,19 @@ export default function AIFAGen() {
       <div className="font-body">
         <style>{CSS}</style>
         <Splash text="Loading…" />
+      </div>
+    );
+  }
+
+  if (recovering) {
+    return (
+      <div className="font-body">
+        <style>{CSS}</style>
+        <ResetPasswordScreen
+          hasSession={!!user}
+          onDone={() => endRecovery(true)}
+          onCancel={() => endRecovery(false)}
+        />
       </div>
     );
   }

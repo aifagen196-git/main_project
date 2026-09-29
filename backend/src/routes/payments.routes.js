@@ -26,30 +26,6 @@ export function periodEndFor(billingCycle, from = new Date()) {
 // starts at 'none' and stays there until checkout completes.
 const VALID_PAIRS = new Set(["basic:monthly", "basic:semiannual", "premium:semiannual"]);
 
-// DEAD (UNREACHABLE FROM THE UI) — Pricing.jsx no longer offers a free plan,
-// so nothing calls this anymore. Left mounted (harmless, still auth-gated) in
-// case a free tier returns, and because any account that activated it while
-// it was live still legitimately holds plan='free' and this is the only
-// documented path that ever set that state.
-router.post("/free", async (req, res) => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({ plan: "free", subscription_status: "active", billing_cycle: null })
-    .eq("id", req.user.id)
-    .in("plan", ["none", "free"])
-    .select()
-    .maybeSingle();
-
-  if (error) {
-    console.error("Free plan activation failed", error);
-    return res.status(500).json({ success: false, message: "Could not activate free plan" });
-  }
-  if (!data) {
-    return res.status(409).json({ success: false, message: "Free plan not available for this account" });
-  }
-  return res.json({ success: true, profile: data });
-});
-
 // Create a Razorpay order for a plan + billing cycle. The pair is validated
 // against VALID_PAIRS, and the actual amount is looked up server-side from
 // PRICING (razorpay.service.js) — a client can't request Basic's monthly
@@ -108,12 +84,33 @@ router.post("/verify", async (req, res) => {
     return res.status(502).json({ success: false, message: "Could not verify order" });
   }
 
-  const { plan, billingCycle, userId } = notes;
+  const { plan, billingCycle, userId, _createdAt } = notes;
+  // Checkout completes within minutes of /order. An old order being
+  // "verified" now is a replay of a past payment, not a new purchase.
+  if (!_createdAt || Date.now() - _createdAt > 24 * 60 * 60 * 1000) {
+    return res.status(400).json({ success: false, message: "This payment has expired. Please start checkout again." });
+  }
   // The order must belong to the same user completing checkout — otherwise
   // a valid signature for someone else's order could activate a plan on
   // this account (or vice versa) if an order id ever leaked.
   if (!VALID_PAIRS.has(`${plan}:${billingCycle}`) || userId !== req.user.id) {
     return res.status(400).json({ success: false, message: "Order does not match this account" });
+  }
+
+  // A signature stays valid forever, so re-posting the same payment later
+  // would otherwise push current_period_end forward again for free. Treat a
+  // payment that's already been applied as a no-op.
+  const { data: current, error: curErr } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", req.user.id)
+    .single();
+  if (curErr) {
+    console.error("Profile lookup before activation failed", curErr);
+    return res.status(500).json({ success: false, message: "Could not activate plan" });
+  }
+  if (current.razorpay_payment_id === razorpay_payment_id) {
+    return res.json({ success: true, profile: current, already: true });
   }
 
   const { data, error } = await supabase

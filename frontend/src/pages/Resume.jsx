@@ -34,6 +34,8 @@ export default function Resume() {
   const [improveError, setImproveError] = useState("");
   const [resumes, setResumes] = useState([]);
   const [selectedResume, setSelectedResume] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     loadLatestResume();
@@ -42,6 +44,7 @@ export default function Resume() {
   const fileInputRef = useRef(null);
 
   async function loadLatestResume() {
+    setLoadError("");
     try {
       const resume = await getLatestResume();
       if (resume) {
@@ -53,6 +56,9 @@ export default function Resume() {
       }
     } catch (err) {
       console.error("Failed to load latest resume:", err);
+      setLoadError("We couldn't load your resume. Check your connection and try again.");
+    } finally {
+      setInitialLoading(false);
     }
   }
 
@@ -274,7 +280,44 @@ export default function Resume() {
         </div>
       )}
 
-      {!hasResume ? (
+      {!hasResume && (initialLoading || loadError) ? (
+        <div
+          style={{
+            background: "var(--surface)",
+            border: `1px solid ${R.lineMid}`,
+            borderRadius: 20,
+            padding: "64px 24px",
+            textAlign: "center",
+            marginTop: 26,
+            color: R.muted,
+            fontSize: 14,
+          }}
+        >
+          {initialLoading ? (
+            "Loading your resume…"
+          ) : (
+            <>
+              {loadError}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setInitialLoading(true);
+                  loadLatestResume();
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: R.brand,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Retry
+              </button>
+            </>
+          )}
+        </div>
+      ) : !hasResume ? (
         <div
           style={{
             background: "var(--surface)",

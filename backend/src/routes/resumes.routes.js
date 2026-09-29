@@ -81,7 +81,15 @@ router.post("/", upload.single("file"), async (req, res) => {
   if (!file) return res.status(400).json({ success: false, message: "No file uploaded." });
 
   const ext = file.originalname.split(".").pop()?.toLowerCase();
-  if (!ALLOWED.has(ext)) {
+  // Extension and mimetype are client-controlled; confirm the real header.
+  const head = file.buffer.subarray(0, 4).toString("latin1");
+  const realType =
+    ext === "pdf" && head === "%PDF"
+      ? "application/pdf"
+      : ext === "docx" && head === "PK\x03\x04"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : null;
+  if (!ALLOWED.has(ext) || !realType) {
     return res.status(400).json({ success: false, message: "Please upload a PDF or DOCX resume." });
   }
 
@@ -89,8 +97,11 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   const { error: upErr } = await supabase.storage
     .from("resumes")
-    .upload(path, file.buffer, { contentType: file.mimetype });
-  if (upErr) return res.status(500).json({ success: false, message: upErr.message });
+    .upload(path, file.buffer, { contentType: realType });
+  if (upErr) {
+    console.error("Resume upload failed", upErr);
+    return res.status(500).json({ success: false, message: "Could not upload your resume. Please try again." });
+  }
 
   let extracted_text = "";
   let extractionError = null;

@@ -82,7 +82,10 @@ export default function Applications() {
 
   async function handleAdd(e) {
     e.preventDefault();
-    if (!form.company.trim() || !form.role.trim()) return;
+    if (!form.company.trim() || !form.role.trim()) {
+      setErr("Enter both a company and a role.");
+      return;
+    }
     setSaving(true);
     setErr("");
     try {
@@ -97,6 +100,9 @@ export default function Applications() {
   }
 
   async function remove(id) {
+    const target = apps.find((x) => x.id === id);
+    const label = target ? `${target.role} at ${target.company}` : "this application";
+    if (!window.confirm(`Remove ${label} from your tracker?`)) return;
     const prev = apps;
     setApps((a) => a.filter((x) => x.id !== id));
     try {
@@ -104,6 +110,7 @@ export default function Applications() {
     } catch (e) {
       console.error(e);
       setApps(prev);
+      setErr("Couldn't remove that application. Please try again.");
     }
   }
 
@@ -341,6 +348,7 @@ export default function Applications() {
               <span style={fieldLabel}>Company</span>
               <input
                 placeholder="Acme Inc."
+                maxLength={120}
                 value={form.company}
                 onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
                 className="v3-field"
@@ -351,6 +359,7 @@ export default function Applications() {
               <span style={fieldLabel}>Role</span>
               <input
                 placeholder="Backend Engineer"
+                maxLength={160}
                 value={form.role}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                 className="v3-field"

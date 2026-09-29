@@ -7,6 +7,7 @@ import { getMatchedJobs } from "../services/matchingService";
 import { getLatestResume } from "../services/resume";
 import { getSavedJobIds } from "../services/savedJobs";
 import { matchHex } from "../utils/matchHex";
+import { formatCompany } from "../utils/jobDisplay";
 
 /* Presentation is an exact port of the "AIFAGen v3" dashboard. All data below
    is the app's own live account data — only the rendering changed. */
@@ -295,7 +296,7 @@ export default function Dashboard({ profile }) {
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                background: `conic-gradient(${D.brand} ${(profileStrength * 3.6).toFixed(1)}deg, ${D.track} 0)`,
+                background: `conic-gradient(${D.brand} ${(loading ? 0 : profileStrength * 3.6).toFixed(1)}deg, ${D.track} 0)`,
               }}
             />
             <div
@@ -313,7 +314,7 @@ export default function Dashboard({ profile }) {
                 color: D.ink,
               }}
             >
-              {profileStrength}%
+              {loading ? "--" : `${profileStrength}%`}
             </div>
           </div>
           <div>
@@ -329,7 +330,11 @@ export default function Dashboard({ profile }) {
                 maxWidth: "15rem",
               }}
             >
-              {nextStep ? `${nextStep.label} →` : "Your profile is complete →"}
+              {loading
+                ? "Checking your profile…"
+                : nextStep
+                  ? `${nextStep.label} →`
+                  : "Your profile is complete →"}
             </div>
           </div>
         </button>
@@ -577,7 +582,7 @@ export default function Dashboard({ profile }) {
                           textOverflow: "ellipsis",
                         }}
                       >
-                        {job.company}
+                        {formatCompany(job.company)}
                         {job.location ? ` · ${job.location}` : ""}
                       </div>
                     </div>

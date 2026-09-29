@@ -196,11 +196,13 @@ export default function Terms({ home, enter, go }) {
           ]}
         />
 
-        <H>5. Payments (If Applicable)</H>
-        <P>If enrolled in paid job marketing packages:</P>
+        <H>5. Payments, Renewals &amp; Cancellation</H>
+        <P>If enrolled in a paid plan:</P>
         <List
           items={[
-            "Fees must be paid in advance",
+            "Fees must be paid in advance and are processed by Razorpay",
+            "Plans renew automatically at the end of each billing period (monthly or every 6 months, as shown at checkout) until cancelled",
+            "To cancel, email info@aifagenlabs.com — cancellation stops future renewals, and access continues until the end of the period already paid for",
             "Fees are non-refundable unless explicitly agreed in writing",
           ]}
         />

@@ -256,6 +256,7 @@ const jobCols = () =>
 // their own longer cache; this one just stops repeated full-table transfers.
 let poolCache = { jobs: null, expiresAt: 0 };
 const POOL_TTL_MS = Number(process.env.MATCH_POOL_TTL_MINUTES || 10) * 60 * 1000;
+const MAX_POSTING_AGE_DAYS = Number(process.env.MAX_POSTING_AGE_DAYS || 180);
 
 // In-flight de-dup: the cold pool load takes 30-60s. Without this, the
 // startup warm-up and the first real user request (and any concurrent
@@ -364,7 +365,14 @@ async function loadLiveJobsUncached() {
     pageIndex += CONCURRENCY;
   }
 
-  const out = results.flat();
+  // last_seen keeps "evergreen" requisitions alive for years (one kforce
+  // posting showed "196 weeks ago"). Drop postings whose own date is too old
+  // to be a real opening; undated rows are kept.
+  const postedCutoff = Date.now() - MAX_POSTING_AGE_DAYS * 24 * 60 * 60 * 1000;
+  const out = results.flat().filter((j) => {
+    const t = j.posted_date ? Date.parse(j.posted_date) : NaN;
+    return Number.isNaN(t) || t >= postedCutoff;
+  });
   poolCache = { jobs: out, expiresAt: Date.now() + POOL_TTL_MS };
   return out;
 }
@@ -571,12 +579,12 @@ export async function getMatchedJobs(userId) {
  * judge) so it can back a live search box.
  */
 export async function searchJobs(userId, q, limit = 100) {
-  const term = String(q || "").trim();
+  const term = String(q || "").trim().slice(0, 100);
   if (term.length < 2) return [];
 
-  // Sanitize for the PostgREST `or(...ilike...)` filter — commas/parens/*
-  // and % would break or widen the pattern.
-  const safe = term.replace(/[%,()*]/g, " ").replace(/\s+/g, " ").trim();
+  // Sanitize for the PostgREST `or(...ilike...)` filter — commas/parens/*,
+  // quotes, backslashes and % would break or widen the pattern.
+  const safe = term.replace(/[%,()*"'\\_]/g, " ").replace(/\s+/g, " ").trim();
   if (!safe) return [];
 
   const candidate = await getCandidateProfile(userId);

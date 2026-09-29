@@ -60,11 +60,35 @@ export const SKILLS = [
   "MITRE ATT&CK", "BGP", "OSPF", "SD-WAN", "Switching", "Routing",
 ];
 
+// Skill names that are also everyday English words ("go to market",
+// "Adobe Express", "Swift delivery"). These only count when written with the
+// technology's own capitalisation, and "Go" never when it's "Go-to"/"go to".
+const CASE_SENSITIVE = new Set([
+  "Go", "Express", "Rails", "Swift", "Rust", "Dart", "Chef", "Puppet", "Spark", "Ruby", "Flask",
+]);
+
+const EXCLUDE_AFTER = { Go: "(?![- ]?to\\b)" };
+const EXCLUDE_BEFORE = {
+  Express: "(?<!\\b(?:Adobe|American|Microsoft|Visual Studio|SQL Server) )",
+};
+
+function hasCaseSensitive(original, skill) {
+  const re = new RegExp(
+    `${EXCLUDE_BEFORE[skill] || ""}\\b${skill}\\b${EXCLUDE_AFTER[skill] || ""}`,
+  );
+  return re.test(original);
+}
+
 /** Detect which dictionary skills appear in a blob of text (word-boundary). */
 export function extractSkills(text = "") {
-  const content = String(text).toLowerCase();
+  const original = String(text);
+  const content = original.toLowerCase();
   const found = [];
   for (const skill of SKILLS) {
+    if (CASE_SENSITIVE.has(skill)) {
+      if (hasCaseSensitive(original, skill)) found.push(skill);
+      continue;
+    }
     const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     // \b only matches between a word char and a non-word char. A skill that
     // STARTS or ENDS on a non-word char (C#, C++, .NET) can never satisfy a

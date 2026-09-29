@@ -65,7 +65,10 @@ export async function createOrder({ plan, billingCycle, userId }) {
  */
 export async function fetchOrderNotes(orderId) {
   const order = await client().orders.fetch(orderId);
-  return order.notes || {};
+  return {
+    ...(order.notes || {}),
+    _createdAt: Number(order.created_at) * 1000,
+  };
 }
 
 /**

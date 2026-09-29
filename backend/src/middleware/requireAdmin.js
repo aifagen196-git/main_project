@@ -16,7 +16,8 @@ export async function requireAdmin(req, res, next) {
     .maybeSingle();
 
   if (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("requireAdmin lookup failed", error);
+    return res.status(500).json({ success: false, message: "Could not verify admin access." });
   }
   if (!data) {
     return res.status(403).json({ success: false, message: "Admin access required." });

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { signOut, updatePassword } from "../services/auth";
 import { updateProfile, uploadAvatar, removeAvatar, validateAvatarFile } from "../services/profile";
-import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
+import { PLAN_LABEL, isPaidPlan, isSubscribed } from "../utils/plan";
 import { getPreference, setPreference, resolveTheme } from "../lib/theme";
 
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
@@ -160,7 +160,7 @@ export default function SettingsView({ profile, refresh }) {
       .toUpperCase() || "U";
 
   const plan = profile?.plan || "none";
-  const paid = isPaidPlan(plan);
+  const paid = isPaidPlan(plan) || isSubscribed(profile);
 
   const fieldLabel = {
     fontFamily: T.mono,
@@ -677,7 +677,10 @@ export default function SettingsView({ profile, refresh }) {
                 marginTop: 8,
               }}
             >
-              {PLAN_LABEL[plan] || "No plan"}
+              {PLAN_LABEL[plan] ||
+                (plan && plan !== "none"
+                  ? plan.charAt(0).toUpperCase() + plan.slice(1)
+                  : "No plan")}
             </div>
             <p
               style={{
@@ -687,16 +690,13 @@ export default function SettingsView({ profile, refresh }) {
                 color: T.faint,
               }}
             >
-              {
-                // There's no free tier — the only way to land in the app shell
-                // with `paid` false is plan === 'none' (isSubscribed() in
-                // utils/plan.js should normally route that state to Pricing
-                // before this page is even reachable). Defensive copy, not
-                // the expected path.
-                paid
-                  ? "Unlimited matching, resume optimization and cover letters are active on your account."
-                  : "Choose a plan to unlock matching, resume optimization and cover letters."
-              }
+              {plan === "premium"
+                ? "Unlimited AI matching, resume optimization, cover letters and priority support are active on your account."
+                : plan === "basic"
+                  ? "AI job matching (20 a day), resume analysis, application tracking and career insights are active. Upgrade to Premium for unlimited matching and cover letters."
+                  : paid
+                    ? "Your plan is active."
+                    : "Choose a plan to unlock matching, resume analysis and application tracking."}
             </p>
             <button
               onClick={() => setView(paid ? "billing" : "pricing")}

@@ -333,7 +333,7 @@ router.get("/users", async (req, res) => {
   if (search) {
     // Escape PostgREST's or() delimiters so a comma or paren can't break out
     // of the filter expression.
-    const safe = search.replace(/[,()]/g, " ");
+    const safe = search.slice(0, 100).replace(/[%,()*"'\\]/g, " ");
     query = query.or(`email.ilike.%${safe}%,full_name.ilike.%${safe}%`);
   }
   // Plan and status filter server-side, across the whole table. Doing this in
@@ -596,7 +596,7 @@ router.get("/jobs", async (req, res) => {
   if (search) {
     // Escape PostgREST's or() delimiters so a comma or paren in the search
     // term can't break out of the filter expression.
-    const safe = search.replace(/[,()]/g, " ");
+    const safe = search.slice(0, 100).replace(/[%,()*"'\\]/g, " ");
     query = query.or(`title.ilike.%${safe}%,company.ilike.%${safe}%`);
   }
   if (source) query = query.eq("source", source);

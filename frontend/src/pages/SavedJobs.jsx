@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import { matchHex } from "../utils/matchHex";
+import { formatCompany, formatSalary } from "../utils/jobDisplay";
+import { safeUrl } from "../utils/safeUrl";
 import { getSavedJobs } from "../services/savedJobs";
 
 /* Exact port of the "AIFAGen v3" shortlist screen. */
@@ -190,7 +192,7 @@ export default function SavedJobs({ saved, toggle }) {
                       {j.title}
                     </div>
                     <div style={{ fontSize: 12.5, color: S.muted, marginTop: 2 }}>
-                      {j.company}
+                      {formatCompany(j.company)}
                     </div>
                   </div>
                   <div
@@ -217,18 +219,18 @@ export default function SavedJobs({ saved, toggle }) {
                   }}
                 >
                   {j.location && <span>{j.location}</span>}
-                  {j.salary && (
+                  {formatSalary(j.salary) && (
                     <span style={{ fontFamily: S.mono, fontWeight: 700, color: S.body }}>
-                      {j.salary}
+                      {formatSalary(j.salary)}
                     </span>
                   )}
                 </div>
 
                 <div style={{ display: "flex", gap: 9, marginTop: 18 }}>
                   <a
-                    href={j.apply_url || "#"}
-                    target={j.apply_url ? "_blank" : undefined}
-                    rel={j.apply_url ? "noreferrer" : undefined}
+                    href={safeUrl(j.apply_url) || "#"}
+                    target={safeUrl(j.apply_url) ? "_blank" : undefined}
+                    rel={safeUrl(j.apply_url) ? "noopener noreferrer" : undefined}
                     className="v3-applybtn"
                     style={{
                       flex: 1,

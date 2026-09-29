@@ -3,6 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import { getMatchedJobs, searchJobs } from "../services/matchingService";
 import { getAppliedJobIds, markJobApplied } from "../services/applications";
 import { matchHex } from "../utils/matchHex";
+import { formatCompany, formatSalary } from "../utils/jobDisplay";
+import { safeUrl } from "../utils/safeUrl";
+
+// Backend searchJobs() returns at most this many rows (matching.service.js).
+const SEARCH_LIMIT = 100;
 
 /* Presentation is an exact port of the "AIFAGen v3" job-matches screen. The
    filtering, search and taxonomy logic below is unchanged. */
@@ -614,7 +619,9 @@ export default function JobMatches({ saved, toggle }) {
           <span style={{ fontFamily: M.mono, fontWeight: 700, color: M.ink }}>
             {base.length}
           </span>{" "}
-          matches
+          {isSearch && base.length >= SEARCH_LIMIT
+            ? "top results — refine your search to see more specific roles"
+            : "matches"}
         </span>
         {anyFilter && (
           <button
@@ -884,11 +891,11 @@ export default function JobMatches({ saved, toggle }) {
                         color: M.muted,
                       }}
                     >
-                      <span style={{ fontWeight: 700, color: M.body }}>{j.company}</span>
+                      <span style={{ fontWeight: 700, color: M.body }}>{formatCompany(j.company)}</span>
                       {j.location && <span>{j.location}</span>}
-                      {j.salary && (
+                      {formatSalary(j.salary) && (
                         <span style={{ fontFamily: M.mono, fontWeight: 700, color: M.body }}>
-                          {j.salary}
+                          {formatSalary(j.salary)}
                         </span>
                       )}
                       {posted && <span>{relativePosted(posted)}</span>}
@@ -947,11 +954,11 @@ export default function JobMatches({ saved, toggle }) {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                      {j.apply_url && (
+                      {safeUrl(j.apply_url) && (
                         <a
-                          href={j.apply_url}
+                          href={safeUrl(j.apply_url)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           style={{
                             display: "inline-block",
                             background: M.brand,
