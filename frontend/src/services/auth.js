@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { DEV_PREVIEW } from '../devPreview'
 
-export async function signUp(email, password, { firstName, lastName, areaOfInterest }) {
+export async function signUp(email, password, { firstName, lastName, mobile, areaOfInterest }) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -10,6 +10,7 @@ export async function signUp(email, password, { firstName, lastName, areaOfInter
         first_name: firstName,
         last_name: lastName,
         full_name: `${firstName} ${lastName}`.trim(),
+        mobile,
         area_of_interest: areaOfInterest
       }
     }

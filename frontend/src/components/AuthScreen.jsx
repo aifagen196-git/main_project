@@ -134,6 +134,7 @@ export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState("login");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [mobile, setMobile] = useState("");
   const [area, setArea] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -165,6 +166,7 @@ export default function AuthScreen({ onBack }) {
         await signUp(email.trim(), password, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
+          mobile: mobile.trim(),
           areaOfInterest: area,
         });
         setNotice("Account created — check your email to confirm, then log in.");
@@ -469,6 +471,26 @@ export default function AuthScreen({ onBack }) {
                   />
                 </label>
               </div>
+            )}
+
+            {isSignup && (
+              <label style={{ display: "block" }}>
+                <span style={fieldLabel}>Mobile number</span>
+                <input
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  inputMode="tel"
+                  maxLength={20}
+                  pattern="(?=(?:\D*\d){7,15}\D*$)\+?[0-9\(][0-9 \(\)\-]{6,18}"
+                  title="Enter a valid mobile number, with country code if outside the US (e.g. +1 555 123 4567)"
+                  placeholder="+1 555 123 4567"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  className="v3-input"
+                  style={fieldInput}
+                />
+              </label>
             )}
 
             {isSignup && (
