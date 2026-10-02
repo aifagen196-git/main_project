@@ -1,21 +1,13 @@
 import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabase.js";
-import { ROLE_FAMILY_ENUM } from "../prompts/prompts.js";
 
 const router = express.Router();
 
 // Columns a user is allowed to edit on their own profile. Billing columns are
-// deliberately excluded (only Razorpay/webhook code may touch those).
+// deliberately excluded (only Razorpay/webhook code may touch those), and so
+// are mobile / area_of_interest, which only an admin may change.
 const EDITABLE = ["full_name", "headline", "location"];
-
-// Same rules as the sign-up form (AuthScreen.jsx): 7-15 digits, optional
-// leading +, spaces/dashes/brackets allowed.
-const MOBILE_RE = /^\+?[0-9(][0-9 ()-]{6,18}$/;
-function validMobile(v) {
-  const digits = v.replace(/\D/g, "").length;
-  return MOBILE_RE.test(v) && digits >= 7 && digits <= 15;
-}
 
 function sniffImageType(buf) {
   if (!buf || buf.length < 12) return null;
@@ -54,20 +46,6 @@ router.patch("/", async (req, res) => {
       return res.status(400).json({ success: false, message: `${key} must be text.` });
     }
     update[key] = v == null ? null : v.trim().slice(0, key === "headline" ? 160 : 100);
-  }
-  if ("mobile" in req.body) {
-    const v = req.body.mobile;
-    if (v != null && (typeof v !== "string" || (v.trim() && !validMobile(v.trim())))) {
-      return res.status(400).json({ success: false, message: "Enter a valid mobile number." });
-    }
-    update.mobile = v?.trim() || null;
-  }
-  if ("area_of_interest" in req.body) {
-    const v = req.body.area_of_interest;
-    if (v != null && v !== "" && !ROLE_FAMILY_ENUM.includes(v)) {
-      return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
-    }
-    update.area_of_interest = v || null;
   }
   if (Object.keys(update).length === 0) {
     return res.status(400).json({ success: false, message: "No editable fields provided." });

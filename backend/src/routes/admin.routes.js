@@ -2,6 +2,7 @@ import express from "express";
 import { supabase } from "../config/supabase.js";
 import { listPayments, monthlyEquivalent, refundPayment } from "../services/payments/razorpay.service.js";
 import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
+import { validArea, validMobile } from "../utils/profileFields.js";
 
 // All routes here are mounted behind requireAuth + requireAdmin in app.js.
 const router = express.Router();
@@ -324,7 +325,7 @@ router.get("/users", async (req, res) => {
   let query = supabase
     .from("profiles")
     .select(
-      "id, email, full_name, plan, subscription_status, billing_cycle, current_period_end, created_at",
+      "id, email, full_name, mobile, area_of_interest, plan, subscription_status, billing_cycle, current_period_end, created_at",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -334,7 +335,7 @@ router.get("/users", async (req, res) => {
     // Escape PostgREST's or() delimiters so a comma or paren can't break out
     // of the filter expression.
     const safe = search.slice(0, 100).replace(/[%,()*"'\\]/g, " ");
-    query = query.or(`email.ilike.%${safe}%,full_name.ilike.%${safe}%`);
+    query = query.or(`email.ilike.%${safe}%,full_name.ilike.%${safe}%,mobile.ilike.%${safe}%`);
   }
   // Plan and status filter server-side, across the whole table. Doing this in
   // the browser only ever filtered the 25 rows already on screen, so "show me
@@ -433,6 +434,64 @@ router.patch("/users/:id/plan", async (req, res) => {
     detail: { before: before || null, after: update, targetEmail: data.email, reason: reason || null },
   });
   invalidatePlanCache(id);
+
+  return res.json({ success: true, user: data });
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /api/admin/users/:id/details — mobile number and area of interest.
+// Users set these at sign-up but can't change them themselves; only admins
+// can, and every change is audited.
+// ---------------------------------------------------------------------------
+router.patch("/users/:id/details", async (req, res) => {
+  const { id } = req.params;
+  const { mobile, area_of_interest, reason } = req.body || {};
+
+  const update = {};
+  if (mobile !== undefined) {
+    const v = typeof mobile === "string" ? mobile.trim() : mobile;
+    if (v != null && v !== "" && (typeof v !== "string" || !validMobile(v))) {
+      return res.status(400).json({ success: false, message: "Enter a valid mobile number." });
+    }
+    update.mobile = v || null;
+  }
+  if (area_of_interest !== undefined) {
+    if (area_of_interest != null && area_of_interest !== "" && !validArea(area_of_interest)) {
+      return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
+    }
+    update.area_of_interest = area_of_interest || null;
+  }
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ success: false, message: "Nothing to update." });
+  }
+
+  const { data: before } = await supabase
+    .from("profiles")
+    .select("mobile, area_of_interest")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(update)
+    .eq("id", id)
+    .select("id, email, mobile, area_of_interest")
+    .maybeSingle();
+
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (!data) return res.status(404).json({ success: false, message: "User not found." });
+
+  await logAudit(req, {
+    action: "user.details_update",
+    targetType: "user",
+    targetId: id,
+    detail: {
+      before: before || null,
+      after: update,
+      targetEmail: data.email,
+      reason: typeof reason === "string" ? reason.slice(0, 500) || null : null,
+    },
+  });
 
   return res.json({ success: true, user: data });
 });
