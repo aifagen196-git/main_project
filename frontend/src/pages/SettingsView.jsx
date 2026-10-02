@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { signOut, updatePassword } from "../services/auth";
 import { updateProfile, uploadAvatar, removeAvatar, validateAvatarFile } from "../services/profile";
 import { PLAN_LABEL, isPaidPlan, isSubscribed } from "../utils/plan";
+import { AREAS_OF_INTEREST } from "../utils/areas";
 import { getPreference, setPreference, resolveTheme } from "../lib/theme";
 
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
@@ -49,6 +50,8 @@ export default function SettingsView({ profile, refresh }) {
     full_name: profile?.full_name || "",
     headline: profile?.headline || "",
     location: profile?.location || "",
+    mobile: profile?.mobile || "",
+    area_of_interest: profile?.area_of_interest || "",
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -422,6 +425,36 @@ export default function SettingsView({ profile, refresh }) {
                 className="v3-field"
                 style={fieldInput}
               />
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Mobile number</span>
+              <input
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                maxLength={20}
+                value={form.mobile}
+                onChange={(e) => upd("mobile", e.target.value)}
+                placeholder="+1 555 123 4567"
+                className="v3-field"
+                style={fieldInput}
+              />
+            </label>
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Area of interest</span>
+              <select
+                value={form.area_of_interest}
+                onChange={(e) => upd("area_of_interest", e.target.value)}
+                className="v3-field"
+                style={fieldInput}
+              >
+                <option value="">Not set</option>
+                {AREAS_OF_INTEREST.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label style={{ display: "block" }}>
               <span style={fieldLabel}>Email</span>
