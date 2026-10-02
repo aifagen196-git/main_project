@@ -1985,10 +1985,9 @@ function Marketing({ enter, go }) {
               popular: true,
               featuresIntro: "Includes everything in Basic, plus:",
               features: [
-                "Provision of offer letter for OPT",
+                "Immigration support",
                 "Advanced resume crafting tailored to 70-80 targeted job descriptions",
                 "Customized cover letters specific to each role",
-                "Background Verification (BGV) support",
                 "Evaluation calls with expert hiring mentors",
                 "LinkedIn optimization and portfolio website building",
                 "Advanced interview training with performance feedback",
