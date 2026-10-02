@@ -154,3 +154,21 @@ export function verifyWebhookSignature(rawBody, signature) {
     return false;
   }
 }
+
+// One-time fee to join the WhatsApp job-seeker community (USD). Not a plan:
+// it doesn't touch profiles, and needs no account.
+export const COMMUNITY_PRICE = 2.99;
+
+export async function createCommunityOrder() {
+  return client().orders.create({
+    amount: Math.round(COMMUNITY_PRICE * 100),
+    currency: CURRENCY,
+    receipt: `community_${Date.now()}`,
+    notes: { purpose: "community" },
+  });
+}
+
+/** Fetches an order with the fields /community/verify needs to check. */
+export async function fetchOrder(orderId) {
+  return client().orders.fetch(orderId);
+}

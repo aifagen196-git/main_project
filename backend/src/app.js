@@ -8,7 +8,7 @@ import multer from "multer";
 import { requireAuth } from "./middleware/auth.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
 import { requireActivePlan } from "./middleware/requireActivePlan.js";
-import { apiRateLimiter, heavyRateLimiter } from "./middleware/rateLimiter.js";
+import { apiRateLimiter, heavyRateLimiter, publicRateLimiter } from "./middleware/rateLimiter.js";
 
 import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -19,6 +19,7 @@ import applicationsRoutes from "./routes/applications.routes.js";
 import resumesRoutes from "./routes/resumes.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
+import communityRoutes from "./routes/community.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
 import adminRoutes from "./routes/admin.routes.js";
 
@@ -103,6 +104,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "AIFAGen Backend Running", timestamp: new Date() });
 });
+
+// Paid WhatsApp community — public, no login (see community.routes.js).
+app.use("/api/community", publicRateLimiter, communityRoutes);
 
 // =============================
 // Routes (all require a valid Supabase JWT)

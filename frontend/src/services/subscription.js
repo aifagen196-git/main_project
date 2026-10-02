@@ -1,7 +1,7 @@
 import { api } from "./api";
 
 // Loads the Razorpay checkout script once.
-function loadRazorpay() {
+export function loadRazorpay() {
   return new Promise((resolve, reject) => {
     if (window.Razorpay) return resolve(window.Razorpay);
     const script = document.createElement("script");

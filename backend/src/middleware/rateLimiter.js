@@ -35,3 +35,20 @@ export const heavyRateLimiter = limiter(
   20,
   "Too many uploads or AI requests. Please try again in a few minutes.",
 );
+
+// Public (signed-out) routes. Caddy appends the real client IP as the LAST
+// X-Forwarded-For entry; earlier entries are client-supplied and spoofable.
+const byClientIp = (req) => {
+  const xff = String(req.headers["x-forwarded-for"] || "").split(",").map((s) => s.trim()).filter(Boolean);
+  return xff[xff.length - 1] || req.socket.remoteAddress || "unknown";
+};
+
+export const publicRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 20,
+  keyGenerator: byClientIp,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+  message: { success: false, message: "Too many requests. Please try again in a few minutes." },
+});

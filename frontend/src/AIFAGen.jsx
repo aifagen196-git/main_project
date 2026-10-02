@@ -86,6 +86,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import CommunityJoin from "./components/marketing/CommunityJoin";
 
 // Theming (fonts, brand colors, .card/.num/.btn-brand) now lives in
 // tailwind.config.js + index.css, the single source of truth — this used to
@@ -2399,39 +2400,7 @@ function Marketing({ enter, go }) {
             ))}
           </div>
 
-          <a
-            href="https://chat.whatsapp.com/GjUoKpDEyM415A9WFzuXGP"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              marginTop: 26,
-              background: V3.brand,
-              borderRadius: 13,
-              padding: "16px 28px",
-              fontSize: 15,
-              fontWeight: 700,
-              color: "#fff",
-              textDecoration: "none",
-              boxShadow: "0 10px 24px -12px rgba(109,74,255,.45)",
-              transition: "transform .18s,box-shadow .18s",
-            }}
-            className="v3-join-cta"
-          >
-            <MessageSquare size={18} />
-            Join the Community
-          </a>
-          <div
-            style={{
-              marginTop: 12,
-              fontSize: 12.5,
-              color: V3.faint,
-            }}
-          >
-            No spam, ever
-          </div>
+          <CommunityJoin brand={V3.brand} faint={V3.faint} />
         </div>
       </section>
 
