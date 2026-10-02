@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { signIn, signUp, sendPasswordReset } from "../services/auth";
+import { AREAS_OF_INTEREST } from "../utils/areas";
 
 /* Exact port of the "AIFAGen v3" auth screen. Palette, type ramp and spacing
    come from the design spec, so static properties are written inline; hover
@@ -131,7 +132,9 @@ const messageBox = (tone) => ({
 
 export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState("login");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [area, setArea] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -159,7 +162,11 @@ export default function AuthScreen({ onBack }) {
           "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
         );
       } else if (isSignup) {
-        await signUp(email.trim(), password, name.trim());
+        await signUp(email.trim(), password, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          areaOfInterest: area,
+        });
         setNotice("Account created — check your email to confirm, then log in.");
       } else {
         await signIn(email.trim(), password);
@@ -432,19 +439,57 @@ export default function AuthScreen({ onBack }) {
             }}
           >
             {isSignup && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
+                <label style={{ display: "block" }}>
+                  <span style={fieldLabel}>First name</span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="given-name"
+                    maxLength={60}
+                    placeholder="Jane"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="v3-input"
+                    style={fieldInput}
+                  />
+                </label>
+                <label style={{ display: "block" }}>
+                  <span style={fieldLabel}>Last name</span>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="family-name"
+                    maxLength={60}
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="v3-input"
+                    style={fieldInput}
+                  />
+                </label>
+              </div>
+            )}
+
+            {isSignup && (
               <label style={{ display: "block" }}>
-                <span style={fieldLabel}>Full name</span>
-                <input
-                  type="text"
+                <span style={fieldLabel}>Area of interest</span>
+                <select
                   required
-                  autoComplete="name"
-                  maxLength={100}
-                  placeholder="Jane Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
                   className="v3-input"
-                  style={fieldInput}
-                />
+                  style={{ ...fieldInput, color: area ? undefined : "var(--ink-3)" }}
+                >
+                  <option value="" disabled>
+                    Select the field you're targeting
+                  </option>
+                  {AREAS_OF_INTEREST.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </label>
             )}
 

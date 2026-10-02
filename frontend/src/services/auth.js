@@ -1,13 +1,16 @@
 import { supabase } from '../lib/supabase'
 import { DEV_PREVIEW } from '../devPreview'
 
-export async function signUp(email, password, fullName) {
+export async function signUp(email, password, { firstName, lastName, areaOfInterest }) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        full_name: fullName
+        first_name: firstName,
+        last_name: lastName,
+        full_name: `${firstName} ${lastName}`.trim(),
+        area_of_interest: areaOfInterest
       }
     }
   })
