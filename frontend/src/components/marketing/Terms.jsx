@@ -201,7 +201,7 @@ export default function Terms({ home, enter, go }) {
         <List
           items={[
             "Fees must be paid in advance and are processed by Razorpay",
-            "Plans renew automatically at the end of each billing period (monthly or every 6 months, as shown at checkout) until cancelled",
+            "Monthly plans renew each month until cancelled; one-time payment plans are charged once at checkout",
             "To cancel, email info@aifagenlabs.com — cancellation stops future renewals, and access continues until the end of the period already paid for",
             "Fees are non-refundable unless explicitly agreed in writing",
           ]}

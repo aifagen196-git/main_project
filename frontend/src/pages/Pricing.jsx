@@ -8,9 +8,10 @@ import ConfirmPayment from "../components/ConfirmPayment";
 
 /* Pricing screen in the "AIFAGen v3" design language.
  *
- * Three cards, no free tier: Basic monthly ($229), Basic every 6 months
- * ($1299 — same features as monthly, just a different commitment), and
- * Premium every 6 months ($2499). PRICING_CARDS (utils/plan.js) is the
+ * Three cards, no free tier: Basic monthly ($229), Basic one-time payment
+ * ($1299 — same features as monthly), and Premium one-time payment ($2499).
+ * One-time plans are "semiannual" internally (access is still time-limited
+ * server-side), but the UI never shows the period. PRICING_CARDS (utils/plan.js) is the
  * display list; each card carries both `id` (the plan tier) and
  * `billingCycle`, since Basic now has two cards with the same id.
  *
@@ -86,12 +87,14 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       title="Confirm your plan"
       lines={[
         ["Plan", pending.name],
-        ["Billing", monthly ? "Monthly" : "Every 6 months"],
+        ["Billing", monthly ? "Monthly" : "One-time payment"],
       ]}
       total={`$${pending.price.toLocaleString("en-US")}`}
-      note={`You'll be charged today and your plan unlocks right after payment. Access lasts ${
-        monthly ? "one month" : "six months"
-      }; you can cancel anytime from Billing.`}
+      note={
+        monthly
+          ? "You'll be charged today and your plan unlocks right after payment. Billed monthly; you can cancel anytime from Billing."
+          : "You'll be charged once today and your plan unlocks right after payment."
+      }
       onConfirm={() => choose(pending)}
       onCancel={() => setPending(null)}
     />

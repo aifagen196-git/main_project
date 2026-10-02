@@ -1964,7 +1964,7 @@ function Marketing({ enter, go }) {
             },
             {
               name: "Basic",
-              periodTag: "Billed every 6 months",
+              periodTag: "One-time payment",
               price: "1,299",
               tagline: "Job Marketing Program — a full application push.",
               popular: false,
@@ -1980,7 +1980,7 @@ function Marketing({ enter, go }) {
             },
             {
               name: "Premium",
-              periodTag: "Billed every 6 months",
+              periodTag: "One-time payment",
               price: "2,499",
               tagline: "Acceleration Program — everything in Basic, plus interview prep.",
               popular: true,

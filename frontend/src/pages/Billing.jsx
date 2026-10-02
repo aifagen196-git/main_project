@@ -44,8 +44,8 @@ const STATUS_META = {
 };
 
 const BILLING_CYCLE_LABEL = {
-  monthly: "Monthly",
-  semiannual: "Every 6 months",
+  monthly: "Monthly billing",
+  semiannual: "One-time payment",
 };
 
 const SUPPORT_EMAIL = "info@aifagenlabs.com";
@@ -184,7 +184,7 @@ export default function Billing({ profile }) {
             </div>
             {profile?.billing_cycle && (
               <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6" }}>
-                {BILLING_CYCLE_LABEL[profile.billing_cycle] || profile.billing_cycle} billing
+                {BILLING_CYCLE_LABEL[profile.billing_cycle] || profile.billing_cycle}
               </p>
             )}
           </div>
@@ -192,7 +192,7 @@ export default function Billing({ profile }) {
           {renew && (
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12.5, color: "#B9C2D6" }}>
-                {status === "canceled" ? "Access until" : "Renews on"}
+                {status === "canceled" || profile?.billing_cycle !== "monthly" ? "Access until" : "Renews on"}
               </div>
               <div
                 style={{
