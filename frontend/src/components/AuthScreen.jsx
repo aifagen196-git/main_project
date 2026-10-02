@@ -191,8 +191,8 @@ export default function AuthScreen({ onBack }) {
     >
       {/* ---------------- LEFT PANEL ---------------- */}
       <div
+        className="auth-left"
         style={{
-          position: "relative",
           overflow: "hidden",
           background: "var(--inverse)",
           color: "var(--on-inverse)",

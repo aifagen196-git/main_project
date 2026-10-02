@@ -140,3 +140,19 @@
     filter: brightness(1.05);
   }
 }
+
+/* Login / sign-up: the left showcase panel stays put while the form column
+   scrolls (sign-up is taller than the screen). Only side-by-side — when the
+   columns stack on phones it scrolls normally. */
+.auth-left {
+  position: relative;
+}
+@media (min-width: 700px) {
+  .auth-left {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    align-self: start;
+  }
+}
