@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, MessageSquare } from "lucide-react";
 
 import { joinCommunity } from "../../services/community";
+import ConfirmPayment from "../ConfirmPayment";
 
 const STORE_KEY = "aifagen.communityLink";
 const PRICE = "$2.99";
@@ -39,8 +40,10 @@ export default function CommunityJoin({ brand, faint }) {
   const [link, setLink] = useState(readStored);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   async function pay() {
+    setConfirming(false);
     setBusy(true);
     setError("");
     try {
@@ -82,7 +85,10 @@ export default function CommunityJoin({ brand, faint }) {
     <>
       <button
         type="button"
-        onClick={pay}
+        onClick={() => {
+          setError("");
+          setConfirming(true);
+        }}
         disabled={busy}
         style={{ ...buttonStyle(brand), opacity: busy ? 0.75 : 1 }}
         className="v3-join-cta"
@@ -92,6 +98,19 @@ export default function CommunityJoin({ brand, faint }) {
       </button>
       <div style={note}>One-time payment of {PRICE}. No spam, ever.</div>
       {error && <div style={{ ...note, color: "#dc2626" }}>{error}</div>}
+      {confirming && (
+        <ConfirmPayment
+          title="Join the community"
+          lines={[
+            ["Item", "Job Seeker Community access"],
+            ["Payment", "One-time"],
+          ]}
+          total={PRICE}
+          note="After payment you'll get the link to join our WhatsApp community. No account needed."
+          onConfirm={pay}
+          onCancel={() => setConfirming(false)}
+        />
+      )}
     </>
   );
 }

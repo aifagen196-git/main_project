@@ -4,6 +4,7 @@ import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lu
 import { PRICING_CARDS } from "../utils/plan";
 import { startCheckout } from "../services/subscription";
 import { signOut } from "../services/auth";
+import ConfirmPayment from "../components/ConfirmPayment";
 
 /* Pricing screen in the "AIFAGen v3" design language.
  *
@@ -59,24 +60,46 @@ const kicker = {
 export default function Pricing({ profile, refresh, onboarding = false }) {
   const [busy, setBusy] = useState(null); // "id:billingCycle" currently processing
   const [err, setErr] = useState("");
+  const [pending, setPending] = useState(null); // card awaiting confirmation
   const currentPlan = profile?.plan;
   const currentCycle = profile?.billing_cycle;
 
   async function choose(card) {
     const key = `${card.id}:${card.billingCycle}`;
+    setPending(null);
     setErr("");
     setBusy(key);
     try {
       await startCheckout(card.id, card.billingCycle); // opens Razorpay, resolves on success
       await refresh?.();
     } catch (e) {
-      setErr(e.message || "Something went wrong. Please try again.");
+      if (e?.message !== "Checkout cancelled") {
+        setErr(e.message || "Something went wrong. Please try again.");
+      }
       setBusy(null);
     }
   }
 
+  const monthly = pending?.billingCycle === "monthly";
+  const confirm = pending && (
+    <ConfirmPayment
+      title="Confirm your plan"
+      lines={[
+        ["Plan", pending.name],
+        ["Billing", monthly ? "Monthly" : "Every 6 months"],
+      ]}
+      total={`$${pending.price.toLocaleString("en-US")}`}
+      note={`You'll be charged today and your plan unlocks right after payment. Access lasts ${
+        monthly ? "one month" : "six months"
+      }; you can cancel anytime from Billing.`}
+      onConfirm={() => choose(pending)}
+      onCancel={() => setPending(null)}
+    />
+  );
+
   const grid = (
     <>
+      {confirm}
       <div style={{ textAlign: "center" }}>
         <div style={{ ...kicker, textAlign: "center" }}>Pricing</div>
         <h1
@@ -231,7 +254,10 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
               </div>
 
               <button
-                onClick={() => choose(p)}
+                onClick={() => {
+                  setErr("");
+                  setPending(p);
+                }}
                 disabled={busy !== null || isCurrent}
                 style={{
                   width: "100%",
