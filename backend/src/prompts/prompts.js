@@ -82,11 +82,12 @@ export const RESUME_FULL_SCHEMA = {
       type: "object",
       additionalProperties: false,
       required: [
-        "skills", "years", "seniority", "role_family", "country",
+        "candidate_name", "skills", "years", "seniority", "role_family", "country",
         "target_locations", "open_to_relocate", "work_auth",
         "education_level", "certifications",
       ],
       properties: {
+        candidate_name: { type: "string" }, // "" when not stated
         skills: strArray,
         years: { type: "number" },
         seniority: { type: "string", enum: SENIORITY_ENUM },
@@ -130,6 +131,8 @@ export function buildResumeFullPrompt(text = "") {
   return `From the resume below, produce two things.
 
 1) "profile" — factual extraction used by a job-matching engine:
+   - candidate_name: the candidate's full name exactly as written at the top of
+     the resume; "" if no name appears. Never guess.
    - skills: every concrete skill, tool, technology, or domain capability.
    - years: total years of professional experience (number).
    - seniority, role_family, education_level: pick from the allowed values.

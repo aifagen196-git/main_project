@@ -130,7 +130,6 @@ export default function Resume() {
       // The backend stores the file, extracts text + skills, builds the
       // structured profile, and runs ATS analysis — returning the finished row.
       const resume = await uploadResume(file);
-      e.target.value = "";
 
       setSelectedResume(resume);
       setResumes((prev) => [resume, ...prev]);
@@ -144,6 +143,9 @@ export default function Resume() {
       console.error(err);
       setImproveError(err.message || "Upload failed.");
     } finally {
+      // Clear the picker either way, so choosing the same file again after a
+      // rejected upload still triggers a new attempt.
+      e.target.value = "";
       setBusy(false);
     }
   }
@@ -215,6 +217,10 @@ export default function Resume() {
           <p style={{ margin: "9px 0 0", fontSize: 15, color: R.muted }}>
             AI-powered feedback to help you create a resume that gets you
             interviews.
+          </p>
+          <p style={{ margin: "6px 0 0", fontSize: 12.5, color: R.faint }}>
+            Upload your own resume for your chosen area of interest — uploads are
+            checked against your account name and area.
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>

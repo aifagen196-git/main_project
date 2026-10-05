@@ -6,8 +6,9 @@ const router = express.Router();
 
 // Columns a user is allowed to edit on their own profile. Billing columns are
 // deliberately excluded (only Razorpay/webhook code may touch those), and so
-// are mobile / area_of_interest, which only an admin may change.
-const EDITABLE = ["full_name", "headline", "location"];
+// are the name, mobile and area of interest, which only an admin may change
+// (resume uploads are checked against the name and area).
+const EDITABLE = ["headline", "location"];
 
 function sniffImageType(buf) {
   if (!buf || buf.length < 12) return null;

@@ -14,6 +14,14 @@ import {
 } from "../services/resume/improvedResumeDoc.service.js";
 import { consumeAiUsage, withAiContext } from "../services/ai/usage.js";
 import { invalidateMatches } from "../services/jobs/matching.service.js";
+import {
+  accountName,
+  areaLabel,
+  areaMatches,
+  nameMatches,
+} from "../services/resume/resumeOwnership.js";
+
+const SUPPORT_EMAIL = "info@aifagenlabs.com";
 
 const router = express.Router();
 
@@ -147,6 +155,69 @@ router.post("/", upload.single("file"), async (req, res) => {
     }
   }
 
+  // Ownership checks (services/resume/resumeOwnership.js): the resume must be
+  // in the account's area of interest and carry the account holder's name.
+  // Both need the AI read above, so if that failed we can't let it through.
+  const reject = async (status, code, message) => {
+    await supabase.storage.from("resumes").remove([path]).catch(() => {});
+    return res.status(status).json({ success: false, code, message });
+  };
+  if (!profile) {
+    return reject(
+      503,
+      "RESUME_CHECK_UNAVAILABLE",
+      "We couldn't check your resume right now. Please try again in a few minutes.",
+    );
+  }
+
+  const { data: account, error: accErr } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, full_name, area_of_interest")
+    .eq("id", req.user.id)
+    .single();
+  if (accErr) {
+    console.error("Account lookup for resume checks failed", accErr);
+    return reject(500, "RESUME_CHECK_FAILED", "Could not upload your resume. Please try again.");
+  }
+
+  // Older accounts predate these fields: the first resume fills them in, and
+  // from then on they're locked like everyone else's (only an admin can
+  // change them).
+  const backfill = {};
+  const { first } = accountName(account);
+  if (!first.length) {
+    if (!profile.candidate_name) {
+      return reject(
+        422,
+        "NAME_MISSING",
+        `We couldn't find your name on this resume. Please upload a resume with your name at the top, or contact ${SUPPORT_EMAIL}.`,
+      );
+    }
+    const parts = profile.candidate_name.split(/\s+/);
+    backfill.first_name = parts[0].slice(0, 60);
+    backfill.last_name = parts.slice(1).join(" ").slice(0, 60) || null;
+    backfill.full_name = profile.candidate_name.slice(0, 100);
+  } else if (!nameMatches(account, profile.candidate_name, extracted_text)) {
+    return reject(
+      422,
+      "NAME_MISMATCH",
+      "The name on this resume doesn't match your account. You can only upload your own resume. " +
+        `If your name is wrong on your account, contact ${SUPPORT_EMAIL}.`,
+    );
+  }
+
+  if (!account.area_of_interest) {
+    backfill.area_of_interest = profile.role_family;
+  } else if (!areaMatches(account.area_of_interest, profile.role_family)) {
+    return reject(
+      422,
+      "AREA_MISMATCH",
+      `Your account is set up for ${areaLabel(account.area_of_interest)}, but this resume reads as ` +
+        `${areaLabel(profile.role_family)}. Please upload your ${areaLabel(account.area_of_interest)} resume. ` +
+        `If your area of interest is wrong, contact ${SUPPORT_EMAIL}.`,
+    );
+  }
+
   const { data, error } = await supabase
     .from("resumes")
     .insert({
@@ -164,6 +235,11 @@ router.post("/", upload.single("file"), async (req, res) => {
   if (error) {
     await supabase.storage.from("resumes").remove([path]);
     return res.status(500).json({ success: false, message: error.message });
+  }
+
+  if (Object.keys(backfill).length) {
+    const { error: bfErr } = await supabase.from("profiles").update(backfill).eq("id", req.user.id);
+    if (bfErr) console.error("Profile backfill from resume failed", bfErr);
   }
 
   // New resume → the user's cached matches are stale.

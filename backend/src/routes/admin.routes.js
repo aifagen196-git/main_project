@@ -439,15 +439,24 @@ router.patch("/users/:id/plan", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// PATCH /api/admin/users/:id/details — mobile number and area of interest.
+// PATCH /api/admin/users/:id/details — name, mobile number and area of interest.
 // Users set these at sign-up but can't change them themselves; only admins
 // can, and every change is audited.
 // ---------------------------------------------------------------------------
 router.patch("/users/:id/details", async (req, res) => {
   const { id } = req.params;
-  const { mobile, area_of_interest, reason } = req.body || {};
+  const { mobile, area_of_interest, reason, first_name, last_name } = req.body || {};
 
   const update = {};
+  // Name: resume uploads are checked against it, so only admins can change it.
+  if (first_name !== undefined || last_name !== undefined) {
+    const first = typeof first_name === "string" ? first_name.trim().slice(0, 60) : "";
+    const last = typeof last_name === "string" ? last_name.trim().slice(0, 60) : "";
+    if (!first) return res.status(400).json({ success: false, message: "First name is required." });
+    update.first_name = first;
+    update.last_name = last || null;
+    update.full_name = `${first} ${last}`.trim();
+  }
   if (mobile !== undefined) {
     const v = typeof mobile === "string" ? mobile.trim() : mobile;
     if (v != null && v !== "" && (typeof v !== "string" || !validMobile(v))) {
@@ -467,7 +476,7 @@ router.patch("/users/:id/details", async (req, res) => {
 
   const { data: before } = await supabase
     .from("profiles")
-    .select("mobile, area_of_interest")
+    .select("first_name, last_name, mobile, area_of_interest")
     .eq("id", id)
     .maybeSingle();
 
@@ -475,7 +484,7 @@ router.patch("/users/:id/details", async (req, res) => {
     .from("profiles")
     .update(update)
     .eq("id", id)
-    .select("id, email, mobile, area_of_interest")
+    .select("id, email, full_name, first_name, last_name, mobile, area_of_interest")
     .maybeSingle();
 
   if (error) return res.status(500).json({ success: false, message: error.message });

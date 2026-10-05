@@ -49,7 +49,6 @@ export default function SettingsView({ profile, refresh }) {
   const navigate = useNavigate();
   const setView = (view) => navigate(`/${view}`);
   const [form, setForm] = useState({
-    full_name: profile?.full_name || "",
     headline: profile?.headline || "",
     location: profile?.location || "",
   });
@@ -399,11 +398,13 @@ export default function SettingsView({ profile, refresh }) {
           >
             <label style={{ display: "block" }}>
               <span style={fieldLabel}>Full name</span>
+              {/* Locked: resume uploads are checked against this name. */}
               <input
-                value={form.full_name}
-                onChange={(e) => upd("full_name", e.target.value)}
+                value={profile?.full_name || "Not set"}
+                readOnly
+                title={LOCKED_HINT}
                 className="v3-field"
-                style={fieldInput}
+                style={{ ...fieldInput, color: T.muted, cursor: "not-allowed" }}
               />
             </label>
             <label style={{ display: "block" }}>

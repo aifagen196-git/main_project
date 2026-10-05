@@ -25,6 +25,7 @@ const RESUME_DEFAULTS = {
   skills: [], years: 0, seniority: "mid", role_family: "other",
   country: "USA", target_locations: [], open_to_relocate: false,
   work_auth: null, education_level: "", certifications: [],
+  candidate_name: "",
 };
 
 // The scorer looks these up by exact key — anything else is read as "unknown"
@@ -81,6 +82,8 @@ function coerceProfile(raw, sourceText = "") {
     out[k] = Array.isArray(RESUME_DEFAULTS[k]) ? [].concat(obj[k]).filter(Boolean) : obj[k];
   }
   out.years = Number(out.years) || 0;
+  out.candidate_name =
+    typeof out.candidate_name === "string" ? out.candidate_name.trim().slice(0, 120) : "";
   // Canonicalize the fields the scorer keys off of.
   out.education_level = normalizeEducation(out.education_level);
   out.seniority = normalizeSeniority(out.seniority);
