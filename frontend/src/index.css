@@ -156,3 +156,9 @@
     align-self: start;
   }
 }
+/* Phones: the showcase panel just pushes the form below the fold — hide it. */
+@media (max-width: 699px) {
+  .auth-left {
+    display: none !important;
+  }
+}
