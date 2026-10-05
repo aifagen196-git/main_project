@@ -56,9 +56,5 @@ services:
         source: /*
         destination: /index.html
     envVars:
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
       - key: VITE_API_URL
         value: https://api.aifagenlabs.com

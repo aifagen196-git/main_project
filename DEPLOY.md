@@ -41,8 +41,6 @@ Order matters — the frontend needs the backend's URL, but not vice versa yet.
 1. [vercel.com](https://vercel.com) (you already have an account) → New Project → import this repo.
 2. Set **Root Directory** to `frontend`. Build command and output directory are already declared in `frontend/vercel.json`.
 3. Add environment variables (Settings → Environment Variables) — see `frontend/.env.example`:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
    - `VITE_API_URL` = the Railway URL from step 1 (e.g. `https://your-service.up.railway.app`, **no trailing slash**)
 4. Deploy. Vercel assigns a domain like `https://your-app.vercel.app`.
 

@@ -497,6 +497,132 @@ router.patch("/users/:id/details", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Internal jobs (postings the team adds by hand). The admin app used to write
+// these straight to Supabase; it now only talks to this API.
+// ---------------------------------------------------------------------------
+function internalJobRow(body, { partial = false } = {}) {
+  const row = {};
+  const text = (key, max, { required = false } = {}) => {
+    if (!(key in body)) {
+      if (required && !partial) throw new Error(`${key} is required.`);
+      return;
+    }
+    const v = body[key];
+    if (v != null && typeof v !== "string") throw new Error(`${key} must be text.`);
+    const clean = (v || "").trim().slice(0, max);
+    if (required && !clean) throw new Error(`${key} is required.`);
+    row[key] = clean || null;
+  };
+  text("title", 200, { required: true });
+  text("description", 10000, { required: true });
+  text("department", 120);
+  text("location", 160);
+  text("employment_type", 60);
+  if ("apply_url" in body) {
+    const v = body.apply_url;
+    if (v) {
+      let u;
+      const bad = "Apply URL must be an https:// or mailto: link.";
+      try {
+        u = new URL(String(v).trim());
+      } catch {
+        throw new Error(bad);
+      }
+      if (!["https:", "http:", "mailto:"].includes(u.protocol)) throw new Error(bad);
+      row.apply_url = u.href.slice(0, 2000);
+    } else {
+      row.apply_url = null;
+    }
+  }
+  if ("skills" in body) {
+    if (!Array.isArray(body.skills)) throw new Error("skills must be a list.");
+    row.skills = body.skills
+      .filter((s) => typeof s === "string")
+      .map((s) => s.trim().slice(0, 60))
+      .filter(Boolean)
+      .slice(0, 40);
+  }
+  if ("is_active" in body) row.is_active = Boolean(body.is_active);
+  return row;
+}
+
+router.get("/internal-jobs", async (req, res) => {
+  const { data, error } = await supabase
+    .from("internal_jobs")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  return res.json({ success: true, jobs: data || [] });
+});
+
+router.post("/internal-jobs", async (req, res) => {
+  let row;
+  try {
+    row = internalJobRow(req.body || {});
+  } catch (e) {
+    return res.status(400).json({ success: false, message: e.message });
+  }
+  const { data, error } = await supabase
+    .from("internal_jobs")
+    .insert({ ...row, created_by: req.user.id })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  await logAudit(req, {
+    action: "internal_job.create",
+    targetType: "internal_job",
+    targetId: data.id,
+    detail: { title: data.title },
+  });
+  return res.status(201).json({ success: true, job: data });
+});
+
+router.patch("/internal-jobs/:id", async (req, res) => {
+  let row;
+  try {
+    row = internalJobRow(req.body || {}, { partial: true });
+  } catch (e) {
+    return res.status(400).json({ success: false, message: e.message });
+  }
+  if (Object.keys(row).length === 0) {
+    return res.status(400).json({ success: false, message: "Nothing to update." });
+  }
+  const { data, error } = await supabase
+    .from("internal_jobs")
+    .update({ ...row, updated_at: new Date().toISOString() })
+    .eq("id", req.params.id)
+    .select()
+    .maybeSingle();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (!data) return res.status(404).json({ success: false, message: "Posting not found." });
+  await logAudit(req, {
+    action: "internal_job.update",
+    targetType: "internal_job",
+    targetId: data.id,
+    detail: { title: data.title, changed: Object.keys(row) },
+  });
+  return res.json({ success: true, job: data });
+});
+
+router.delete("/internal-jobs/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("internal_jobs")
+    .delete()
+    .eq("id", req.params.id)
+    .select("id, title")
+    .maybeSingle();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (!data) return res.status(404).json({ success: false, message: "Posting not found." });
+  await logAudit(req, {
+    action: "internal_job.delete",
+    targetType: "internal_job",
+    targetId: data.id,
+    detail: { title: data.title },
+  });
+  return res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/admin/ai-usage — aggregate usage for monitoring/abuse detection.
 // ---------------------------------------------------------------------------
 router.get("/ai-usage", async (req, res) => {

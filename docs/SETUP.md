@@ -32,7 +32,7 @@ Browser (React)
 
 ```bash
 npm install
-cp .env.example .env     # then fill VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
+cp .env.example .env     # optional — the site needs no Supabase settings
 npm run dev
 ```
 
