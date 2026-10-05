@@ -439,13 +439,15 @@ router.patch("/users/:id/plan", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// PATCH /api/admin/users/:id/details — name, mobile number and area of interest.
+// PATCH /api/admin/users/:id/details — the account's profile: name, email,
+// mobile number, area of interest, headline and location.
 // Users set these at sign-up but can't change them themselves; only admins
 // can, and every change is audited.
 // ---------------------------------------------------------------------------
 router.patch("/users/:id/details", async (req, res) => {
   const { id } = req.params;
-  const { mobile, area_of_interest, reason, first_name, last_name } = req.body || {};
+  const { mobile, area_of_interest, reason, first_name, last_name, headline, location, email } =
+    req.body || {};
 
   const update = {};
   // Name: resume uploads are checked against it, so only admins can change it.
@@ -470,21 +472,53 @@ router.patch("/users/:id/details", async (req, res) => {
     }
     update.area_of_interest = area_of_interest || null;
   }
-  if (Object.keys(update).length === 0) {
-    return res.status(400).json({ success: false, message: "Nothing to update." });
+  for (const [key, value, max] of [["headline", headline, 160], ["location", location, 100]]) {
+    if (value === undefined) continue;
+    if (value != null && typeof value !== "string") {
+      return res.status(400).json({ success: false, message: `${key} must be text.` });
+    }
+    update[key] = value?.trim().slice(0, max) || null;
   }
 
   const { data: before } = await supabase
     .from("profiles")
-    .select("first_name, last_name, mobile, area_of_interest")
+    .select("email, first_name, last_name, mobile, area_of_interest, headline, location")
     .eq("id", id)
     .maybeSingle();
+  if (!before) return res.status(404).json({ success: false, message: "User not found." });
+
+  // Email is the login, so it changes on the sign-in account first; the
+  // profile copy follows. Confirmed straight away — an admin is vouching for it.
+  if (email !== undefined) {
+    const next = typeof email === "string" ? email.trim().toLowerCase().slice(0, 254) : "";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      return res.status(400).json({ success: false, message: "Enter a valid email address." });
+    }
+    if (next !== (before.email || "").toLowerCase()) {
+      const { error: authErr } = await supabase.auth.admin.updateUserById(id, {
+        email: next,
+        email_confirm: true,
+      });
+      if (authErr) {
+        const taken = /already|registered|exists/i.test(authErr.message);
+        return res.status(taken ? 409 : 400).json({
+          success: false,
+          message: taken ? "Another account already uses that email." : authErr.message,
+        });
+      }
+      update.email = next;
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ success: false, message: "Nothing to update." });
+  }
 
   const { data, error } = await supabase
     .from("profiles")
     .update(update)
     .eq("id", id)
-    .select("id, email, full_name, first_name, last_name, mobile, area_of_interest")
+    .select("id, email, full_name, first_name, last_name, mobile, area_of_interest, headline, location")
     .maybeSingle();
 
   if (error) return res.status(500).json({ success: false, message: error.message });
@@ -495,7 +529,7 @@ router.patch("/users/:id/details", async (req, res) => {
     targetType: "user",
     targetId: id,
     detail: {
-      before: before || null,
+      before,
       after: update,
       targetEmail: data.email,
       reason: typeof reason === "string" ? reason.slice(0, 500) || null : null,
