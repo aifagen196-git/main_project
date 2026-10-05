@@ -52,3 +52,27 @@ export const publicRateLimiter = rateLimit({
   validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
   message: { success: false, message: "Too many requests. Please try again in a few minutes." },
 });
+
+// Login / sign-up / forgot-password: tight, to slow password guessing and
+// email spam.
+export const authRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 30,
+  keyGenerator: byClientIp,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+  message: { success: false, message: "Too many attempts. Please wait a few minutes and try again." },
+});
+
+// Token refresh and the other session calls happen in the background for
+// every signed-in tab, so they get more room.
+export const sessionRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 300,
+  keyGenerator: byClientIp,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, keyGeneratorIpFallback: false },
+  message: { success: false, message: "Too many requests. Please try again in a few minutes." },
+});

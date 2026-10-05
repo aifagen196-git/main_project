@@ -12,8 +12,8 @@ import { getPreference, setPreference, resolveTheme } from "../lib/theme";
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
  * exact port: an identity strip (avatar, name, email) heads the Profile
  * card instead of a bare "Profile" label over a form, and a Security card
- * fills what used to be dead space under Save changes — real, since
- * supabase.auth.updateUser() needs no backend route (see services/auth.js).
+ * fills what used to be dead space under Save changes (password changes go
+ * through POST /api/auth/password, see services/auth.js).
  *
  * Two things from the original v3 mockup are still deliberately absent,
  * both because the backing data doesn't exist: the spec's "Match

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
-import { supabase } from "./lib/supabase";
+import { auth } from "./lib/authClient";
 import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
 import { DEV_PREVIEW } from "./devPreview";
@@ -2512,8 +2512,8 @@ function Marketing({ enter, go }) {
   );
 }
 
-// Read synchronously at load: supabase-js strips the recovery tokens from the
-// URL once it has parsed them, which can happen before the root mounts.
+// Read synchronously at load: the auth client strips the recovery tokens from
+// the URL once it has parsed them (lib/authClient.js consumeUrlSession).
 const RECOVERY_AT_LOAD =
   /(^|[#&])type=recovery(&|$)/.test(window.location.hash) ||
   new URLSearchParams(window.location.search).has("recovery");
@@ -2522,12 +2522,9 @@ const RECOVERY_AT_LOAD =
 export default function AIFAGen() {
   const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD);
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    return auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
     });
-    return () => subscription.unsubscribe();
   }, []);
   const endRecovery = (toApp) => {
     setRecovering(false);

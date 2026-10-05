@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getProfile } from '../services/profile'
-import { supabase } from '../lib/supabase'
+import { auth } from '../lib/authClient'
 import { DEV_PREVIEW, PREVIEW_PROFILE } from '../devPreview'
 
 export function useProfile(user) {
@@ -47,7 +47,7 @@ export function useProfile(user) {
         // A 401 that survived the client's refresh-and-retry means the session
         // is truly invalid — sign out so the user lands on a clean login.
         if (err.status === 401) {
-          await supabase.auth.signOut()
+          await auth.signOut()
           return
         }
         if (active) setError(err.message || 'Could not load your account.')
@@ -56,21 +56,21 @@ export function useProfile(user) {
         if (active) setLoading(false)
       })
 
-    // Live-update the profile if the webhook changes the subscription.
-    const channel = supabase
-      .channel(`profile-${user.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
-        (payload) => {
-          if (active) setProfile(payload.new)
-        },
-      )
-      .subscribe()
+    // Pick up plan changes made elsewhere (payment webhook, an admin) when the
+    // user comes back to the tab. Checkout itself refreshes explicitly.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      getProfile(user.id)
+        .then((data) => {
+          if (active) setProfile(data)
+        })
+        .catch(() => {})
+    }
+    document.addEventListener('visibilitychange', onVisible)
 
     return () => {
       active = false
-      supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [user?.id])
 

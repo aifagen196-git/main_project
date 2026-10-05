@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { auth } from "../lib/authClient";
 import { DEV_PREVIEW, previewApi } from "../devPreview";
 
 // Base URL of the Express backend, resolved per environment.
@@ -36,10 +36,7 @@ const API_URL = import.meta.env.DEV
   : "";
 
 async function authHeader() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = (await auth.getSession())?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -121,10 +118,10 @@ export async function apiRequest(path, { method = "GET", body, _retried } = {}) 
     timeoutFor(path),
   );
 
-  // Expired access token: refresh the Supabase session once and retry.
+  // Expired access token: refresh the session once and retry.
   if (res.status === 401 && !_retried) {
-    const { data } = await supabase.auth.refreshSession();
-    if (data?.session) {
+    const refreshed = await auth.refreshSession().catch(() => null);
+    if (refreshed) {
       return apiRequest(path, { method, body, _retried: true });
     }
   }
