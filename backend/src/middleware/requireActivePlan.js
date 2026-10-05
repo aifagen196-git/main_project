@@ -12,8 +12,8 @@ import { supabase } from "../config/supabase.js";
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 // Status alone isn't enough: the old free-tier path set status='active' with
-// plan='free'. 'professional' is a legacy paid tier a few accounts still hold.
-const PAID_PLANS = new Set(["basic", "premium", "professional"]);
+// plan='free'. Only basic and premium are paid plans (migration 0022).
+const PAID_PLANS = new Set(["basic", "premium"]);
 
 // Tiny per-user cache so we don't hit the DB on every single request. Short
 // TTL so a just-activated plan is picked up quickly; invalidated explicitly

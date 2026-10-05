@@ -29,11 +29,11 @@ export function planLimits(plan) {
 }
 
 /** A user has access to the app once they hold an active/trialing paid plan
- *  ('professional' is a legacy paid tier; 'free' no longer grants access). */
+ *  (basic or premium — the only paid plans). */
 export function isSubscribed(profile) {
   return (
     ["active", "trialing"].includes(profile?.subscription_status) &&
-    ["basic", "premium", "professional"].includes(profile?.plan)
+    ["basic", "premium"].includes(profile?.plan)
   );
 }
 

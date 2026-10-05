@@ -170,7 +170,7 @@ export default function Analytics({ plan }) {
             padding: "56px 26px",
           }}
         >
-          <div style={{ ...kicker, color: A.faint }}>Professional</div>
+          <div style={{ ...kicker, color: A.faint }}>Premium</div>
           <div
             style={{
               fontFamily: A.display,
@@ -180,7 +180,7 @@ export default function Analytics({ plan }) {
               margin: "12px 0 0",
             }}
           >
-            Analytics is part of Professional
+            Analytics is part of Premium
           </div>
           <p
             style={{
