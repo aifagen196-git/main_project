@@ -1,6 +1,6 @@
-import { ROLE_FAMILY_ENUM } from "../prompts/prompts.js";
+import { AREA_IDS } from "../services/resume/resumeOwnership.js";
 
-// Mobile number and area of interest are set at sign-up and can only be
+// Name, mobile number and area of interest are set at sign-up and can only be
 // changed by an admin (PATCH /api/admin/users/:id/details).
 
 // Same rules as the sign-up form (AuthScreen.jsx): 7-15 digits, optional
@@ -11,6 +11,7 @@ export function validMobile(v) {
   return MOBILE_RE.test(v) && digits >= 7 && digits <= 15;
 }
 
+// The Area of interest choices (services/resume/resumeOwnership.js AREAS).
 export function validArea(v) {
-  return ROLE_FAMILY_ENUM.includes(v);
+  return AREA_IDS.includes(v);
 }

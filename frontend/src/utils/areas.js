@@ -1,23 +1,20 @@
-// "Area of interest" choices on sign-up. Values are the matcher's role-family
-// ids (backend/src/prompts/prompts.js ROLE_FAMILY_ENUM) so they can feed job
-// matching later without a mapping table.
+// "Area of interest" choices (sign-up, Settings). Ids and labels must match
+// the backend's list in backend/src/services/resume/resumeOwnership.js
+// (AREAS), which also decides which resumes fit each area.
 export const AREAS_OF_INTEREST = [
-  ["software-engineering", "Software Engineering"],
-  ["frontend-engineering", "Frontend Development"],
-  ["backend-engineering", "Backend Development"],
   ["devops", "DevOps"],
-  ["cloud-engineering", "Cloud Engineering"],
-  ["data-analytics", "Data Analytics"],
-  ["data-engineering", "Data Engineering"],
-  ["ai-ml", "AI / Machine Learning"],
-  ["security-engineering", "Cybersecurity"],
-  ["network-engineering", "Network Engineering"],
-  ["qa-testing", "QA / Testing"],
-  ["business-analysis", "Business Analysis"],
-  ["product-management", "Product Management"],
-  ["design", "UI / UX Design"],
   ["supply-chain", "Supply Chain"],
-  ["other", "Other"],
+  ["ai-ml", "AI / ML"],
+  ["data-scientist", "Data Scientist"],
+  ["data-center-technician", "Data Center Technician"],
+  ["network-engineer", "Network Engineer"],
+  ["business-analyst", "Business Analyst"],
+  ["data-analyst", "Data Analyst"],
+  ["full-stack", "Full Stack"],
+  ["software-engineer", "Software Engineer"],
+  ["quality-automation", "Quality Automation"],
+  ["it-support", "IT Support"],
+  ["sap", "SAP"],
 ];
 
 export const AREA_LABEL = Object.fromEntries(AREAS_OF_INTEREST);

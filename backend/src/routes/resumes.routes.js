@@ -17,6 +17,7 @@ import { invalidateMatches } from "../services/jobs/matching.service.js";
 import {
   accountName,
   areaLabel,
+  areaForFamily,
   areaMatches,
   nameMatches,
 } from "../services/resume/resumeOwnership.js";
@@ -207,14 +208,16 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 
   if (!account.area_of_interest) {
-    backfill.area_of_interest = profile.role_family;
-  } else if (!areaMatches(account.area_of_interest, profile.role_family)) {
+    // Fields with no clear area are left unset for an admin to choose.
+    const area = areaForFamily(profile.role_family);
+    if (area) backfill.area_of_interest = area;
+  } else if (!areaMatches(account.area_of_interest, profile.role_family, extracted_text)) {
+    const area = areaLabel(account.area_of_interest);
     return reject(
       422,
       "AREA_MISMATCH",
-      `Your account is set up for ${areaLabel(account.area_of_interest)}, but this resume reads as ` +
-        `${areaLabel(profile.role_family)}. Please upload your ${areaLabel(account.area_of_interest)} resume. ` +
-        `If your area of interest is wrong, contact ${SUPPORT_EMAIL}.`,
+      `Your account is set up for ${area}, but this doesn't look like ${/^(?:[AEIOU]|SAP)/.test(area) ? "an" : "a"} ${area} resume. ` +
+        `Please upload your ${area} resume. If your area of interest is wrong, contact ${SUPPORT_EMAIL}.`,
     );
   }
 

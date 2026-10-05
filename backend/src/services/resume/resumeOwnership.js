@@ -6,33 +6,76 @@
 // The resume's field (role_family) and name (candidate_name) come from the
 // AI extraction the upload already runs (resumeProcessing.service.js).
 
-// Fields close enough that a resume in one is a fair upload for the other.
-// Anything not listed here only matches itself.
-const RELATED = {
-  "software-engineering": ["frontend-engineering", "backend-engineering", "qa-testing"],
-  "frontend-engineering": ["software-engineering", "backend-engineering"],
-  "backend-engineering": ["software-engineering", "frontend-engineering"],
-  devops: ["cloud-engineering"],
-  "cloud-engineering": ["devops", "network-engineering"],
-  "network-engineering": ["cloud-engineering"],
-  "security-engineering": ["offensive-security"],
-  "offensive-security": ["security-engineering"],
-  "data-analytics": ["data-engineering", "business-analysis"],
-  "data-engineering": ["data-analytics", "ai-ml"],
-  "ai-ml": ["data-engineering"],
-  "business-analysis": ["data-analytics"],
-  "qa-testing": ["software-engineering"],
+// The Area of interest choices (sign-up form, Settings, admin). For each, the
+// resume fields (role_family from the AI read) that count as a fit, and/or
+// keywords the resume text must contain. Areas the classifier has no category
+// for (SAP, IT support, data center) are checked by keywords instead.
+// The frontend and admin lists (utils/areas.js, admin lib/areas.js) must use
+// the same ids and labels.
+export const AREAS = {
+  devops: { label: "DevOps", families: ["devops", "cloud-engineering"] },
+  "supply-chain": { label: "Supply Chain", families: ["supply-chain"] },
+  "ai-ml": { label: "AI / ML", families: ["ai-ml", "data-engineering"] },
+  "data-scientist": { label: "Data Scientist", families: ["ai-ml", "data-analytics", "data-engineering"] },
+  "data-center-technician": {
+    label: "Data Center Technician",
+    keywords: /data\s*cent(?:er|re)|server\s+racks?|racks?\s*(?:and|&)\s*stack|structured\s+cabling/i,
+  },
+  "network-engineer": { label: "Network Engineer", families: ["network-engineering", "cloud-engineering"] },
+  "business-analyst": {
+    label: "Business Analyst",
+    families: ["business-analysis", "data-analytics", "product-management"],
+  },
+  "data-analyst": { label: "Data Analyst", families: ["data-analytics", "business-analysis", "data-engineering"] },
+  "full-stack": {
+    label: "Full Stack",
+    families: ["software-engineering", "frontend-engineering", "backend-engineering"],
+  },
+  "software-engineer": {
+    label: "Software Engineer",
+    families: ["software-engineering", "frontend-engineering", "backend-engineering", "qa-testing"],
+  },
+  "quality-automation": { label: "Quality Automation", families: ["qa-testing", "software-engineering"] },
+  "it-support": {
+    label: "IT Support",
+    keywords: /help\s*desk|service\s*desk|desktop\s+support|\bIT\s+support|technical\s+support|end[-\s]user\s+support/i,
+  },
+  sap: { label: "SAP", keywords: /\bSAP\b|\bS\/4\s*HANA\b|\bABAP\b/ },
 };
 
-export function areaMatches(area, resumeFamily) {
-  if (!area || !resumeFamily) return false;
-  return area === resumeFamily || (RELATED[area] || []).includes(resumeFamily);
+export const AREA_IDS = Object.keys(AREAS);
+export const areaLabel = (id) => AREAS[id]?.label || id;
+
+export function areaMatches(area, resumeFamily, resumeText = "") {
+  const rule = AREAS[area];
+  if (!rule) return false;
+  if (rule.families && !rule.families.includes(resumeFamily)) return false;
+  if (rule.keywords && !rule.keywords.test(resumeText)) return false;
+  return true;
 }
+
+// Older accounts with no area get one from their first resume's field.
+// Fields with no clear area (design, security, …) are left for an admin.
+const AREA_FOR_FAMILY = {
+  devops: "devops",
+  "cloud-engineering": "devops",
+  "supply-chain": "supply-chain",
+  "ai-ml": "ai-ml",
+  "data-engineering": "data-scientist",
+  "network-engineering": "network-engineer",
+  "business-analysis": "business-analyst",
+  "data-analytics": "data-analyst",
+  "frontend-engineering": "full-stack",
+  "backend-engineering": "full-stack",
+  "software-engineering": "software-engineer",
+  "qa-testing": "quality-automation",
+};
+export const areaForFamily = (family) => AREA_FOR_FAMILY[family] || null;
 
 function nameTokens(s) {
   return String(s || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z]+/g, " ")
     .trim()
@@ -72,23 +115,3 @@ export function nameMatches(profile, candidateName, resumeText = "") {
   return (full(first) && (full(last) || initial(last))) || (initial(first) && full(last));
 }
 
-const AREA_LABEL = {
-  "software-engineering": "Software Engineering",
-  "frontend-engineering": "Frontend Development",
-  "backend-engineering": "Backend Development",
-  devops: "DevOps",
-  "cloud-engineering": "Cloud Engineering",
-  "data-analytics": "Data Analytics",
-  "data-engineering": "Data Engineering",
-  "ai-ml": "AI / Machine Learning",
-  "security-engineering": "Cybersecurity",
-  "offensive-security": "Offensive Security",
-  "network-engineering": "Network Engineering",
-  "qa-testing": "QA / Testing",
-  "business-analysis": "Business Analysis",
-  "product-management": "Product Management",
-  design: "UI / UX Design",
-  "supply-chain": "Supply Chain",
-  other: "Other",
-};
-export const areaLabel = (id) => AREA_LABEL[id] || id;

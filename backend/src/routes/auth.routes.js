@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { supabase } from "../config/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
+import { validArea } from "../utils/profileFields.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -71,6 +72,10 @@ router.post("/signup", async (req, res) => {
 
   const firstName = str(d.first_name, 60);
   const lastName = str(d.last_name, 60);
+  const area = str(d.area_of_interest, 40);
+  if (area && !validArea(area)) {
+    return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
+  }
   const { data, error } = await authClient().auth.signUp({
     email,
     password,
@@ -81,7 +86,7 @@ router.post("/signup", async (req, res) => {
         last_name: lastName,
         full_name: `${firstName} ${lastName}`.trim(),
         mobile: str(d.mobile, 20),
-        area_of_interest: str(d.area_of_interest, 40),
+        area_of_interest: area,
       },
     },
   });
