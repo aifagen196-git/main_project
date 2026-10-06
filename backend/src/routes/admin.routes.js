@@ -777,27 +777,55 @@ router.get("/ai-usage", async (req, res) => {
 // GET /api/admin/collector-runs — job-engine run history (see
 // job-engine/collectors/runLog.js, supabase/migrations/0015).
 // ---------------------------------------------------------------------------
+// One word for how a collector run went. "success" alone hid sources that ran
+// fine but saved nothing (blocked, missing API key, empty feed).
+function runStatus(r) {
+  if (!r.finished_at) {
+    return Date.now() - Date.parse(r.started_at) > 4 * 3600e3 ? "stalled" : "running";
+  }
+  if (r.success === false) return "failed";
+  if (/^Skipped/i.test(r.error || "")) return "skipped";
+  if (/^Blocked/i.test(r.error || "")) return "blocked";
+  if (r.saved === 0) return "empty";
+  return "ok";
+}
+
 router.get("/collector-runs", async (req, res) => {
   const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 200));
 
+  // "*" rather than a column list: new_jobs arrives with migration 0023 and
+  // the page shouldn't break before it's applied.
   const { data: runs, error } = await supabase
     .from("collector_runs")
-    .select("id, source, started_at, finished_at, success, saved, failed, error")
+    .select("*")
     .order("started_at", { ascending: false })
     .limit(limit);
 
   if (error) return res.status(500).json({ success: false, message: error.message });
 
-  // Latest run per source, for a summary/health row per collector.
+  const withStatus = (runs || []).map((r) => ({ ...r, status: runStatus(r) }));
+
+  // Latest run per source, for a summary/health row per collector, plus how
+  // many of that source's jobs were saved/refreshed in the last 24h — a real
+  // number even for older runs that never recorded counts.
   const latestBySource = new Map();
-  for (const r of runs || []) {
+  for (const r of withStatus) {
     if (!latestBySource.has(r.source)) latestBySource.set(r.source, r);
   }
+  const since = isoDaysAgo(1);
+  const latest = await Promise.all(
+    [...latestBySource.values()].map(async (r) => {
+      if (r.source === "cleanupExpiredJobs") return r;
+      const seen24h = await countRows("jobs", (q) => q.eq("source", r.source).gte("last_seen", since));
+      const status = r.status === "ok" && seen24h === 0 ? "empty" : r.status;
+      return { ...r, seen24h, status };
+    }),
+  );
 
   return res.json({
     success: true,
-    runs: runs || [],
-    latestBySource: [...latestBySource.values()],
+    runs: withStatus,
+    latestBySource: latest,
   });
 });
 
