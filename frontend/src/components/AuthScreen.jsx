@@ -163,13 +163,16 @@ export default function AuthScreen({ onBack }) {
           "If an account exists for that email, a reset link is on its way. Check your inbox (and spam).",
         );
       } else if (isSignup) {
-        await signUp(email.trim(), password, {
+        const session = await signUp(email.trim(), password, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           mobile: mobile.trim(),
           areaOfInterest: area,
         });
-        setNotice("Account created — check your email to confirm, then log in.");
+        // With email confirmation off, sign-up signs the user straight in and
+        // the app moves on by itself. Only ask them to check their inbox when
+        // Supabase is still waiting on a confirmation click.
+        if (!session) setNotice("Account created — check your email to confirm, then log in.");
       } else {
         await signIn(email.trim(), password);
       }
