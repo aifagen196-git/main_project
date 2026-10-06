@@ -511,6 +511,34 @@ function toUiJobs(scored) {
     .sort((a, b) => b.match_score - a.match_score);
 }
 
+// The judge's text is shown on every match card, and models don't always
+// respect the length rules in the prompt — so trim here too. Whole sentences
+// are kept where possible, and any sentence about the internal scoring
+// ("baseline", "heuristic", "scorer") is dropped: it means nothing to the user.
+const INTERNAL = /\b(baseline|heuristic|scorer)\b/i;
+function shortText(text, maxWords) {
+  const sentences = String(text || "")
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => s && !INTERNAL.test(s));
+  const out = [];
+  let words = 0;
+  for (const s of sentences) {
+    const n = s.split(/\s+/).length;
+    if (out.length && words + n > maxWords) break;
+    out.push(s);
+    words += n;
+  }
+  const joined = out.join(" ");
+  const all = joined.split(/\s+/);
+  return all.length > maxWords ? `${all.slice(0, maxWords).join(" ")}…` : joined;
+}
+function shortList(items, max = 3) {
+  return (Array.isArray(items) ? items : [])
+    .filter((s) => typeof s === "string" && !INTERNAL.test(s))
+    .slice(0, max)
+    .map((s) => shortText(s, 18));
+}
+
 // Runs after the response is sent: judges the shortlist, then builds a FRESH
 // jobs array and swaps it into the cache atomically. It must never mutate the
 // objects already handed to in-flight responses — doing so serves callers a
@@ -536,12 +564,12 @@ async function judgeInBackground(userId, candidate, scored, entry) {
     return {
       ...ui,
       match_score: Math.round(0.7 * verdict.score + 0.3 * heuristic),
-      match_reasons: verdict.matched || [],
-      gaps: verdict.gaps || [],
+      match_reasons: shortList(verdict.matched),
+      gaps: shortList(verdict.gaps),
       // Deal-breaker subset of gaps, surfaced separately for a 🚩 treatment.
-      red_flags: verdict.red_flags || [],
-      match_verdict: verdict.verdict || "",
-      match_reasoning: verdict.reasoning || "",
+      red_flags: shortList(verdict.red_flags),
+      match_verdict: shortText(verdict.verdict, 12),
+      match_reasoning: shortText(verdict.reasoning, 45),
     };
   });
 
