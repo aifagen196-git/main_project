@@ -540,6 +540,180 @@ router.patch("/users/:id/details", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Manual payments — cash, bank transfer, UPI etc. taken outside Razorpay.
+// One row per agreed charge: total due, amount paid so far; the balance and
+// status (unpaid / partial / paid) are computed by the database (0024).
+// ---------------------------------------------------------------------------
+const MANUAL_METHODS = ["cash", "bank_transfer", "upi", "cheque", "card", "other"];
+const MANUAL_SELECT =
+  "id, user_id, payer_name, payer_email, payer_phone, description, method, currency, total_amount, amount_paid, balance, status, due_date, paid_on, note, created_at, updated_at";
+
+function manualPaymentRow(body, { partial = false } = {}) {
+  const row = {};
+  const text = (key, max) => {
+    if (!(key in body)) return;
+    const v = body[key];
+    if (v != null && typeof v !== "string") throw new Error(`${key} must be text.`);
+    row[key] = (v || "").trim().slice(0, max) || null;
+  };
+  const amount = (key) => {
+    if (!(key in body)) return;
+    const n = Number(body[key]);
+    if (!Number.isFinite(n) || n < 0) throw new Error(`${key.replace("_", " ")} must be a positive number.`);
+    row[key] = Math.round(n * 100) / 100;
+  };
+  const date = (key) => {
+    if (!(key in body)) return;
+    const v = body[key];
+    if (!v) return void (row[key] = null);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v))) throw new Error(`${key.replace("_", " ")} must be a date.`);
+    row[key] = v;
+  };
+
+  text("payer_name", 120);
+  text("payer_email", 254);
+  text("payer_phone", 20);
+  text("description", 200);
+  text("note", 1000);
+  amount("total_amount");
+  amount("amount_paid");
+  date("due_date");
+  date("paid_on");
+  if ("method" in body) {
+    if (!MANUAL_METHODS.includes(body.method)) throw new Error("Choose a payment method from the list.");
+    row.method = body.method;
+  }
+  if ("currency" in body) {
+    const c = String(body.currency || "").trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(c)) throw new Error("Currency must be a 3-letter code, e.g. USD.");
+    row.currency = c;
+  }
+  if ("user_id" in body) row.user_id = body.user_id || null;
+
+  if (!partial) {
+    if (!row.payer_name) throw new Error("Payer name is required.");
+    if (!(row.total_amount > 0)) throw new Error("Total amount must be more than 0.");
+  }
+  if (row.payer_name === null && partial) throw new Error("Payer name is required.");
+  return row;
+}
+
+router.get("/manual-payments", async (req, res) => {
+  const status = String(req.query.status || "");
+  let query = supabase.from("manual_payments").select(MANUAL_SELECT).order("created_at", { ascending: false }).limit(500);
+  if (["unpaid", "partial", "paid"].includes(status)) query = query.eq("status", status);
+  const search = String(req.query.search || "").trim().slice(0, 100).replace(/[%,()*"'\\]/g, " ");
+  if (search) query = query.or(`payer_name.ilike.%${search}%,payer_email.ilike.%${search}%,payer_phone.ilike.%${search}%`);
+
+  const { data, error } = await query;
+  if (error) {
+    const missing = /manual_payments/.test(error.message);
+    return res.status(missing ? 503 : 500).json({
+      success: false,
+      message: missing ? "Run supabase/migrations/0024_manual_payments.sql to enable manual payments." : error.message,
+    });
+  }
+  const sum = (key) => Math.round(data.reduce((s, r) => s + Number(r[key] || 0), 0) * 100) / 100;
+  return res.json({
+    success: true,
+    payments: data,
+    summary: {
+      count: data.length,
+      totalDue: sum("total_amount"),
+      collected: sum("amount_paid"),
+      outstanding: sum("balance"),
+      partialCount: data.filter((r) => r.status === "partial").length,
+      unpaidCount: data.filter((r) => r.status === "unpaid").length,
+    },
+  });
+});
+
+router.post("/manual-payments", async (req, res) => {
+  let row;
+  try {
+    row = manualPaymentRow(req.body || {});
+  } catch (e) {
+    return res.status(400).json({ success: false, message: e.message });
+  }
+  if ((row.amount_paid || 0) > row.total_amount) {
+    return res.status(400).json({ success: false, message: "Amount paid can't be more than the total amount." });
+  }
+  const { data, error } = await supabase
+    .from("manual_payments")
+    .insert({ ...row, created_by: req.user.id })
+    .select(MANUAL_SELECT)
+    .single();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  await logAudit(req, {
+    action: "manual_payment.create",
+    targetType: "manual_payment",
+    targetId: data.id,
+    detail: { payer: data.payer_name, total: data.total_amount, paid: data.amount_paid, currency: data.currency, method: data.method },
+  });
+  return res.status(201).json({ success: true, payment: data });
+});
+
+router.patch("/manual-payments/:id", async (req, res) => {
+  let row;
+  try {
+    row = manualPaymentRow(req.body || {}, { partial: true });
+  } catch (e) {
+    return res.status(400).json({ success: false, message: e.message });
+  }
+  if (Object.keys(row).length === 0) return res.status(400).json({ success: false, message: "Nothing to update." });
+
+  const { data: before } = await supabase
+    .from("manual_payments")
+    .select(MANUAL_SELECT)
+    .eq("id", req.params.id)
+    .maybeSingle();
+  if (!before) return res.status(404).json({ success: false, message: "Payment not found." });
+
+  const total = row.total_amount ?? Number(before.total_amount);
+  const paid = row.amount_paid ?? Number(before.amount_paid);
+  if (!(total > 0)) return res.status(400).json({ success: false, message: "Total amount must be more than 0." });
+  if (paid > total) return res.status(400).json({ success: false, message: "Amount paid can't be more than the total amount." });
+
+  const { data, error } = await supabase
+    .from("manual_payments")
+    .update({ ...row, updated_at: new Date().toISOString() })
+    .eq("id", req.params.id)
+    .select(MANUAL_SELECT)
+    .single();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  await logAudit(req, {
+    action: "manual_payment.update",
+    targetType: "manual_payment",
+    targetId: data.id,
+    detail: {
+      payer: data.payer_name,
+      before: { total: before.total_amount, paid: before.amount_paid, status: before.status },
+      after: { total: data.total_amount, paid: data.amount_paid, status: data.status },
+      changed: Object.keys(row),
+    },
+  });
+  return res.json({ success: true, payment: data });
+});
+
+router.delete("/manual-payments/:id", async (req, res) => {
+  const { data, error } = await supabase
+    .from("manual_payments")
+    .delete()
+    .eq("id", req.params.id)
+    .select("id, payer_name, total_amount, amount_paid, currency")
+    .maybeSingle();
+  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (!data) return res.status(404).json({ success: false, message: "Payment not found." });
+  await logAudit(req, {
+    action: "manual_payment.delete",
+    targetType: "manual_payment",
+    targetId: data.id,
+    detail: { payer: data.payer_name, total: data.total_amount, paid: data.amount_paid, currency: data.currency },
+  });
+  return res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
 // Internal jobs (postings the team adds by hand). The admin app used to write
 // these straight to Supabase; it now only talks to this API.
 // ---------------------------------------------------------------------------
