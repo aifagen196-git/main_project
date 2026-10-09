@@ -677,20 +677,102 @@ export default function Resume() {
                   {downloading ? "Preparing…" : "Download .docx"}
                 </button>
               </div>
-              <pre
-                style={{
-                  margin: "16px 0 0",
-                  whiteSpace: "pre-wrap",
-                  fontFamily: "inherit",
-                  fontSize: 14,
-                  lineHeight: 1.65,
-                  color: "var(--ink-2)",
-                }}
-              >
-                {out}
-              </pre>
+              <ImprovedDraft value={out} />
             </div>
           )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* The improvement comes back as structured parts (improved_summary,
+ * rewritten_bullets, keywords_to_add, recruiter_feedback, ats_improvements).
+ * It used to be printed raw with {out}; React can't render a plain object, so
+ * the whole page crashed — and because the result is saved on the resume, the
+ * Resume page crashed again on every visit. Older plain-text results still
+ * show as text. */
+const asText = (v) =>
+  typeof v === "string" ? v : v && typeof v === "object" ? Object.values(v).filter(Boolean).join(" — ") : String(v ?? "");
+
+function ImprovedDraft({ value }) {
+  const label = {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: ".12em",
+    textTransform: "uppercase",
+    color: "var(--ink-3)",
+    margin: "20px 0 8px",
+  };
+  const body = { margin: 0, fontSize: 14, lineHeight: 1.65, color: "var(--ink-2)" };
+
+  if (!value || typeof value !== "object") {
+    return <p style={{ ...body, marginTop: 16, whiteSpace: "pre-wrap" }}>{asText(value)}</p>;
+  }
+
+  const list = (items) =>
+    Array.isArray(items) && items.length > 0 ? (
+      <ul style={{ ...body, paddingLeft: 20 }}>
+        {items.map((item, i) => (
+          <li key={i} style={{ marginBottom: 6 }}>{asText(item)}</li>
+        ))}
+      </ul>
+    ) : null;
+
+  const {
+    improved_summary,
+    rewritten_bullets,
+    keywords_to_add,
+    recruiter_feedback,
+    ats_improvements,
+  } = value;
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      {improved_summary && (
+        <>
+          <div style={label}>Improved summary</div>
+          <p style={body}>{asText(improved_summary)}</p>
+        </>
+      )}
+      {list(rewritten_bullets) && (
+        <>
+          <div style={label}>Rewritten bullet points</div>
+          {list(rewritten_bullets)}
+        </>
+      )}
+      {Array.isArray(keywords_to_add) && keywords_to_add.length > 0 && (
+        <>
+          <div style={label}>Keywords to add</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {keywords_to_add.map((k, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#6D4AFF",
+                  background: "var(--brand-wash)",
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                }}
+              >
+                {asText(k)}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      {list(recruiter_feedback) && (
+        <>
+          <div style={label}>Recruiter feedback</div>
+          {list(recruiter_feedback)}
+        </>
+      )}
+      {list(ats_improvements) && (
+        <>
+          <div style={label}>ATS improvements</div>
+          {list(ats_improvements)}
         </>
       )}
     </div>

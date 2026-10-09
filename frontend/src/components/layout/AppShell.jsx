@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import Sidebar from "./Sidebar";
@@ -18,10 +18,12 @@ const Dashboard = lazy(() => import("../../pages/Dashboard"));
 import SettingsView from "../../pages/SettingsView";
 import Pricing from "../../pages/Pricing";
 import Billing from "../../pages/Billing";
+import PageErrorBoundary from "../common/PageErrorBoundary";
 
 import { getSavedJobIds, toggleSavedJob } from "../../services/savedJobs";
 
 export default function AppShell({ profile, refresh, exit }) {
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState([]);
 
@@ -111,6 +113,7 @@ export default function AppShell({ profile, refresh, exit }) {
                   </div>
                 }
               >
+              <PageErrorBoundary key={pathname}>
               <Routes>
                 <Route
                   path="/"
@@ -170,6 +173,7 @@ export default function AppShell({ profile, refresh, exit }) {
                     been removed (e.g. the old /prep screen). */}
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
+              </PageErrorBoundary>
               </Suspense>
             </div>
           </main>
