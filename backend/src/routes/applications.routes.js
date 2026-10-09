@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get("/", async (req, res) => {
     .eq("user_id", req.user.id)
     .order("applied_at", { ascending: false });
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, applications: data || [] });
 });
 
@@ -64,7 +65,7 @@ router.post("/", async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.status(201).json({ success: true, application: data });
 });
 
@@ -94,7 +95,7 @@ router.patch("/:id", async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, application: data });
 });
 
@@ -105,7 +106,7 @@ router.delete("/:id", async (req, res) => {
     .eq("id", req.params.id)
     .eq("user_id", req.user.id);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true });
 });
 

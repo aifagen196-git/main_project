@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 import {
   detectSkills,
   analyzeAndExtract,
@@ -69,7 +70,7 @@ router.get("/", async (req, res) => {
     .eq("user_id", req.user.id)
     .order("uploaded_at", { ascending: false });
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, resumes: data || [] });
 });
 
@@ -81,7 +82,7 @@ router.get("/latest", async (req, res) => {
     .order("uploaded_at", { ascending: false })
     .limit(1);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, resume: data?.[0] ?? null });
 });
 
@@ -237,7 +238,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   if (error) {
     await supabase.storage.from("resumes").remove([path]);
-    return res.status(500).json({ success: false, message: error.message });
+    return dbError(res, error);
   }
 
   if (Object.keys(backfill).length) {
@@ -402,24 +403,10 @@ router.post("/:id/improve", async (req, res) => {
   }
 });
 
-// Persist AI-derived fields (skills/profile/analysis) after enrichment.
-router.patch("/:id", async (req, res) => {
-  const update = {};
-  for (const key of ["extracted_skills", "profile", "ai_analysis"]) {
-    if (key in req.body) update[key] = req.body[key];
-  }
-
-  const { data, error } = await supabase
-    .from("resumes")
-    .update(update)
-    .eq("id", req.params.id)
-    .eq("user_id", req.user.id)
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ success: false, message: error.message });
-  return res.json({ success: true, resume: data });
-});
+// There is deliberately no PATCH route. A resume's profile, skills and
+// analysis are written only by the server from the uploaded file — letting a
+// user rewrite them would bypass the upload checks (area of interest, name)
+// and feed job matching whatever they typed.
 
 router.delete("/:id", async (req, res) => {
   const { data: row } = await supabase
@@ -435,7 +422,7 @@ router.delete("/:id", async (req, res) => {
     .eq("id", req.params.id)
     .eq("user_id", req.user.id);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   if (row?.file_path) await supabase.storage.from("resumes").remove([row.file_path]);
 
   // The cached matches feed was derived from this resume (or, if this was the

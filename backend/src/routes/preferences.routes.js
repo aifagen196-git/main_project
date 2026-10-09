@@ -5,6 +5,7 @@
 // is left mounted (harmless, still auth-gated) in case the feature returns.
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 import { invalidateMatches } from "../services/jobs/matching.service.js";
 
 const router = express.Router();
@@ -30,7 +31,7 @@ router.get("/", async (req, res) => {
     .order("updated_at", { ascending: false })
     .limit(1);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, preferences: data?.[0] ?? null });
 });
 
@@ -51,7 +52,7 @@ router.put("/", async (req, res) => {
     .eq("user_id", req.user.id)
     .order("updated_at", { ascending: false })
     .limit(1);
-  if (selErr) return res.status(500).json({ success: false, message: selErr.message });
+  if (selErr) return dbError(res, selErr);
 
   let data, error;
   if (existing?.[0]) {
@@ -69,7 +70,7 @@ router.put("/", async (req, res) => {
       .single());
   }
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
 
   // Preferences feed the match score — drop the cached feed so the next load
   // re-ranks with the new preferences.

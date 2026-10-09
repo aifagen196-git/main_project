@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 
 const router = express.Router();
 
@@ -34,7 +35,7 @@ router.get("/", async (req, res) => {
     .eq("id", req.user.id)
     .single();
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, profile: data });
 });
 
@@ -59,7 +60,7 @@ router.patch("/", async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, profile: data });
 });
 
@@ -118,7 +119,7 @@ router.delete("/avatar", async (req, res) => {
     .select()
     .single();
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, profile: data });
 });
 

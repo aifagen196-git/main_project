@@ -10,6 +10,7 @@
 // switched back on once application status can be captured reliably.
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 
 const router = express.Router();
 
@@ -55,7 +56,7 @@ router.get("/", async (req, res) => {
     .eq("user_id", req.user.id);
 
   if (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return dbError(res, error);
   }
 
   const rows = apps || [];

@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get("/", async (req, res) => {
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, jobs: data || [] });
 });
 

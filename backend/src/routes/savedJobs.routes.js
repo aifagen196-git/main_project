@@ -1,5 +1,6 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { dbError } from "../utils/dbError.js";
 import { scoreJobsForUser } from "../services/jobs/matching.service.js";
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.get("/", async (req, res) => {
     .eq("user_id", req.user.id)
     .order("created_at", { ascending: false });
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
 
   const rows = (data || []).map((r) => r.jobs).filter(Boolean);
   try {
@@ -39,7 +40,7 @@ router.get("/ids", async (req, res) => {
     .select("job_id")
     .eq("user_id", req.user.id);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true, ids: (data || []).map((r) => r.job_id) });
 });
 
@@ -51,7 +52,7 @@ router.post("/", async (req, res) => {
     .from("saved_jobs")
     .upsert({ user_id: req.user.id, job_id });
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true });
 });
 
@@ -62,7 +63,7 @@ router.delete("/:jobId", async (req, res) => {
     .eq("user_id", req.user.id)
     .eq("job_id", req.params.jobId);
 
-  if (error) return res.status(500).json({ success: false, message: error.message });
+  if (error) return dbError(res, error);
   return res.json({ success: true });
 });
 

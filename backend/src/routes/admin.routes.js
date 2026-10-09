@@ -207,8 +207,13 @@ router.get("/payments", async (req, res) => {
   // /verify is the only path that writes razorpay_order_id — a payment
   // activated by the webhook, made before that column existed, or paid from a
   // different email than the account would otherwise show as orphaned.
-  const orderIds = [...new Set(items.map((p) => p.order_id).filter(Boolean))];
-  const emails = [...new Set(items.map((p) => p.email).filter(Boolean))];
+  // Both go into a PostgREST or() filter as text. The email is whatever the
+  // payer typed at checkout, so drop anything that isn't a plain address
+  // (quotes, commas, brackets would break out of the filter).
+  const orderIds = [...new Set(items.map((p) => p.order_id).filter((v) => /^order_[A-Za-z0-9]+$/.test(v || "")))];
+  const emails = [
+    ...new Set(items.map((p) => p.email).filter((v) => /^[^\s",()\\]+@[^\s",()\\]+\.[^\s",()\\]+$/.test(v || ""))),
+  ];
   const byOrder = {};
   const byEmail = {};
   if (orderIds.length || emails.length) {
