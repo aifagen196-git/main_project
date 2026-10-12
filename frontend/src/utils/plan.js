@@ -29,23 +29,12 @@ export function planLimits(plan) {
 }
 
 /** A user has access to the app once they hold an active/trialing paid plan
- *  (basic or premium — the only paid plans) that hasn't ended yet. The end
- *  date matters most for the 7-day free trial, which stops exactly on time;
- *  the server applies the same rule (requireActivePlan). */
+ *  (basic or premium — the only paid plans). */
 export function isSubscribed(profile) {
-  const end = profile?.current_period_end ? new Date(profile.current_period_end) : null;
   return (
     ["active", "trialing"].includes(profile?.subscription_status) &&
-    ["basic", "premium"].includes(profile?.plan) &&
-    (!end || end > new Date())
+    ["basic", "premium"].includes(profile?.plan)
   );
-}
-
-/** Whole days left in a free trial (0 on the last day), or null if not in one. */
-export function trialDaysLeft(profile) {
-  if (profile?.subscription_status !== "trialing" || !profile?.current_period_end) return null;
-  const ms = new Date(profile.current_period_end) - new Date();
-  return ms > 0 ? Math.floor(ms / 86400000) : 0;
 }
 
 export function isPaidPlan(plan) {

@@ -42,10 +42,6 @@ async function authHeader() {
 
 // Default per-request timeout so a down/hung backend surfaces an error instead
 // of leaving the UI spinning forever.
-// Fired when the server says the account no longer has access (plan/trial
-// ended, verification missing); hooks/useProfile.js reloads the profile.
-export const ACCOUNT_CHANGED = "aifagen:account-changed";
-
 const DEFAULT_TIMEOUT_MS = 20000;
 
 // Endpoints that legitimately take longer than the default. The matches feed
@@ -134,18 +130,10 @@ export async function apiRequest(path, { method = "GET", body, _retried } = {}) 
   // never active — send the user to Pricing. Signal it distinctly so callers
   // (and AIFAGen.jsx) can react rather than showing a generic error.
   if (res.status === 402) {
-    // The plan or free trial ended while the app was open. Tell the app to
-    // reload the profile, which moves the user to the plan page.
-    window.dispatchEvent(new Event(ACCOUNT_CHANGED));
     const err = new Error("An active plan is required.");
     err.status = 402;
     err.code = "PLAN_REQUIRED";
     throw err;
-  }
-
-  if (res.status === 403) {
-    const body = await res.clone().json().catch(() => ({}));
-    if (body.code === "VERIFICATION_REQUIRED") window.dispatchEvent(new Event(ACCOUNT_CHANGED));
   }
 
   return handle(res);

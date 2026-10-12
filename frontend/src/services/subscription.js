@@ -70,9 +70,3 @@ export async function startCheckout(plan, billingCycle) {
     rzp.open();
   });
 }
-
-/** Starts the one-time 7-day free trial (server checks eligibility). */
-export async function startFreeTrial() {
-  const { trial } = await api.post("/api/payments/trial", {});
-  return trial;
-}

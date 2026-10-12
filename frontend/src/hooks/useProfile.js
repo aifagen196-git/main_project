@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getProfile } from '../services/profile'
 import { auth } from '../lib/authClient'
-import { ACCOUNT_CHANGED } from '../services/api'
 import { DEV_PREVIEW, PREVIEW_PROFILE } from '../devPreview'
 
 export function useProfile(user) {
@@ -68,20 +67,10 @@ export function useProfile(user) {
         .catch(() => {})
     }
     document.addEventListener('visibilitychange', onVisible)
-    // The server said access changed mid-session (trial ended, etc.).
-    const onAccountChanged = () => {
-      getProfile(user.id)
-        .then((data) => {
-          if (active) setProfile(data)
-        })
-        .catch(() => {})
-    }
-    window.addEventListener(ACCOUNT_CHANGED, onAccountChanged)
 
     return () => {
       active = false
       document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener(ACCOUNT_CHANGED, onAccountChanged)
     }
   }, [user?.id])
 

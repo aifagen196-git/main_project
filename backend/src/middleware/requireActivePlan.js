@@ -59,10 +59,7 @@ export async function requireActivePlan(req, res, next) {
     !data?.current_period_end || new Date(data.current_period_end) > new Date();
   const active = statusOk && notExpired;
 
-  // Never cache "active" past the moment the plan or trial ends, so a 7-day
-  // trial stops exactly on time rather than up to a minute late.
-  const periodEnd = data?.current_period_end ? new Date(data.current_period_end).getTime() : Infinity;
-  cache.set(req.user.id, { active, expiresAt: Math.min(Date.now() + TTL_MS, active ? periodEnd : Infinity) });
+  cache.set(req.user.id, { active, expiresAt: Date.now() + TTL_MS });
 
   if (active) return next();
   return res.status(402).json({

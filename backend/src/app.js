@@ -7,7 +7,6 @@ import multer from "multer";
 
 import { requireAuth } from "./middleware/auth.js";
 import { requireAdmin } from "./middleware/requireAdmin.js";
-import { requireVerified } from "./middleware/requireVerified.js";
 import { requireActivePlan } from "./middleware/requireActivePlan.js";
 import {
   apiRateLimiter,
@@ -117,7 +116,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/community", publicRateLimiter, communityRoutes);
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
-app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot", "/api/auth/phone/start"], authRateLimiter);
+app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot"], authRateLimiter);
 app.use("/api/auth", sessionRateLimiter, authRoutes);
 
 // =============================
@@ -133,16 +132,16 @@ const heavyWrites = (req, res, next) =>
   req.method === "GET" ? next() : heavyRateLimiter(req, res, next);
 
 app.use("/api/profile", requireAuth, apiRateLimiter, heavyWrites, profileRoutes);
-app.use("/api/payments", requireAuth, apiRateLimiter, requireVerified, paymentsRoutes);
+app.use("/api/payments", requireAuth, apiRateLimiter, paymentsRoutes);
 app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
 
-app.use("/api/jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, jobsRoutes);
-app.use("/api/preferences", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, preferencesRoutes);
-app.use("/api/saved-jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, savedJobsRoutes);
-app.use("/api/internal-jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, internalJobsRoutes);
-app.use("/api/applications", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, applicationsRoutes);
-app.use("/api/resumes", requireAuth, apiRateLimiter, heavyWrites, requireVerified, requireActivePlan, resumesRoutes);
-app.use("/api/analytics", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, analyticsRoutes);
+app.use("/api/jobs", requireAuth, apiRateLimiter, requireActivePlan, jobsRoutes);
+app.use("/api/preferences", requireAuth, apiRateLimiter, requireActivePlan, preferencesRoutes);
+app.use("/api/saved-jobs", requireAuth, apiRateLimiter, requireActivePlan, savedJobsRoutes);
+app.use("/api/internal-jobs", requireAuth, apiRateLimiter, requireActivePlan, internalJobsRoutes);
+app.use("/api/applications", requireAuth, apiRateLimiter, requireActivePlan, applicationsRoutes);
+app.use("/api/resumes", requireAuth, apiRateLimiter, heavyWrites, requireActivePlan, resumesRoutes);
+app.use("/api/analytics", requireAuth, apiRateLimiter, requireActivePlan, analyticsRoutes);
 
 // =============================
 // 404

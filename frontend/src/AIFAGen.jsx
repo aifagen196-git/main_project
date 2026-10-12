@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
-import PhoneVerifyScreen from "./components/PhoneVerifyScreen";
 import { auth } from "./lib/authClient";
 import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
@@ -2740,13 +2739,8 @@ export default function AIFAGen() {
         </div>
       ) : profileLoading || !profile ? (
         <Splash text="Loading your account…" />
-      ) : !profile.phone_verified ? (
-        // Mobile not verified yet → nothing else (trial, payment, app) until
-        // it is. The server enforces the same rule (requireVerified).
-        <PhoneVerifyScreen profile={profile} onVerified={refresh} />
       ) : !isSubscribed(profile) ? (
-        // New / lapsed user → must pick a plan (or start the free trial)
-        // before entering the app.
+        // New / lapsed user → must pick a plan before entering the app.
         <Pricing profile={profile} refresh={refresh} onboarding />
       ) : (
         <AppShell
