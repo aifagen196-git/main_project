@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lucide-react";
 
 import { PRICING_CARDS } from "../utils/plan";
-import { startCheckout } from "../services/subscription";
+import { startCheckout, startFreeTrial } from "../services/subscription";
 import { signOut } from "../services/auth";
 import ConfirmPayment from "../components/ConfirmPayment";
 
@@ -128,7 +128,9 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           }}
         >
           {onboarding
-            ? "Pick a plan to unlock your dashboard. You're charged today; cancel anytime from Billing."
+            ? profile?.trial_eligible
+              ? "Start with a free 7-day trial, or pick a plan to unlock your dashboard now."
+              : "Pick a plan to unlock your dashboard. You're charged today; cancel anytime from Billing."
             : "Change plans anytime. Charges apply immediately for the new plan."}
         </p>
       </div>
@@ -150,6 +152,47 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           }}
         >
           {err}
+        </div>
+      )}
+
+      {profile?.trial_eligible && (
+        <TrialOffer
+          busy={busy !== null}
+          onStart={async () => {
+            setErr("");
+            setBusy("trial");
+            try {
+              await startFreeTrial();
+              await refresh?.();
+            } catch (e) {
+              setErr(e.message || "Could not start your trial. Please try again.");
+              setBusy(null);
+            }
+          }}
+          starting={busy === "trial"}
+        />
+      )}
+
+      {profile?.trial_ends_at && !profile?.trial_eligible && new Date(profile.trial_ends_at) <= new Date() && (
+        <div
+          style={{
+            marginTop: 20,
+            maxWidth: 520,
+            marginLeft: "auto",
+            marginRight: "auto",
+            background: "var(--brand-wash)",
+            borderRadius: 13,
+            padding: "12px 15px",
+            fontSize: 13.5,
+            color: P.ink,
+            textAlign: "center",
+          }}
+        >
+          Your free trial ended on{" "}
+          <strong>
+            {new Date(profile.trial_ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+          </strong>
+          . Choose a plan to keep using AIFAGen.
         </div>
       )}
 
@@ -437,6 +480,78 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
         )}
         {grid}
       </main>
+    </div>
+  );
+}
+
+/* One-time 7-day free trial, offered only to accounts the server marks as
+ * eligible (verified, never paid, never trialed). Basic features; access
+ * ends exactly 7 days after it starts. */
+function TrialOffer({ onStart, busy, starting }) {
+  const ends = new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  });
+  return (
+    <div
+      style={{
+        marginTop: 28,
+        background: "var(--surface)",
+        border: `1.5px dashed ${P.brand}`,
+        borderRadius: 20,
+        padding: "22px 26px",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 18,
+      }}
+    >
+      <div style={{ flex: "1 1 320px" }}>
+        <div style={{ ...kicker, color: P.brand }}>New here?</div>
+        <h3
+          style={{
+            fontFamily: P.display,
+            fontSize: 21,
+            fontWeight: 700,
+            letterSpacing: "-.02em",
+            margin: "8px 0 0",
+            color: P.ink,
+          }}
+        >
+          Try AIFAGen free for 7 days
+        </h3>
+        <p style={{ margin: "6px 0 0", fontSize: 13.5, lineHeight: 1.55, color: P.muted }}>
+          Basic plan features, no payment needed. Your trial ends automatically on {ends} — choose a plan any time to keep going.
+        </p>
+      </div>
+      <button
+        onClick={onStart}
+        disabled={busy}
+        style={{
+          flex: "0 0 auto",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          background: P.brand,
+          border: "none",
+          borderRadius: 12,
+          padding: "13px 22px",
+          fontSize: 14,
+          fontWeight: 700,
+          fontFamily: "inherit",
+          color: "#fff",
+          cursor: busy ? "default" : "pointer",
+          opacity: busy && !starting ? 0.55 : 1,
+        }}
+      >
+        {starting ? (
+          <>
+            <Loader2 size={15} className="animate-spin" /> Starting…
+          </>
+        ) : (
+          "Start free trial"
+        )}
+      </button>
     </div>
   );
 }

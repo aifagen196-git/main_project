@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabase.js";
 import { dbError } from "../utils/dbError.js";
+import { isVerified } from "../middleware/requireVerified.js";
 
 const router = express.Router();
 
@@ -36,7 +37,7 @@ router.get("/", async (req, res) => {
     .single();
 
   if (error) return dbError(res, error);
-  return res.json({ success: true, profile: data });
+  return res.json({ success: true, profile: withAccountState(data, req.user) });
 });
 
 router.patch("/", async (req, res) => {
@@ -61,7 +62,7 @@ router.patch("/", async (req, res) => {
     .single();
 
   if (error) return dbError(res, error);
-  return res.json({ success: true, profile: data });
+  return res.json({ success: true, profile: withAccountState(data, req.user) });
 });
 
 // Upload/replace the profile photo. Always written to the same storage key
@@ -106,7 +107,7 @@ router.post("/avatar", upload.single("file"), async (req, res) => {
     console.error("Avatar column update failed", error);
     return res.status(500).json({ success: false, message: "Could not save photo." });
   }
-  return res.json({ success: true, profile: data });
+  return res.json({ success: true, profile: withAccountState(data, req.user) });
 });
 
 router.delete("/avatar", async (req, res) => {
@@ -120,7 +121,22 @@ router.delete("/avatar", async (req, res) => {
     .single();
 
   if (error) return dbError(res, error);
-  return res.json({ success: true, profile: data });
+  return res.json({ success: true, profile: withAccountState(data, req.user) });
 });
+
+
+// Facts the site needs to decide what to show, computed here so the browser
+// never decides them: whether email and mobile are verified (from Supabase
+// Auth, not the profile), and whether a free trial can still be started.
+function withAccountState(profile, user) {
+  return {
+    ...profile,
+    email_verified: Boolean(user.email_confirmed_at),
+    phone_verified: isVerified(user),
+    verified_phone: user.phone_confirmed_at && user.phone ? `+${user.phone}` : null,
+    trial_eligible:
+      !profile.trial_started_at && !profile.razorpay_payment_id && profile.plan === "none",
+  };
+}
 
 export default router;

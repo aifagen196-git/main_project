@@ -19,6 +19,8 @@ import SettingsView from "../../pages/SettingsView";
 import Pricing from "../../pages/Pricing";
 import Billing from "../../pages/Billing";
 import PageErrorBoundary from "../common/PageErrorBoundary";
+import { trialDaysLeft } from "../../utils/plan";
+import { Link } from "react-router-dom";
 
 import { getSavedJobIds, toggleSavedJob } from "../../services/savedJobs";
 
@@ -106,6 +108,7 @@ export default function AppShell({ profile, refresh, exit }) {
             }}
           >
             <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+              <TrialBanner profile={profile} />
               <Suspense
                 fallback={
                   <div className="flex justify-center py-20">
@@ -179,6 +182,43 @@ export default function AppShell({ profile, refresh, exit }) {
           </main>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Shown on every page while the 7-day free trial runs. */
+function TrialBanner({ profile }) {
+  const days = trialDaysLeft(profile);
+  if (days == null) return null;
+  const ends = new Date(profile.current_period_end).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 18,
+        background: days <= 1 ? "var(--amber-wash)" : "var(--brand-wash)",
+        border: `1px solid ${days <= 1 ? "var(--amber-line)" : "transparent"}`,
+        borderRadius: 13,
+        padding: "11px 15px",
+        fontSize: 13.5,
+        color: "var(--ink)",
+      }}
+    >
+      <span>
+        <strong>Free trial:</strong>{" "}
+        {days === 0 ? "ends today" : `${days} day${days === 1 ? "" : "s"} left`} (until {ends}).
+      </span>
+      <Link to="/pricing" style={{ marginLeft: "auto", fontWeight: 700, color: "#6D4AFF", textDecoration: "none" }}>
+        Choose a plan →
+      </Link>
     </div>
   );
 }
