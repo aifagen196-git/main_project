@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
@@ -2518,6 +2519,12 @@ const RECOVERY_AT_LOAD =
   /(^|[#&])type=recovery(&|$)/.test(window.location.hash) ||
   new URLSearchParams(window.location.search).has("recovery");
 
+// The legal pages answer at their own URLs (aifagenlabs.com/privacy, /terms):
+// payment and SMS providers ask for a link that opens the policy itself. The
+// rest of the marketing site stays on "/".
+const LEGAL_PAGES = { "/privacy": "privacy", "/privacy-policy": "privacy", "/terms": "terms" };
+const legalPageAt = (path) => LEGAL_PAGES[path.replace(/\/+$/, "")] || null;
+
 /* ===================== ROOT ===================== */
 export default function AIFAGen() {
   const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD);
@@ -2534,9 +2541,26 @@ export default function AIFAGen() {
 
   const [mode, setMode] = useState(() =>
     // ?preview opens straight into the signed-in app (see src/devPreview.js).
-    DEV_PREVIEW ? "app" : localStorage.getItem("mode") || "marketing",
+    DEV_PREVIEW
+      ? "app"
+      : legalPageAt(window.location.pathname)
+      ? "marketing"
+      : localStorage.getItem("mode") || "marketing",
   );
-  const [marketingPage, setMarketingPage] = useState("home");
+  const [marketingPage, setMarketingPage] = useState(
+    () => legalPageAt(window.location.pathname) || "home",
+  );
+
+  // Leaving a legal page opened from its link: drop /privacy or /terms from
+  // the address bar so a reload doesn't reopen it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (mode !== "marketing") return;
+    if (legalPageAt(location.pathname) && legalPageAt(location.pathname) !== marketingPage) {
+      navigate("/", { replace: true });
+    }
+  }, [mode, marketingPage, location.pathname, navigate]);
 
   const { user, loading } = useAuth();
 

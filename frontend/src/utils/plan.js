@@ -75,7 +75,7 @@ export const PRICING_CARDS = [
     name: "Basic",
     periodTag: "One-time payment",
     price: 1299,
-    tagline: "Same Basic features, billed twice a year.",
+    tagline: "Same Basic features, paid once.",
     cta: "Get Basic — one-time payment",
     popular: false,
     features: [

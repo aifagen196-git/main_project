@@ -60,7 +60,9 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
       if (process.env.NODE_ENV !== "production" && DEV_LAN_ORIGIN.test(origin))
         return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
+      // No CORS headers: the browser blocks the response. Passing an Error
+      // here turned every request from another site into a logged 500.
+      return cb(null, false);
     },
     credentials: true,
   }),
@@ -175,6 +177,10 @@ app.use((err, req, res, next) => {
 
   if (err?.type === "entity.too.large") {
     return res.status(413).json({ success: false, message: "Request body too large." });
+  }
+
+  if (err?.type === "entity.parse.failed") {
+    return res.status(400).json({ success: false, message: "Request body is not valid JSON." });
   }
 
   console.error("Unhandled error:", err);

@@ -105,6 +105,12 @@ export function nameMatches(profile, candidateName, resumeText = "") {
   if (!first.length) return false;
 
   const nameSeen = new Set(nameTokens(candidateName));
+  // The text only fills gaps in what the AI read. When the AI read a name and
+  // none of it is the account's, the text can't overrule it — otherwise the
+  // account holder's email (jane.doe@…) at the top of someone else's resume
+  // would pass.
+  const own = [...first, ...last];
+  if (nameSeen.size && !own.some((t) => nameSeen.has(t) || nameSeen.has(t[0]))) return false;
   const seen = new Set([...nameSeen, ...nameTokens(String(resumeText).slice(0, 300))]);
   const full = (toks) => toks.some((t) => t.length > 1 && seen.has(t));
   // Initials only count when the AI read them as part of the name — a lone

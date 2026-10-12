@@ -582,6 +582,15 @@ export async function getMatchedJobs(userId) {
   const hit = cache.get(userId);
   if (hit && hit.expiresAt > Date.now()) return hit.jobs;
 
+  // No resume, no matches. Without one every job passes the gates and the
+  // feed fills with unrelated roles (and the judge spends AI calls on them).
+  // The Job Matches page already asks for a resume when this is empty.
+  const { count, error } = await supabase
+    .from("resumes")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  if (!error && !count) return [];
+
   // Return heuristic matches immediately (fast, never times out)…
   const { candidate, scored } = await computeScored(userId);
   const uiJobs = await applyFeedbackRerank(userId, toUiJobs(scored));
