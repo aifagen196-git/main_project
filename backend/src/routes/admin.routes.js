@@ -2,7 +2,10 @@ import express from "express";
 import { supabase } from "../config/supabase.js";
 import { listPayments, monthlyEquivalent, refundPayment } from "../services/payments/razorpay.service.js";
 import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
-import { validArea, validMobile } from "../utils/profileFields.js";
+import { validArea } from "../utils/profileFields.js";
+import { toAdminE164 } from "../utils/phone.js";
+import crypto from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 
 // All routes here are mounted behind requireAuth + requireAdmin in app.js.
 const router = express.Router();
@@ -318,6 +321,91 @@ router.get("/payments", async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /api/admin/users — paginated, searchable user + subscription list.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// POST /api/admin/users — create an account for someone (team members,
+// clients, people who can't sign up themselves). Unlike self sign-up, admins
+// may use Indian (+91) as well as US numbers. The email and mobile count as
+// verified because an admin is vouching for them. With no password given,
+// the person gets an email to set their own.
+// ---------------------------------------------------------------------------
+function siteUrl() {
+  const first = (process.env.CORS_ORIGIN || "").split(",")[0].trim();
+  return process.env.SITE_URL || (process.env.NODE_ENV === "production" ? "https://aifagenlabs.com" : first || "http://localhost:5173");
+}
+
+router.post("/users", async (req, res) => {
+  const b = req.body || {};
+  const text = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const first = text(b.first_name, 60);
+  const last = text(b.last_name, 60);
+  const email = text(b.email, 254).toLowerCase();
+  const area = text(b.area_of_interest, 40);
+  const password = typeof b.password === "string" ? b.password : "";
+  const phone = toAdminE164(b.mobile);
+
+  if (!first) return res.status(400).json({ success: false, message: "First name is required." });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ success: false, message: "Enter a valid email address." });
+  }
+  if (!phone) {
+    return res.status(400).json({ success: false, message: "Enter a US (+1) or Indian (+91) mobile number." });
+  }
+  if (area && !validArea(area)) {
+    return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
+  }
+  if (password && password.length < 8) {
+    return res.status(400).json({ success: false, message: "Password must be at least 8 characters, or leave it blank." });
+  }
+
+  const { data: created, error } = await supabase.auth.admin.createUser({
+    email,
+    password: password || crypto.randomBytes(24).toString("base64url"),
+    email_confirm: true,
+    phone,
+    phone_confirm: true,
+    user_metadata: {
+      first_name: first,
+      last_name: last,
+      full_name: `${first} ${last}`.trim(),
+      mobile: phone,
+      area_of_interest: area,
+    },
+  });
+  if (error) {
+    const taken = /already|registered|exists/i.test(error.message);
+    return res.status(taken ? 409 : 400).json({
+      success: false,
+      message: taken ? "An account with that email or mobile number already exists." : error.message,
+    });
+  }
+  const id = created.user.id;
+
+  // The sign-up trigger creates the profile; make sure the mobile is the
+  // normalized number either way.
+  await supabase.from("profiles").update({ mobile: phone }).eq("id", id);
+
+  let emailSent = false;
+  if (!password) {
+    const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { error: mailErr } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl()}/?recovery=1`,
+    });
+    if (mailErr) console.error("Set-password email failed", mailErr.message);
+    emailSent = !mailErr;
+  }
+
+  await logAudit(req, {
+    action: "user.create",
+    targetType: "user",
+    targetId: id,
+    detail: { targetEmail: email, mobile: phone, area_of_interest: area || null, setPasswordEmail: emailSent, passwordSetByAdmin: Boolean(password) },
+  });
+
+  return res.status(201).json({ success: true, user: { id, email, mobile: phone }, emailSent });
+});
+
 router.get("/users", async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 25));
@@ -464,12 +552,19 @@ router.patch("/users/:id/details", async (req, res) => {
     update.last_name = last || null;
     update.full_name = `${first} ${last}`.trim();
   }
-  if (mobile !== undefined) {
-    const v = typeof mobile === "string" ? mobile.trim() : mobile;
-    if (v != null && v !== "" && (typeof v !== "string" || !validMobile(v))) {
-      return res.status(400).json({ success: false, message: "Enter a valid mobile number." });
+  // Admins may enter US or Indian numbers. A number an admin sets counts as
+  // verified (the admin vouches for it), so it's also confirmed on the
+  // user's sign-in account below.
+  let confirmPhone = null;
+  if (mobile !== undefined && mobile !== null && mobile !== "") {
+    const e164 = toAdminE164(mobile);
+    if (!e164) {
+      return res.status(400).json({ success: false, message: "Enter a US (+1) or Indian (+91) mobile number." });
     }
-    update.mobile = v || null;
+    update.mobile = e164;
+    confirmPhone = e164;
+  } else if (mobile === "" || mobile === null) {
+    update.mobile = null;
   }
   if (area_of_interest !== undefined) {
     if (area_of_interest != null && area_of_interest !== "" && !validArea(area_of_interest)) {
@@ -528,6 +623,20 @@ router.patch("/users/:id/details", async (req, res) => {
 
   if (error) return res.status(500).json({ success: false, message: error.message });
   if (!data) return res.status(404).json({ success: false, message: "User not found." });
+
+  if (confirmPhone) {
+    const { error: phoneErr } = await supabase.auth.admin.updateUserById(id, { phone: confirmPhone, phone_confirm: true });
+    if (phoneErr) {
+      console.error("Confirming phone on sign-in account failed", phoneErr.message);
+      const taken = /already|registered|exists/i.test(phoneErr.message);
+      return res.status(taken ? 409 : 500).json({
+        success: false,
+        message: taken
+          ? "Profile saved, but that mobile number is already linked to another account, so it isn't verified."
+          : "Profile saved, but the mobile number couldn't be marked as verified. Try again.",
+      });
+    }
+  }
 
   await logAudit(req, {
     action: "user.details_update",
