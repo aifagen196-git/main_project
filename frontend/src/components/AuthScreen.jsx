@@ -166,7 +166,7 @@ export default function AuthScreen({ onBack }) {
         const session = await signUp(email.trim(), password, {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          mobile: mobile.trim(),
+          mobile: `+1${mobile.replace(/\D/g, "").slice(-10)}`,
           areaOfInterest: area,
         });
         // With email confirmation off, sign-up signs the user straight in and
@@ -478,21 +478,30 @@ export default function AuthScreen({ onBack }) {
 
             {isSignup && (
               <label style={{ display: "block" }}>
-                <span style={fieldLabel}>Mobile number</span>
-                <input
-                  type="tel"
-                  required
-                  autoComplete="tel"
-                  inputMode="tel"
-                  maxLength={20}
-                  pattern="(?=(?:\D*\d){7,15}\D*$)\+?[0-9\(][0-9 \(\)\-]{6,18}"
-                  title="Enter a valid mobile number, with country code if outside the US (e.g. +1 555 123 4567)"
-                  placeholder="+1 555 123 4567"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  className="v3-input"
-                  style={fieldInput}
-                />
+                <span style={fieldLabel}>US mobile number</span>
+                {/* US numbers only for self sign-up; admins can add others. */}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <span
+                    aria-hidden="true"
+                    style={{ ...fieldInput, width: "auto", flex: "0 0 auto", display: "flex", alignItems: "center", color: "var(--ink-2)" }}
+                  >
+                    +1
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    autoComplete="tel-national"
+                    inputMode="tel"
+                    maxLength={16}
+                    pattern="\(?[2-9]\d{2}\)?[ \-\.]?[2-9]\d{2}[ \-\.]?\d{4}"
+                    title="Enter a 10-digit US mobile number, e.g. (555) 234-5678"
+                    placeholder="(555) 234-5678"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    className="v3-input"
+                    style={{ ...fieldInput, flex: 1 }}
+                  />
+                </div>
               </label>
             )}
 

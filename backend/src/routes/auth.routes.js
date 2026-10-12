@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../config/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { validArea } from "../utils/profileFields.js";
-import { toE164 } from "../utils/phone.js";
+import { toUsE164 } from "../utils/phone.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -77,6 +77,12 @@ router.post("/signup", async (req, res) => {
   if (area && !validArea(area)) {
     return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
   }
+  // Self sign-up is US only. (Admins can add accounts with Indian numbers
+  // from the admin page.)
+  const mobile = toUsE164(d.mobile);
+  if (!mobile) {
+    return res.status(400).json({ success: false, message: "Enter a US mobile number, e.g. (555) 234-5678." });
+  }
   const { data, error } = await authClient().auth.signUp({
     email,
     password,
@@ -86,7 +92,7 @@ router.post("/signup", async (req, res) => {
         first_name: firstName,
         last_name: lastName,
         full_name: `${firstName} ${lastName}`.trim(),
-        mobile: str(d.mobile, 20),
+        mobile,
         area_of_interest: area,
       },
     },
@@ -185,11 +191,11 @@ function phoneError(data, status) {
 }
 
 router.post("/phone/start", requireAuth, async (req, res) => {
-  const phone = toE164(req.body?.phone);
+  const phone = toUsE164(req.body?.phone);
   if (!phone) {
     return res.status(400).json({
       success: false,
-      message: "Enter your mobile number with the country code, e.g. +1 555 123 4567.",
+      message: "Enter a US mobile number, e.g. (555) 234-5678.",
     });
   }
   if (req.user.phone_confirmed_at && `+${req.user.phone}` === phone) {
@@ -202,7 +208,7 @@ router.post("/phone/start", requireAuth, async (req, res) => {
 });
 
 router.post("/phone/verify", requireAuth, async (req, res) => {
-  const phone = toE164(req.body?.phone);
+  const phone = toUsE164(req.body?.phone);
   const code = String(req.body?.code || "").replace(/\D/g, "");
   if (!phone || !/^\d{4,8}$/.test(code)) {
     return res.status(400).json({ success: false, message: "Enter the code from the text message." });

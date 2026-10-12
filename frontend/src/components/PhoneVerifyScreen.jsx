@@ -43,7 +43,11 @@ const btn = {
 const RESEND_SECONDS = 60;
 
 export default function PhoneVerifyScreen({ profile, onVerified }) {
-  const [phone, setPhone] = useState(profile?.mobile || "");
+  // US numbers only: show the 10-digit national part; +1 is fixed.
+  const [phone, setPhone] = useState(() => {
+    const d = String(profile?.mobile || "").replace(/\D/g, "");
+    return d.length === 11 && d.startsWith("1") ? d.slice(1) : d.length === 10 ? d : "";
+  });
   const [sentTo, setSentTo] = useState(""); // number the code went to
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,7 +65,7 @@ export default function PhoneVerifyScreen({ profile, onVerified }) {
     setErr("");
     setBusy(true);
     try {
-      const r = await sendPhoneCode(phone);
+      const r = await sendPhoneCode(`+1${phone.replace(/\D/g, "").slice(-10)}`);
       if (r.alreadyVerified) {
         await onVerified();
         return;
@@ -132,19 +136,29 @@ export default function PhoneVerifyScreen({ profile, onVerified }) {
         {!sentTo ? (
           <form onSubmit={send} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 24 }}>
             <label>
-              <span style={label}>Mobile number (with country code)</span>
-              <input
-                type="tel"
-                required
-                autoComplete="tel"
-                inputMode="tel"
-                maxLength={20}
-                placeholder="+1 555 123 4567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="v3-input"
-                style={input}
-              />
+              <span style={label}>US mobile number</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <span
+                  aria-hidden="true"
+                  style={{ ...input, width: "auto", flex: "0 0 auto", display: "flex", alignItems: "center", color: "var(--ink-2)" }}
+                >
+                  +1
+                </span>
+                <input
+                  type="tel"
+                  required
+                  autoComplete="tel-national"
+                  inputMode="tel"
+                  maxLength={16}
+                  pattern="\(?[2-9]\d{2}\)?[ \-\.]?[2-9]\d{2}[ \-\.]?\d{4}"
+                  title="Enter a 10-digit US mobile number, e.g. (555) 234-5678"
+                  placeholder="(555) 234-5678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="v3-input"
+                  style={{ ...input, flex: 1 }}
+                />
+              </div>
             </label>
             {err && <ErrorBox>{err}</ErrorBox>}
             <button type="submit" disabled={busy} className="v3-btn-dark" style={{ ...btn, opacity: busy ? 0.65 : 1 }}>
