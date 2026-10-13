@@ -44,7 +44,7 @@ const STATUS_META = {
 };
 
 const BILLING_CYCLE_LABEL = {
-  monthly: "Monthly billing",
+  monthly: "Monthly plan",
   semiannual: "One-time payment",
 };
 
@@ -67,9 +67,9 @@ export default function Billing({ profile }) {
     : null;
 
   const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-    "Cancel my AIFAGen subscription",
+    "Question about my AIFAGen plan",
   )}&body=${encodeURIComponent(
-    `Please cancel my subscription.\n\n—\nAccount: ${profile?.email || "unknown"}\nPlan: ${PLAN_LABEL[plan] || plan}`,
+    `\n\n—\nAccount: ${profile?.email || "unknown"}\nPlan: ${PLAN_LABEL[plan] || plan}`,
   )}`;
 
   return (
@@ -99,7 +99,7 @@ export default function Billing({ profile }) {
             color: B.ink,
           }}
         >
-          Subscription &amp; billing
+          Plan &amp; billing
         </h1>
         <p style={{ margin: "9px 0 0", fontSize: 15, color: B.muted }}>
           What you're on, and how to change it.
@@ -192,7 +192,8 @@ export default function Billing({ profile }) {
           {renew && (
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12.5, color: "#B9C2D6" }}>
-                {status === "canceled" || profile?.billing_cycle !== "monthly" ? "Access until" : "Renews on"}
+                {/* Plans are one-time payments; nothing renews automatically. */}
+                Access until
               </div>
               <div
                 style={{
@@ -224,7 +225,7 @@ export default function Billing({ profile }) {
               cursor: "pointer",
             }}
           >
-            {paid ? "Manage subscription" : "See plans"}
+            {paid ? "Change plan" : "See plans"}
           </button>
         </div>
       </div>
@@ -264,11 +265,11 @@ export default function Billing({ profile }) {
         >
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: B.ink }}>
-              Upgrade, downgrade, or switch billing cycle
+              Change or renew your plan
             </div>
             <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.6, color: B.muted }}>
-              Head to Plans &amp; pricing — switching tiers runs a new checkout
-              and takes effect right away.
+              Head to Plans &amp; pricing — a new plan runs a new checkout and
+              takes effect right away.
             </p>
             <button
               onClick={() => navigate("/pricing")}
@@ -291,11 +292,11 @@ export default function Billing({ profile }) {
 
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: B.ink }}>
-              Cancel your subscription
+              Nothing renews automatically
             </div>
             <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.6, color: B.muted }}>
-              Cancellation isn't self-serve yet — email us and we'll take care
-              of it, no back-and-forth needed.
+              Your plan simply ends on its end date — we never charge you again.
+              Questions about a payment? Email us.
             </p>
             <a
               href={mailHref}
@@ -314,7 +315,7 @@ export default function Billing({ profile }) {
                 textDecoration: "none",
               }}
             >
-              <Mail size={13} /> Email to cancel
+              <Mail size={13} /> Email us
             </a>
           </div>
         </div>

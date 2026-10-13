@@ -41,8 +41,8 @@ const FAQS = [
     a: "Press “I applied” on any match, or add one by hand on the Applications screen. Nothing is detected automatically, so move a row through interviewing, assessment, offer or closed yourself using its status dropdown.",
   },
   {
-    q: "How do I change or cancel my plan?",
-    a: "Open Billing and choose View plans to switch plans or billing cycle — the new plan starts right away. To cancel, use Email to cancel on the Billing page and we'll take care of it.",
+    q: "How do I change my plan?",
+    a: "Open Billing and choose View plans — the new plan starts right away. Plans never renew automatically: when yours ends, pick a plan again to keep going. Questions about a payment? Email info@aifagenlabs.com.",
   },
 ];
 

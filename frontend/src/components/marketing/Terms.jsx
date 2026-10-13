@@ -196,13 +196,13 @@ export default function Terms({ home, enter, go }) {
           ]}
         />
 
-        <H>5. Payments, Renewals &amp; Cancellation</H>
+        <H>5. Payments &amp; Plan Periods</H>
         <P>If enrolled in a paid plan:</P>
         <List
           items={[
             "Fees must be paid in advance and are processed by Razorpay",
-            "Monthly plans renew each month until cancelled; one-time payment plans are charged once at checkout",
-            "To cancel, email info@aifagenlabs.com — cancellation stops future renewals, and access continues until the end of the period already paid for",
+            "Monthly plans cover one month from the date of payment; one-time payment plans are charged once at checkout",
+            "Plans do not renew automatically — no further charges are made unless you choose and pay for a new plan",
             "Fees are non-refundable unless explicitly agreed in writing",
           ]}
         />

@@ -92,7 +92,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       total={`$${pending.price.toLocaleString("en-US")}`}
       note={
         monthly
-          ? "You'll be charged today and your plan unlocks right after payment. Billed monthly; you can cancel anytime from Billing."
+          ? "You'll be charged once today for one month, and your plan unlocks right after payment. It doesn't renew automatically."
           : "You'll be charged once today and your plan unlocks right after payment."
       }
       onConfirm={() => choose(pending)}
@@ -128,7 +128,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
           }}
         >
           {onboarding
-            ? "Pick a plan to unlock your dashboard. You're charged today; cancel anytime from Billing."
+            ? "Pick a plan to unlock your dashboard. You pay once — nothing renews automatically."
             : "Change plans anytime. Charges apply immediately for the new plan."}
         </p>
       </div>
@@ -322,7 +322,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       >
         {[
           [Shield, "Full access on day one", "Every feature in your plan, unlocked immediately."],
-          [CreditCard, "Cancel anytime", "No lock-in — manage your plan from Billing."],
+          [CreditCard, "No auto-renewal", "You pay once per plan — we never charge you again without asking."],
           [Lock, "Secure payments", "Handled by Razorpay, not stored on our servers."],
           [HelpCircle, "Real support", "Email us and a person answers."],
         ].map(([Icon, title, desc]) => (

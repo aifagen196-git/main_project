@@ -336,11 +336,11 @@ const STEPS = [
 const FAQS = [
   {
     q: "Can I change my plan later?",
-    a: "Yes. Switch plans or billing cycle anytime from Billing — the new plan starts right away. To cancel, email info@aifagenlabs.com and we'll handle it.",
+    a: "Yes. Pick a new plan anytime from Billing — it starts right away. Plans never renew automatically, so there's nothing to cancel.",
   },
   {
     q: "Is there a free trial?",
-    a: "There is no free trial — plans are billed when you subscribe, and you can cancel anytime.",
+    a: "There is no free trial. You pay once when you choose a plan, and it never renews automatically.",
   },
   {
     q: "What payment methods do you accept?",
@@ -1953,7 +1953,7 @@ function Marketing({ enter, go }) {
           {[
             {
               name: "Basic",
-              periodTag: "Billed monthly",
+              periodTag: "Monthly",
               price: "229",
               tagline: "Ongoing support while you're actively job hunting.",
               popular: false,
@@ -2134,7 +2134,7 @@ function Marketing({ enter, go }) {
             color: V3.faint,
           }}
         >
-          Prices in USD. Cancel anytime — plans renew until you cancel.
+          Prices in USD. Pay once — plans never renew automatically.
         </p>
         </div>
       </section>
@@ -2737,7 +2737,7 @@ export default function AIFAGen() {
           }}
         />
       ) : finalizing ? (
-        <Splash text="Confirming your subscription…" />
+        <Splash text="Confirming your payment…" />
       ) : profileError && !profile ? (
         // A failed profile fetch previously fell through to the loading splash
         // and stuck there forever (no retry path). Surface it instead.

@@ -60,7 +60,7 @@ export const PRICING_CARDS = [
     periodTag: "Monthly",
     price: 229,
     tagline: "Get started with AI-matched roles.",
-    cta: "Get Basic — billed monthly",
+    cta: "Get Basic — monthly",
     popular: false,
     features: [
       "AI Job Matching (20 / day)",
