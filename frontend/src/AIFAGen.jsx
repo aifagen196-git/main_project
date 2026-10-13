@@ -21,7 +21,6 @@ import Collaborate from "./components/marketing/Collaborate";
 import Partners from "./components/marketing/Partners";
 import PrivacyPolicy from "./components/marketing/PrivacyPolicy";
 import Terms from "./components/marketing/Terms";
-import RefundPolicy from "./components/marketing/RefundPolicy";
 import {
   Sparkles,
   Briefcase,
@@ -2460,16 +2459,6 @@ function Marketing({ enter, go }) {
               >
                 Terms &amp; Conditions
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  go("refund");
-                  window.scrollTo(0, 0);
-                }}
-                className="hover:text-white underline-offset-2 hover:underline"
-              >
-                Refund Policy
-              </button>
             </div>
           </div>
         </div>
@@ -2487,12 +2476,7 @@ const RECOVERY_AT_LOAD =
 // The legal pages answer at their own URLs (aifagenlabs.com/privacy, /terms):
 // payment and SMS providers ask for a link that opens the policy itself. The
 // rest of the marketing site stays on "/".
-const LEGAL_PAGES = {
-  "/privacy": "privacy",
-  "/privacy-policy": "privacy",
-  "/terms": "terms",
-  "/refund-policy": "refund",
-};
+const LEGAL_PAGES = { "/privacy": "privacy", "/privacy-policy": "privacy", "/terms": "terms" };
 const legalPageAt = (path) => LEGAL_PAGES[path.replace(/\/+$/, "")] || null;
 
 /* ===================== ROOT ===================== */
@@ -2692,12 +2676,6 @@ export default function AIFAGen() {
           />
         ) : marketingPage === "terms" ? (
           <Terms
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "refund" ? (
-          <RefundPolicy
             home={() => setMarketingPage("home")}
             enter={() => setMode("app")}
             go={goTo}

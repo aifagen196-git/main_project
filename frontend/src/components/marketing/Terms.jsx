@@ -203,7 +203,6 @@ export default function Terms({ home, enter, go }) {
             "Fees must be paid in advance and are processed by Razorpay",
             "Monthly plans cover one month from the date of payment; one-time payment plans are charged once at checkout",
             "Plans do not renew automatically — no further charges are made unless you choose and pay for a new plan",
-            "Fees are non-refundable unless explicitly agreed in writing",
           ]}
         />
 
