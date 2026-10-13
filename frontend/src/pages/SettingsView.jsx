@@ -716,9 +716,9 @@ export default function SettingsView({ profile, refresh }) {
               }}
             >
               {plan === "premium"
-                ? "Unlimited AI matching, resume optimization, cover letters and priority support are active on your account."
+                ? "Your Acceleration Program is active — everything in Basic, plus immigration support, mentor calls and interview training."
                 : plan === "basic"
-                  ? "AI job matching (20 a day), resume analysis, application tracking and career insights are active. Upgrade to Premium for unlimited matching and cover letters."
+                  ? "Your Basic plan is active. Upgrade to Premium for immigration support, mentor calls and interview training."
                   : paid
                     ? "Your plan is active."
                     : "Choose a plan to unlock matching, resume analysis and application tracking."}

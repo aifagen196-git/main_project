@@ -10,7 +10,7 @@ import { DEV_PREVIEW } from "./devPreview";
 import AppShell from "./components/layout/AppShell";
 import Card from "./components/common/Card";
 import Pricing from "./pages/Pricing";
-import { isSubscribed } from "./utils/plan";
+import { PRICING_CARDS, isSubscribed } from "./utils/plan";
 import AboutPage from "./components/marketing/AboutPage";
 import InnovationLabs from "./components/marketing/InnovationLabs";
 import CaseStudies from "./components/marketing/CaseStudies";
@@ -21,6 +21,7 @@ import Collaborate from "./components/marketing/Collaborate";
 import Partners from "./components/marketing/Partners";
 import PrivacyPolicy from "./components/marketing/PrivacyPolicy";
 import Terms from "./components/marketing/Terms";
+import RefundPolicy from "./components/marketing/RefundPolicy";
 import {
   Sparkles,
   Briefcase,
@@ -1893,8 +1894,7 @@ function Marketing({ enter, go }) {
       </section>
 
       {/* ---------------- PRICING ----------------
-          Names, prices and billing periods mirror utils/plan.js's
-          PRICING_CARDS (what checkout actually charges) — keep them in sync.
+          Same cards as the in-app plan picker (utils/plan.js PRICING_CARDS).
           "Get Started" enters the app; sign-up then lands on the plan picker. */}
       <section
         id="pricing"
@@ -1950,52 +1950,7 @@ function Marketing({ enter, go }) {
             alignItems: "start",
           }}
         >
-          {[
-            {
-              name: "Basic",
-              periodTag: "Monthly",
-              price: "229",
-              tagline: "Ongoing support while you're actively job hunting.",
-              popular: false,
-              features: [
-                "Targeted job applications",
-                "Resume review & optimization",
-                "Personalized career suggestions",
-              ],
-            },
-            {
-              name: "Basic",
-              periodTag: "One-time payment",
-              price: "1,299",
-              tagline: "Job Marketing Program — a full application push.",
-              popular: false,
-              features: [
-                "50+ targeted job applications every day",
-                "Resume drafting & optimization using 70-80 real job descriptions",
-                "ATS-optimized custom cover letter",
-                "Recruiter outreach across top U.S. job boards",
-                "Mock interview sessions with structured feedback",
-                "Dedicated marketing manager for your profile",
-                "Ongoing resume and keyword optimization based on market response",
-              ],
-            },
-            {
-              name: "Premium",
-              periodTag: "One-time payment",
-              price: "2,499",
-              tagline: "Acceleration Program — everything in Basic, plus interview prep.",
-              popular: true,
-              featuresIntro: "Includes everything in Basic, plus:",
-              features: [
-                "Immigration support",
-                "Advanced resume crafting tailored to 70-80 targeted job descriptions",
-                "Customized cover letters specific to each role",
-                "Evaluation calls with expert hiring mentors",
-                "LinkedIn optimization and portfolio website building",
-                "Advanced interview training with performance feedback",
-              ],
-            },
-          ].map((p) => (
+          {PRICING_CARDS.map((p) => (
             <div
               key={`${p.name}-${p.periodTag}`}
               style={{
@@ -2083,7 +2038,7 @@ function Marketing({ enter, go }) {
                   marginTop: 14,
                 }}
               >
-                ${p.price}
+                ${p.price.toLocaleString("en-US")}
               </div>
 
               <button
@@ -2505,6 +2460,16 @@ function Marketing({ enter, go }) {
               >
                 Terms &amp; Conditions
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  go("refund");
+                  window.scrollTo(0, 0);
+                }}
+                className="hover:text-white underline-offset-2 hover:underline"
+              >
+                Refund Policy
+              </button>
             </div>
           </div>
         </div>
@@ -2522,7 +2487,12 @@ const RECOVERY_AT_LOAD =
 // The legal pages answer at their own URLs (aifagenlabs.com/privacy, /terms):
 // payment and SMS providers ask for a link that opens the policy itself. The
 // rest of the marketing site stays on "/".
-const LEGAL_PAGES = { "/privacy": "privacy", "/privacy-policy": "privacy", "/terms": "terms" };
+const LEGAL_PAGES = {
+  "/privacy": "privacy",
+  "/privacy-policy": "privacy",
+  "/terms": "terms",
+  "/refund-policy": "refund",
+};
 const legalPageAt = (path) => LEGAL_PAGES[path.replace(/\/+$/, "")] || null;
 
 /* ===================== ROOT ===================== */
@@ -2722,6 +2692,12 @@ export default function AIFAGen() {
           />
         ) : marketingPage === "terms" ? (
           <Terms
+            home={() => setMarketingPage("home")}
+            enter={() => setMode("app")}
+            go={goTo}
+          />
+        ) : marketingPage === "refund" ? (
+          <RefundPolicy
             home={() => setMarketingPage("home")}
             enter={() => setMode("app")}
             go={goTo}

@@ -253,7 +253,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   marginTop: 14,
                 }}
               >
-                ${p.price}
+                ${p.price.toLocaleString("en-US")}
               </div>
 
               <button
@@ -293,6 +293,11 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
               </button>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
+                {p.featuresIntro && (
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: P.ink }}>
+                    {p.featuresIntro}
+                  </div>
+                )}
                 {p.features.map((f) => (
                   <div
                     key={f}

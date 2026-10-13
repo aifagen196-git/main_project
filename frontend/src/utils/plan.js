@@ -46,12 +46,13 @@ export function isPaidPlan(plan) {
 // not count or gate usage — it just surfaces the backend's 429 ("daily limit
 // reached") if it happens.
 
-// What the Pricing screen actually renders — one card per (plan, billingCycle)
-// pair. Basic offers two; Premium offers one. `price` and `billingCycle` here
-// are DISPLAY values only; backend/src/services/payments/razorpay.service.js's
-// PRICING is the real source of truth for what Razorpay actually charges, and
-// backend/src/routes/payments.routes.js's VALID_PAIRS is what /order and
-// /verify actually accept — all three MUST stay in sync.
+// The plan cards — one per (plan, billingCycle) pair. Basic offers two;
+// Premium offers one. Both the landing page and the in-app Pricing screen
+// render these, so the two always show the same lists. `price` and
+// `billingCycle` are DISPLAY values only; backend/src/services/payments/
+// razorpay.service.js's PRICING is the real source of truth for what Razorpay
+// actually charges, and backend/src/routes/payments.routes.js's VALID_PAIRS is
+// what /order and /verify actually accept — all three MUST stay in sync.
 export const PRICING_CARDS = [
   {
     id: "basic",
@@ -59,14 +60,13 @@ export const PRICING_CARDS = [
     name: "Basic",
     periodTag: "Monthly",
     price: 229,
-    tagline: "Get started with AI-matched roles.",
+    tagline: "Ongoing support while you're actively job hunting.",
     cta: "Get Basic — monthly",
     popular: false,
     features: [
-      "AI Job Matching (20 / day)",
-      "Resume Analysis",
-      "Application Tracking",
-      "Career Insights",
+      "Targeted job applications",
+      "Resume review & optimization",
+      "Personalized career suggestions",
     ],
   },
   {
@@ -75,14 +75,17 @@ export const PRICING_CARDS = [
     name: "Basic",
     periodTag: "One-time payment",
     price: 1299,
-    tagline: "Same Basic features, paid once.",
+    tagline: "Job Marketing Program — a full application push.",
     cta: "Get Basic — one-time payment",
     popular: false,
     features: [
-      "AI Job Matching (20 / day)",
-      "Resume Analysis",
-      "Application Tracking",
-      "Career Insights",
+      "50+ targeted job applications every day",
+      "Resume drafting & optimization using 70-80 real job descriptions",
+      "ATS-optimized custom cover letter",
+      "Recruiter outreach across top U.S. job boards",
+      "Mock interview sessions with structured feedback",
+      "Dedicated marketing manager for your profile",
+      "Ongoing resume and keyword optimization based on market response",
     ],
   },
   {
@@ -91,16 +94,17 @@ export const PRICING_CARDS = [
     name: "Premium",
     periodTag: "One-time payment",
     price: 2499,
-    tagline: "Everything you need to get more interviews.",
+    tagline: "Acceleration Program — everything in Basic, plus interview prep.",
     cta: "Get Premium — one-time payment",
     popular: true,
+    featuresIntro: "Includes everything in Basic, plus:",
     features: [
-      "Unlimited AI Job Matching",
-      "AI Resume Optimization",
-      "AI Cover Letter Generator",
-      "Application Tracking & Analytics",
-      "AI Application Automation",
-      "Priority Support",
+      "Immigration support",
+      "Advanced resume crafting tailored to 70-80 targeted job descriptions",
+      "Customized cover letters specific to each role",
+      "Evaluation calls with expert hiring mentors",
+      "LinkedIn optimization and portfolio website building",
+      "Advanced interview training with performance feedback",
     ],
   },
 ];
