@@ -1,5 +1,4 @@
 import { auth } from '../lib/authClient'
-import { api } from './api'
 import { DEV_PREVIEW } from '../devPreview'
 
 // All of these go through the backend's /api/auth routes (lib/authClient.js);
@@ -37,14 +36,4 @@ export async function updatePassword(newPassword) {
 
 export async function signOut() {
   return auth.signOut()
-}
-
-// Mobile verification (POST /api/auth/phone/*). The code is texted by the
-// server; the browser only passes the number and the code along.
-export async function sendPhoneCode(phone) {
-  return api.post('/api/auth/phone/start', { phone })
-}
-
-export async function confirmPhoneCode(phone, code) {
-  return api.post('/api/auth/phone/verify', { phone, code })
 }

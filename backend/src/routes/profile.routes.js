@@ -2,7 +2,6 @@ import express from "express";
 import multer from "multer";
 import { supabase } from "../config/supabase.js";
 import { dbError } from "../utils/dbError.js";
-import { isVerified } from "../middleware/requireVerified.js";
 
 const router = express.Router();
 
@@ -126,14 +125,12 @@ router.delete("/avatar", async (req, res) => {
 
 
 // Facts the site needs to decide what to show, computed here so the browser
-// never decides them: whether email and mobile are verified (from Supabase
-// Auth, not the profile), and whether a free trial can still be started.
+// never decides them: whether the email is verified (from Supabase Auth, not
+// the profile), and whether a free trial can still be started.
 function withAccountState(profile, user) {
   return {
     ...profile,
     email_verified: Boolean(user.email_confirmed_at),
-    phone_verified: isVerified(user),
-    verified_phone: user.phone_confirmed_at && user.phone ? `+${user.phone}` : null,
     trial_eligible:
       !profile.trial_started_at && !profile.razorpay_payment_id && profile.plan === "none",
   };

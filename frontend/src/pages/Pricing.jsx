@@ -490,7 +490,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
 }
 
 /* One-time 7-day free trial, offered only to accounts the server marks as
- * eligible (verified, never paid, never trialed). Basic features; access
+ * eligible (email verified, never paid, never trialed). Basic features; access
  * ends exactly 7 days after it starts. */
 function TrialOffer({ onStart, busy, starting }) {
   const ends = new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-US", {

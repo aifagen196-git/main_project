@@ -1,6 +1,6 @@
 // Phone numbers in international (E.164) form: + country code + digits.
 //
-// Users who sign up or verify themselves may only use US numbers. Admins
+// Users who sign up themselves may only use US numbers. Admins
 // creating or editing accounts may also use Indian numbers (team members and
 // clients in India).
 

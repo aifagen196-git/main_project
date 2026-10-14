@@ -1,13 +1,13 @@
 -- supabase/migrations/0026_free_trial.sql
 --
--- 7-day free trial. New accounts, once their email AND mobile number are
--- verified, can start one trial: plan 'basic', status 'trialing', and
+-- 7-day free trial. New accounts, once their email is verified, can start
+-- one trial: plan 'basic', status 'trialing', and
 -- current_period_end exactly 7 days after the start. Access is checked
 -- against current_period_end on every request (requireActivePlan), so the
 -- trial ends at that moment with no job needed to switch it off.
 --
--- One trial per verified phone number (trial_claims), so a new email can't
--- buy another free week. Only the backend (service role) touches any of this.
+-- One trial per sign-up mobile number (trial_claims), so a new email with the
+-- same number can't get another free week. Only the backend (service role) touches any of this.
 --
 -- Safe to re-run.
 

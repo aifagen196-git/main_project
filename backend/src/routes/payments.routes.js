@@ -139,20 +139,19 @@ router.post("/verify", async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /api/payments/trial — start the one-time 7-day free trial.
 //
-// Mounted behind requireVerified, so email and mobile are already confirmed.
+// Mounted behind requireVerified, so the email is already confirmed.
 // The trial is Basic features, status 'trialing', and current_period_end set
 // to exactly 7 days from now; requireActivePlan checks that date on every
 // request, so access stops at that moment. One trial per account AND per
-// verified phone number (trial_claims), so new emails don't buy more weeks.
+// sign-up mobile number (trial_claims), so a new email with the same number
+// doesn't get another week.
 // ---------------------------------------------------------------------------
 export const TRIAL_DAYS = 7;
 
 router.post("/trial", async (req, res) => {
-  const phone = req.user.phone ? `+${req.user.phone}` : null;
-
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("plan, subscription_status, trial_started_at, razorpay_payment_id")
+    .select("plan, subscription_status, trial_started_at, razorpay_payment_id, mobile")
     .eq("id", req.user.id)
     .single();
   if (error) {
@@ -166,11 +165,13 @@ router.post("/trial", async (req, res) => {
     return res.status(409).json({ success: false, code: "TRIAL_NOT_ELIGIBLE", message: "The free trial is only for new accounts." });
   }
 
-  // Claim the phone number first: the primary key makes a second claim fail,
-  // even if two requests race.
-  const { error: claimErr } = await supabase
-    .from("trial_claims")
-    .insert({ phone, user_id: req.user.id });
+  // One trial per mobile number too (the number given at sign-up). Claim it
+  // first: the primary key makes a second claim fail, even if two requests
+  // race. Older accounts with no number on file are limited per account only.
+  const phone = profile.mobile || null;
+  const { error: claimErr } = phone
+    ? await supabase.from("trial_claims").insert({ phone, user_id: req.user.id })
+    : { error: null };
   if (claimErr) {
     if (claimErr.code === "23505") {
       return res.status(409).json({
@@ -200,8 +201,8 @@ router.post("/trial", async (req, res) => {
     .select("plan, subscription_status, current_period_end, trial_started_at, trial_ends_at")
     .maybeSingle();
   if (upErr || !data) {
-    // Give the phone back so the user can retry.
-    await supabase.from("trial_claims").delete().eq("phone", phone).eq("user_id", req.user.id);
+    // Give the number back so the user can retry.
+    if (phone) await supabase.from("trial_claims").delete().eq("phone", phone).eq("user_id", req.user.id);
     if (upErr) console.error("Trial: activation failed", upErr.message);
     return res.status(upErr ? 500 : 409).json({
       success: false,

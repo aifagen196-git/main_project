@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
 import ResetPasswordScreen from "./components/ResetPasswordScreen";
-import PhoneVerifyScreen from "./components/PhoneVerifyScreen";
 import { auth } from "./lib/authClient";
 import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
@@ -341,7 +340,7 @@ const FAQS = [
   },
   {
     q: "Is there a free trial?",
-    a: "There is no free trial. You pay once when you choose a plan, and it never renews automatically.",
+    a: "Yes. New accounts can try Basic free for 7 days, once. After that, you pay once when you choose a plan, and it never renews automatically.",
   },
   {
     q: "What payment methods do you accept?",
@@ -2718,10 +2717,6 @@ export default function AIFAGen() {
         </div>
       ) : profileLoading || !profile ? (
         <Splash text="Loading your account…" />
-      ) : !profile.phone_verified ? (
-        // Mobile not verified yet → nothing else (trial, payment, app) until
-        // it is. The server enforces the same rule (requireVerified).
-        <PhoneVerifyScreen profile={profile} onVerified={refresh} />
       ) : !isSubscribed(profile) ? (
         // New / lapsed user → must pick a plan (or start the free trial)
         // before entering the app.

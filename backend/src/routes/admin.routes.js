@@ -323,9 +323,9 @@ router.get("/payments", async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /api/admin/users — create an account for someone (team members,
 // clients, people who can't sign up themselves). Unlike self sign-up, admins
-// may use Indian (+91) as well as US numbers. The email and mobile count as
-// verified because an admin is vouching for them. With no password given,
-// the person gets an email to set their own.
+// may use Indian (+91) as well as US numbers. The email counts as verified
+// because an admin is vouching for it. With no password given, the person
+// gets an email to set their own.
 // ---------------------------------------------------------------------------
 function siteUrl() {
   const first = (process.env.CORS_ORIGIN || "").split(",")[0].trim();
@@ -360,8 +360,6 @@ router.post("/users", async (req, res) => {
     email,
     password: password || crypto.randomBytes(24).toString("base64url"),
     email_confirm: true,
-    phone,
-    phone_confirm: true,
     user_metadata: {
       first_name: first,
       last_name: last,
@@ -374,7 +372,7 @@ router.post("/users", async (req, res) => {
     const taken = /already|registered|exists/i.test(error.message);
     return res.status(taken ? 409 : 400).json({
       success: false,
-      message: taken ? "An account with that email or mobile number already exists." : error.message,
+      message: taken ? "An account with that email already exists." : error.message,
     });
   }
   const id = created.user.id;
@@ -551,17 +549,13 @@ router.patch("/users/:id/details", async (req, res) => {
     update.last_name = last || null;
     update.full_name = `${first} ${last}`.trim();
   }
-  // Admins may enter US or Indian numbers. A number an admin sets counts as
-  // verified (the admin vouches for it), so it's also confirmed on the
-  // user's sign-in account below.
-  let confirmPhone = null;
+  // Admins may enter US or Indian numbers.
   if (mobile !== undefined && mobile !== null && mobile !== "") {
     const e164 = toAdminE164(mobile);
     if (!e164) {
       return res.status(400).json({ success: false, message: "Enter a US (+1) or Indian (+91) mobile number." });
     }
     update.mobile = e164;
-    confirmPhone = e164;
   } else if (mobile === "" || mobile === null) {
     update.mobile = null;
   }
@@ -622,20 +616,6 @@ router.patch("/users/:id/details", async (req, res) => {
 
   if (error) return res.status(500).json({ success: false, message: error.message });
   if (!data) return res.status(404).json({ success: false, message: "User not found." });
-
-  if (confirmPhone) {
-    const { error: phoneErr } = await supabase.auth.admin.updateUserById(id, { phone: confirmPhone, phone_confirm: true });
-    if (phoneErr) {
-      console.error("Confirming phone on sign-in account failed", phoneErr.message);
-      const taken = /already|registered|exists/i.test(phoneErr.message);
-      return res.status(taken ? 409 : 500).json({
-        success: false,
-        message: taken
-          ? "Profile saved, but that mobile number is already linked to another account, so it isn't verified."
-          : "Profile saved, but the mobile number couldn't be marked as verified. Try again.",
-      });
-    }
-  }
 
   await logAudit(req, {
     action: "user.details_update",
