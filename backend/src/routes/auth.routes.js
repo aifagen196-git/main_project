@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../config/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { validArea } from "../utils/profileFields.js";
+import { toE164 } from "../utils/phone.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -141,6 +142,80 @@ router.post("/password", requireAuth, async (req, res) => {
   const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password });
   if (error) return fail(res, error, "Could not update the password.");
   return res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// Mobile number verification. Uses Supabase Auth's own phone-change flow, so
+// Supabase generates, expires and texts the code (through whichever SMS
+// provider is set up under Authentication → Providers → Phone) and marks the
+// number confirmed on the user. Both calls act as the signed-in user.
+// ---------------------------------------------------------------------------
+async function gotrue(path, method, token, body) {
+  const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/${path}`, {
+    method,
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Supabase's wording is technical; say what the user can do about it.
+function phoneError(data, status) {
+  const msg = String(data?.msg || data?.message || data?.error_description || "");
+  if (status === 429 || /rate|too many|seconds/i.test(msg)) {
+    return "Please wait a minute before asking for another code.";
+  }
+  if (/already|registered|exists/i.test(msg)) {
+    return "That mobile number is already linked to another account.";
+  }
+  if (/expired|invalid|token|otp/i.test(msg)) {
+    return "That code is wrong or has expired. Check it, or send a new one.";
+  }
+  if (/provider|sms|unsupported|disabled/i.test(msg)) {
+    console.error("Phone verification is not configured:", msg);
+    return "We can't send text messages right now. Please try again later.";
+  }
+  console.error("Phone verification failed:", status, msg);
+  return "Something went wrong. Please try again.";
+}
+
+router.post("/phone/start", requireAuth, async (req, res) => {
+  const phone = toE164(req.body?.phone);
+  if (!phone) {
+    return res.status(400).json({
+      success: false,
+      message: "Enter your mobile number with the country code, e.g. +1 555 123 4567.",
+    });
+  }
+  if (req.user.phone_confirmed_at && `+${req.user.phone}` === phone) {
+    return res.json({ success: true, alreadyVerified: true, phone });
+  }
+  const token = req.get("authorization").split(" ")[1];
+  const r = await gotrue("user", "PUT", token, { phone });
+  if (!r.ok) return res.status(r.status === 429 ? 429 : 400).json({ success: false, message: phoneError(r.data, r.status) });
+  return res.json({ success: true, phone });
+});
+
+router.post("/phone/verify", requireAuth, async (req, res) => {
+  const phone = toE164(req.body?.phone);
+  const code = String(req.body?.code || "").replace(/\D/g, "");
+  if (!phone || !/^\d{4,8}$/.test(code)) {
+    return res.status(400).json({ success: false, message: "Enter the code from the text message." });
+  }
+  const token = req.get("authorization").split(" ")[1];
+  const r = await gotrue("verify", "POST", token, { type: "phone_change", phone, token: code });
+  if (!r.ok) return res.status(400).json({ success: false, message: phoneError(r.data, r.status) });
+
+  // Keep the profile's copy in step with the verified number (admins and the
+  // trial check read it from there).
+  const { error } = await supabase.from("profiles").update({ mobile: phone }).eq("id", req.user.id);
+  if (error) console.error("Saving verified mobile on profile failed", error.message);
+  return res.json({ success: true, phone });
 });
 
 router.post("/logout", requireAuth, async (req, res) => {
