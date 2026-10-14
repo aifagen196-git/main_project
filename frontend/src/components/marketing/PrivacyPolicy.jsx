@@ -196,8 +196,8 @@ export default function PrivacyPolicy({ home, enter, go }) {
           <div className="flex items-center gap-3">
             <Phone size={16} className="text-slate-400" />
             Phone:{" "}
-            <a href="tel:+17322539043" className="brand hover:underline">
-              +1 732-253-9043
+            <a href="tel:+14752240417" className="brand hover:underline">
+              +1 (475) 224-0417
             </a>
           </div>
         </div>

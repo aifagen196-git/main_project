@@ -75,8 +75,8 @@ export async function fetchOrderNotes(orderId) {
  * Lists payments from the Razorpay account (admin Payments panel).
  *
  * Razorpay is the source of truth here: profiles only keeps the LAST
- * razorpay_payment_id per user, so it can't show a real transaction history,
- * failed attempts, or refunds. `from`/`to` are unix seconds; `count` caps at
+ * razorpay_payment_id per user, so it can't show a real transaction history
+ * or failed attempts. `from`/`to` are unix seconds; `count` caps at
  * 100 per the API.
  */
 export async function listPayments({ from, to, count = 100, skip = 0 } = {}) {
@@ -85,19 +85,6 @@ export async function listPayments({ from, to, count = 100, skip = 0 } = {}) {
   if (to) params.to = to;
   const res = await client().payments.all(params);
   return res?.items || [];
-}
-
-/**
- * Refunds a captured payment. `amount` is in the major unit (dollars) and is
- * converted here; omit it for a full refund. Razorpay rejects a refund on an
- * uncaptured or already-refunded payment, so the caller surfaces its error
- * rather than guessing.
- */
-export async function refundPayment(paymentId, { amount, notes } = {}) {
-  const payload = {};
-  if (amount != null) payload.amount = Math.round(Number(amount) * 100);
-  if (notes) payload.notes = notes;
-  return client().payments.refund(paymentId, payload);
 }
 
 /**

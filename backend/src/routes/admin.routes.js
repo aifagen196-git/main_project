@@ -1,6 +1,6 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
-import { listPayments, monthlyEquivalent, refundPayment } from "../services/payments/razorpay.service.js";
+import { listPayments, monthlyEquivalent } from "../services/payments/razorpay.service.js";
 import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
 import { validArea, validMobile } from "../utils/profileFields.js";
 
@@ -173,8 +173,8 @@ router.get("/overview", async (req, res) => {
 // ---------------------------------------------------------------------------
 // GET /api/admin/payments — transaction history straight from Razorpay.
 //
-// profiles only stores the LAST payment id per user, so it can't show history,
-// failed attempts or refunds. Razorpay is queried live and each payment is
+// profiles only stores the LAST payment id per user, so it can't show history
+// or failed attempts. Razorpay is queried live and each payment is
 // matched back to a profile by its order id / email where possible.
 // ---------------------------------------------------------------------------
 router.get("/payments", async (req, res) => {
@@ -237,7 +237,7 @@ router.get("/payments", async (req, res) => {
       orderId: p.order_id,
       amount: p.amount / 100, // Razorpay returns the smallest currency unit
       currency: p.currency,
-      status: p.status, // created | authorized | captured | refunded | failed
+      status: p.status, // created | authorized | captured | failed (Razorpay's value)
       method: p.method,
       description: p.description,
       email: p.email || profile?.email || null,
@@ -257,7 +257,6 @@ router.get("/payments", async (req, res) => {
     grossCaptured: captured.reduce((s, p) => s + p.amount, 0),
     capturedCount: captured.length,
     failedCount: failed.length,
-    refundedCount: payments.filter((p) => p.status === "refunded").length,
     currency: payments[0]?.currency || process.env.RAZORPAY_CURRENCY || "USD",
     // Attempts that failed vs. attempts that went through. A high rate here is
     // lost revenue, not just noise.
@@ -1230,40 +1229,6 @@ router.get("/audit-log", async (req, res) => {
   }
 
   return res.json({ success: true, entries: data || [] });
-});
-
-// ---------------------------------------------------------------------------
-// POST /api/admin/payments/:id/refund — refund without leaving the portal.
-// ---------------------------------------------------------------------------
-router.post("/payments/:id/refund", async (req, res) => {
-  const { id } = req.params;
-  const { amount, reason } = req.body || {};
-
-  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    return res.status(503).json({ success: false, message: "Razorpay keys are not configured." });
-  }
-
-  let refund;
-  try {
-    refund = await refundPayment(id, {
-      amount: amount != null ? amount : undefined,
-      notes: reason ? { reason, refundedBy: req.user.email || req.user.id } : undefined,
-    });
-  } catch (e) {
-    // Razorpay's own message ("payment already refunded", "not captured") is
-    // more useful to the admin than anything generic.
-    const msg = e?.error?.description || e?.message || "Refund failed.";
-    return res.status(400).json({ success: false, message: msg });
-  }
-
-  await logAudit(req, {
-    action: "payment.refund",
-    targetType: "payment",
-    targetId: id,
-    detail: { refundId: refund?.id, amount: refund?.amount ? refund.amount / 100 : null, reason: reason || null },
-  });
-
-  return res.json({ success: true, refund });
 });
 
 // ---------------------------------------------------------------------------
