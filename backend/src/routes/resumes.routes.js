@@ -217,7 +217,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     return reject(
       422,
       "AREA_MISMATCH",
-      `Your account is set up for ${area}, but this doesn't look like ${/^(?:[AEIOU]|SAP)/.test(area) ? "an" : "a"} ${area} resume. ` +
+      `Your account is set up for ${area}, but this doesn't look like ${/^(?:[AEIO]|SAP)/.test(area) ? "an" : "a"} ${area} resume. ` +
         `Please upload your ${area} resume. If your area of interest is wrong, contact ${SUPPORT_EMAIL}.`,
     );
   }
