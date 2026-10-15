@@ -26,7 +26,7 @@ export async function razorpayWebhook(req, res) {
       if (payment.id && orderId) {
         // What the order was for is read back from Razorpay (set server-side
         // at /order). The payment's own notes are empty: checkout sends none.
-        // Community orders carry no plan and are skipped here.
+        // Orders without a valid plan (e.g. old community orders) are skipped.
         const { userId, plan, billingCycle } = await fetchOrderNotes(orderId);
         if (userId && VALID_PAIRS.has(`${plan}:${billingCycle}`)) {
           await activatePaidPlan({ userId, plan, billingCycle, paymentId: payment.id, orderId });

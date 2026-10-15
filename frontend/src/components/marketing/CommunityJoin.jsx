@@ -1,19 +1,7 @@
-import { useState } from "react";
-import { Loader2, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MessageSquare } from "lucide-react";
 
-import { joinCommunity } from "../../services/community";
-import ConfirmPayment from "../ConfirmPayment";
-
-const STORE_KEY = "aifagen.communityLink";
-const PRICE = "$2.99";
-
-function readStored() {
-  try {
-    return localStorage.getItem(STORE_KEY) || "";
-  } catch {
-    return "";
-  }
-}
+import { getCommunityLink } from "../../services/community";
 
 const buttonStyle = (brand) => ({
   display: "inline-flex",
@@ -33,84 +21,53 @@ const buttonStyle = (brand) => ({
   transition: "transform .18s,box-shadow .18s",
 });
 
-/* Join button for the landing page's community section. Paying reveals the
-   WhatsApp invite link; it's remembered on this device so a returning payer
-   isn't asked to pay again. */
+/* Join button for the landing page's community section. The community is
+   free: the button opens the WhatsApp invite link in a new tab. */
 export default function CommunityJoin({ brand, faint }) {
-  const [link, setLink] = useState(readStored);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [confirming, setConfirming] = useState(false);
+  const [link, setLink] = useState("");
+  const [unavailable, setUnavailable] = useState(false);
 
-  async function pay() {
-    setConfirming(false);
-    setBusy(true);
-    setError("");
-    try {
-      const url = await joinCommunity();
-      try {
-        localStorage.setItem(STORE_KEY, url);
-      } catch {
-        /* storage blocked — the link is still shown below */
-      }
-      setLink(url);
-    } catch (e) {
-      if (e?.message !== "Checkout cancelled") setError(e?.message || "Payment failed. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(() => {
+    let live = true;
+    getCommunityLink()
+      .then((url) => live && setLink(url))
+      .catch(() => live && setUnavailable(true));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const note = { marginTop: 12, fontSize: 12.5, color: faint };
 
-  if (link) {
+  if (unavailable) {
     return (
       <>
-        <a
-          href={link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={buttonStyle(brand)}
-          className="v3-join-cta"
-        >
+        <span style={{ ...buttonStyle(brand), opacity: 0.6, cursor: "default" }}>
           <MessageSquare size={18} />
-          Open the WhatsApp Community
-        </a>
-        <div style={note}>You're in — thanks for joining.</div>
+          Join Our Community
+        </span>
+        <div style={note}>The community link isn't available right now. Please check back soon.</div>
       </>
     );
   }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setError("");
-          setConfirming(true);
+      <a
+        href={link || undefined}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-disabled={!link}
+        onClick={(e) => {
+          if (!link) e.preventDefault();
         }}
-        disabled={busy}
-        style={{ ...buttonStyle(brand), opacity: busy ? 0.75 : 1 }}
+        style={{ ...buttonStyle(brand), opacity: link ? 1 : 0.75 }}
         className="v3-join-cta"
       >
-        {busy ? <Loader2 size={18} className="animate-spin" /> : <MessageSquare size={18} />}
-        Join the Community — {PRICE}
-      </button>
-      <div style={note}>One-time payment of {PRICE}. No spam, ever.</div>
-      {error && <div style={{ ...note, color: "#dc2626" }}>{error}</div>}
-      {confirming && (
-        <ConfirmPayment
-          title="Join the community"
-          lines={[
-            ["Item", "Job Seeker Community access"],
-            ["Payment", "One-time"],
-          ]}
-          total={PRICE}
-          note="After payment you'll get the link to join our WhatsApp community. No account needed."
-          onConfirm={pay}
-          onCancel={() => setConfirming(false)}
-        />
-      )}
+        <MessageSquare size={18} />
+        Join Our Community
+      </a>
+      <div style={note}>Free to join on WhatsApp. No spam, ever.</div>
     </>
   );
 }

@@ -115,7 +115,7 @@ app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "AIFAGen Backend Running", timestamp: new Date() });
 });
 
-// Paid WhatsApp community — public, no login (see community.routes.js).
+// Free WhatsApp community invite link — public, no login (see community.routes.js).
 app.use("/api/community", publicRateLimiter, communityRoutes);
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
