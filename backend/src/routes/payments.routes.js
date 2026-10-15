@@ -24,7 +24,42 @@ export function periodEndFor(billingCycle, from = new Date()) {
 // PRICING for the actual amounts (source of truth) and
 // frontend/src/utils/plan.js for display copy. No free tier: profiles.plan
 // starts at 'none' and stays there until checkout completes.
-const VALID_PAIRS = new Set(["basic:monthly", "basic:semiannual", "premium:semiannual"]);
+export const VALID_PAIRS = new Set(["basic:monthly", "basic:semiannual", "premium:semiannual"]);
+
+// Turns on a paid plan for one Razorpay payment. Used by /verify and by the
+// webhook, so whichever arrives first applies it and the other is a no-op
+// (same payment id). Paying during the free trial keeps the free days: the
+// paid time starts when the trial would have ended, not at the payment.
+export async function activatePaidPlan({ userId, plan, billingCycle, paymentId, orderId }) {
+  const { data: current, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  if (error) throw error;
+  if (current.razorpay_payment_id === paymentId) return { profile: current, already: true };
+
+  const trialEnd = current.trial_ends_at ? new Date(current.trial_ends_at) : null;
+  const from = trialEnd && trialEnd > new Date() ? trialEnd : new Date();
+
+  const { data, error: upErr } = await supabase
+    .from("profiles")
+    .update({
+      plan,
+      subscription_status: "active",
+      billing_cycle: billingCycle,
+      current_period_end: periodEndFor(billingCycle, from),
+      razorpay_payment_id: paymentId,
+      razorpay_order_id: orderId,
+    })
+    .eq("id", userId)
+    .select()
+    .single();
+  if (upErr) throw upErr;
+
+  invalidatePlanCache(userId);
+  return { profile: data, already: false };
+}
 
 // Create a Razorpay order for a plan + billing cycle. The pair is validated
 // against VALID_PAIRS, and the actual amount is looked up server-side from
@@ -98,42 +133,21 @@ router.post("/verify", async (req, res) => {
   }
 
   // A signature stays valid forever, so re-posting the same payment later
-  // would otherwise push current_period_end forward again for free. Treat a
-  // payment that's already been applied as a no-op.
-  const { data: current, error: curErr } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", req.user.id)
-    .single();
-  if (curErr) {
-    console.error("Profile lookup before activation failed", curErr);
-    return res.status(500).json({ success: false, message: "Could not activate plan" });
-  }
-  if (current.razorpay_payment_id === razorpay_payment_id) {
-    return res.json({ success: true, profile: current, already: true });
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({
+  // would otherwise push current_period_end forward again for free.
+  // activatePaidPlan treats a payment that's already been applied as a no-op.
+  try {
+    const { profile, already } = await activatePaidPlan({
+      userId: req.user.id,
       plan,
-      subscription_status: "active",
-      billing_cycle: billingCycle,
-      current_period_end: periodEndFor(billingCycle),
-      razorpay_payment_id,
-      razorpay_order_id,
-    })
-    .eq("id", req.user.id)
-    .select()
-    .single();
-
-  if (error) {
+      billingCycle,
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+    });
+    return res.json({ success: true, profile, ...(already ? { already: true } : {}) });
+  } catch (error) {
     console.error("Plan activation failed", error);
     return res.status(500).json({ success: false, message: "Could not activate plan" });
   }
-
-  invalidatePlanCache(req.user.id);
-  return res.json({ success: true, profile: data });
 });
 
 // ---------------------------------------------------------------------------

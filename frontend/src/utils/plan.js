@@ -41,11 +41,12 @@ export function isSubscribed(profile) {
   );
 }
 
-/** Whole days left in a free trial (0 on the last day), or null if not in one. */
+/** Days left in a free trial, rounded up (1 on the last day; 0 once it has
+ *  ended), or null if not in one. 3.5 days left reads as 4, not 3. */
 export function trialDaysLeft(profile) {
   if (profile?.subscription_status !== "trialing" || !profile?.current_period_end) return null;
   const ms = new Date(profile.current_period_end) - new Date();
-  return ms > 0 ? Math.floor(ms / 86400000) : 0;
+  return ms > 0 ? Math.ceil(ms / 86400000) : 0;
 }
 
 export function isPaidPlan(plan) {

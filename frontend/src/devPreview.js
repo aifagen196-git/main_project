@@ -52,7 +52,38 @@ export const PREVIEW_PROFILE = {
   current_period_end: PREVIEW_BILLING_CYCLE[PREVIEW_PLAN]
     ? new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString()
     : null,
+  ...trialPreview(PREVIEW_PLAN),
 };
+
+// Free-trial states: `?preview=new` (can start the trial), `?preview=trial`
+// (3 days into it) and `?preview=ended` (trial over, must pick a plan).
+function trialPreview(mode) {
+  const day = 24 * 60 * 60 * 1000;
+  if (mode === "new") return { plan: "none", subscription_status: "inactive", trial_eligible: true };
+  if (mode === "trial") {
+    const start = Date.now() - 3 * day;
+    return {
+      plan: "basic",
+      subscription_status: "trialing",
+      billing_cycle: null,
+      trial_started_at: new Date(start).toISOString(),
+      trial_ends_at: new Date(start + 7 * day).toISOString(),
+      current_period_end: new Date(start + 7 * day).toISOString(),
+    };
+  }
+  if (mode === "ended") {
+    const start = Date.now() - 9 * day;
+    return {
+      plan: "basic",
+      subscription_status: "trialing",
+      billing_cycle: null,
+      trial_started_at: new Date(start).toISOString(),
+      trial_ends_at: new Date(start + 7 * day).toISOString(),
+      current_period_end: new Date(start + 7 * day).toISOString(),
+    };
+  }
+  return {};
+}
 
 // Mirrors the sample set in the v3 design so the preview can be compared
 // side-by-side with the mockup.

@@ -1,7 +1,5 @@
-import { supabase } from "../config/supabase.js";
-import { verifyWebhookSignature } from "../services/payments/razorpay.service.js";
-import { periodEndFor } from "./payments.routes.js";
-import { invalidatePlanCache } from "../middleware/requireActivePlan.js";
+import { fetchOrderNotes, verifyWebhookSignature } from "../services/payments/razorpay.service.js";
+import { VALID_PAIRS, activatePaidPlan } from "./payments.routes.js";
 
 // Razorpay webhook. Mounted with express.raw so the body is the exact bytes
 // the signature was computed over. Public (no JWT) — authenticity comes from
@@ -23,28 +21,23 @@ export async function razorpayWebhook(req, res) {
 
   try {
     if (event.event === "payment.captured" || event.event === "order.paid") {
-      const entity =
-        event.payload?.payment?.entity || event.payload?.order?.entity || {};
-      const notes = entity.notes || {};
-      const { userId, plan, billingCycle } = notes;
-
-      if (userId && plan) {
-        const cycle = billingCycle || "monthly";
-        await supabase
-          .from("profiles")
-          .update({
-            plan,
-            subscription_status: "active",
-            billing_cycle: cycle,
-            current_period_end: periodEndFor(cycle),
-          })
-          .eq("id", userId);
-        invalidatePlanCache(userId);
+      const payment = event.payload?.payment?.entity || {};
+      const orderId = payment.order_id || event.payload?.order?.entity?.id;
+      if (payment.id && orderId) {
+        // What the order was for is read back from Razorpay (set server-side
+        // at /order). The payment's own notes are empty: checkout sends none.
+        // Community orders carry no plan and are skipped here.
+        const { userId, plan, billingCycle } = await fetchOrderNotes(orderId);
+        if (userId && VALID_PAIRS.has(`${plan}:${billingCycle}`)) {
+          await activatePaidPlan({ userId, plan, billingCycle, paymentId: payment.id, orderId });
+        }
       }
     }
   } catch (e) {
+    // Razorpay retries a failed delivery for up to a day; activation is
+    // idempotent (keyed on the payment id), so a retry is safe.
     console.error("Webhook handling error", e);
-    // Still 200 so Razorpay doesn't retry forever on our internal error.
+    return res.status(500).json({ success: false });
   }
 
   return res.json({ received: true });

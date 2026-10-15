@@ -82,6 +82,12 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
   }
 
   const monthly = pending?.billingCycle === "monthly";
+  // Paying during the free trial keeps the free days: the server starts the
+  // paid time when the trial ends (activatePaidPlan).
+  const trialEnd =
+    profile?.subscription_status === "trialing" && profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date()
+      ? new Date(profile.trial_ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+      : null;
   const confirm = pending && (
     <ConfirmPayment
       title="Confirm your plan"
@@ -91,7 +97,9 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       ]}
       total={`$${pending.price.toLocaleString("en-US")}`}
       note={
-        monthly
+        trialEnd
+          ? `You'll be charged once today and your plan unlocks right away. You keep your free days: the paid time starts when your trial ends on ${trialEnd}.`
+          : monthly
           ? "You'll be charged once today for one month, and your plan unlocks right after payment. It doesn't renew automatically."
           : "You'll be charged once today and your plan unlocks right after payment."
       }
@@ -131,6 +139,8 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
             ? profile?.trial_eligible
               ? "Start with a free 7-day trial, or pick a plan to unlock your dashboard now."
               : "Pick a plan to unlock your dashboard. You pay once — nothing renews automatically."
+            : profile?.subscription_status === "trialing"
+            ? "Enjoying the trial? Pay now and your paid time starts when the free trial ends — you keep your free days."
             : "Change plans anytime. Charges apply immediately for the new plan."}
         </p>
       </div>
