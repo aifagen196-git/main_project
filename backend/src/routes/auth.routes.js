@@ -60,7 +60,12 @@ const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 // them to friendlier copy, so pass them through with a matching status.
 function fail(res, error, fallback) {
   const status = error?.status && error.status >= 400 && error.status < 500 ? error.status : 400;
-  return res.status(status).json({ success: false, message: error?.message || fallback });
+  // A database failure inside Supabase Auth comes back as an empty or "{}"
+  // message, or "Database error …" — none of it means anything to a user.
+  const msg = String(error?.message || "").trim();
+  const useless = !msg || msg === "{}" || /database error/i.test(msg);
+  if (useless) console.error("Auth error:", error);
+  return res.status(status).json({ success: false, message: useless ? fallback : msg });
 }
 
 router.post("/signup", async (req, res) => {
@@ -82,6 +87,15 @@ router.post("/signup", async (req, res) => {
   const mobile = toUsE164(d.mobile);
   if (!mobile) {
     return res.status(400).json({ success: false, message: "Enter a US mobile number, e.g. (555) 234-5678." });
+  }
+  // One account per mobile number (the database enforces it too, but its
+  // error reaches us as "{}").
+  const { data: taken } = await supabase.from("profiles").select("id").eq("mobile", mobile).limit(1);
+  if (taken?.length) {
+    return res.status(409).json({
+      success: false,
+      message: "This mobile number is already registered. Log in instead, or contact info@aifagenlabs.com.",
+    });
   }
   const { data, error } = await authClient().auth.signUp({
     email,

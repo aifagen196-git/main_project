@@ -355,6 +355,12 @@ router.post("/users", async (req, res) => {
   if (password && password.length < 8) {
     return res.status(400).json({ success: false, message: "Password must be at least 8 characters, or leave it blank." });
   }
+  // One account per mobile number (the database enforces it too, but its
+  // error from account creation is unreadable).
+  const { data: taken } = await supabase.from("profiles").select("id").eq("mobile", phone).limit(1);
+  if (taken?.length) {
+    return res.status(409).json({ success: false, message: "That mobile number is already on another account." });
+  }
 
   const { data: created, error } = await supabase.auth.admin.createUser({
     email,
@@ -614,6 +620,9 @@ router.patch("/users/:id/details", async (req, res) => {
     .select("id, email, full_name, first_name, last_name, mobile, area_of_interest, headline, location")
     .maybeSingle();
 
+  if (error?.code === "23505") {
+    return res.status(409).json({ success: false, message: "That mobile number is already on another account." });
+  }
   if (error) return res.status(500).json({ success: false, message: error.message });
   if (!data) return res.status(404).json({ success: false, message: "User not found." });
 
