@@ -42,6 +42,39 @@ function safeName(name = "") {
     .replace(/^-|-$/g, "");
 }
 
+// A .docx is a zip. A small file can be crafted to unpack to gigabytes and
+// take the whole server down while mammoth reads it, so check the sizes the
+// zip itself declares before opening it. Real resumes unpack to a few MB.
+const DOCX_MAX_UNPACKED = 50 * 1024 * 1024;
+const DOCX_MAX_ENTRIES = 2000;
+export function docxUnpackOk(buf) {
+  // End-of-central-directory record: signature 0x06054b50, within the last
+  // 64 KB + 22 bytes.
+  const min = Math.max(0, buf.length - 65557);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= min; i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) return false;
+  const entries = buf.readUInt16LE(eocd + 10);
+  const cdOffset = buf.readUInt32LE(eocd + 16);
+  if (entries > DOCX_MAX_ENTRIES || cdOffset >= buf.length) return false;
+  let pos = cdOffset;
+  let total = 0;
+  for (let n = 0; n < entries; n++) {
+    if (pos + 46 > buf.length || buf.readUInt32LE(pos) !== 0x02014b50) return false;
+    const size = buf.readUInt32LE(pos + 24);
+    if (size === 0xffffffff) return false; // zip64: never needed for a resume
+    total += size;
+    if (total > DOCX_MAX_UNPACKED) return false;
+    pos += 46 + buf.readUInt16LE(pos + 28) + buf.readUInt16LE(pos + 30) + buf.readUInt16LE(pos + 32);
+  }
+  return true;
+}
+
 // Server-side text extraction so the browser never needs pdfjs/mammoth.
 // NOTE: pdf-parse v2 exports a PDFParse class (no default function export).
 async function extractText(buffer, ext) {
@@ -101,6 +134,12 @@ router.post("/", upload.single("file"), async (req, res) => {
         : null;
   if (!ALLOWED.has(ext) || !realType) {
     return res.status(400).json({ success: false, message: "Please upload a PDF or DOCX resume." });
+  }
+  if (ext === "docx" && !docxUnpackOk(file.buffer)) {
+    return res.status(400).json({
+      success: false,
+      message: "That Word file couldn't be read. Please save it again as .docx or PDF and re-upload.",
+    });
   }
 
   const path = `${req.user.id}/${Date.now()}-${safeName(file.originalname)}`;

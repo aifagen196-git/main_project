@@ -76,10 +76,19 @@ router.post("/signup", async (req, res) => {
     return res.status(400).json({ success: false, message: "Email and password are required." });
   }
 
+  if (password.length < 8) {
+    return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
+  }
+
+  // Required here, not just on the form: an account with no name or area gets
+  // them from its first resume, which would skip the resume ownership checks.
   const firstName = str(d.first_name, 60);
   const lastName = str(d.last_name, 60);
   const area = str(d.area_of_interest, 40);
-  if (area && !validArea(area)) {
+  if (!firstName || !lastName) {
+    return res.status(400).json({ success: false, message: "Enter your first and last name." });
+  }
+  if (!validArea(area)) {
     return res.status(400).json({ success: false, message: "Choose an area of interest from the list." });
   }
   // Self sign-up is US only. (Admins can add accounts with Indian numbers

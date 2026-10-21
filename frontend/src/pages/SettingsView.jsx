@@ -162,7 +162,11 @@ export default function SettingsView({ profile, refresh }) {
       .toUpperCase() || "U";
 
   const plan = profile?.plan || "none";
-  const paid = isPaidPlan(plan) || isSubscribed(profile);
+  const trialing = profile?.subscription_status === "trialing" && isSubscribed(profile);
+  const paid = !trialing && (isPaidPlan(plan) || isSubscribed(profile));
+  const trialEnds = trialing
+    ? new Date(profile.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+    : null;
 
   const fieldLabel = {
     fontFamily: T.mono,
@@ -702,7 +706,7 @@ export default function SettingsView({ profile, refresh }) {
                 marginTop: 8,
               }}
             >
-              {PLAN_LABEL[plan] ||
+              {trialing ? "Free trial" : PLAN_LABEL[plan] ||
                 (plan && plan !== "none"
                   ? plan.charAt(0).toUpperCase() + plan.slice(1)
                   : "No plan")}
@@ -715,7 +719,9 @@ export default function SettingsView({ profile, refresh }) {
                 color: T.faint,
               }}
             >
-              {plan === "premium"
+              {trialing
+                ? `Your 7-day free trial (Basic features) runs until ${trialEnds}. Choose a plan any time to keep going.`
+                : plan === "premium"
                 ? "Your Acceleration Program is active — everything in Basic, plus immigration support, mentor calls and interview training."
                 : plan === "basic"
                   ? "Your Basic plan is active. Upgrade to Premium for immigration support, mentor calls and interview training."

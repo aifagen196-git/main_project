@@ -73,13 +73,19 @@ router.get("/overview", async (req, res) => {
     const d30 = isoDaysAgo(30);
     const d1 = isoDaysAgo(1);
 
-    const byStatus = (s) => (q) => q.eq("subscription_status", s);
-    const activePlan = (plan, cycle) => (q) =>
-      q.eq("plan", plan).eq("billing_cycle", cycle).in("subscription_status", ACTIVE_STATUSES);
+    // Plans never renew or get switched off when they end: status stays
+    // 'active'/'trialing' and current_period_end passes. So "current" means
+    // the end date hasn't passed, and paying means status 'active' (a free
+    // trial is 'trialing').
+    const nowIso = new Date().toISOString();
+    const current = (q) => q.or(`current_period_end.is.null,current_period_end.gt.${nowIso}`);
+    const byStatus = (s) => (q) => current(q.eq("subscription_status", s));
+    const paying = (plan) => (q) => current(q.eq("plan", plan).eq("subscription_status", "active"));
+    const activePlan = (plan, cycle) => (q) => paying(plan)(q.eq("billing_cycle", cycle));
 
     const [
       usersTotal, users7d, users30d,
-      subsActive, subsTrialing, subsPastDue, subsCanceled,
+      subsActive, subsTrialing, subsPastDue, subsCanceled, subsEnded,
       planBasic, planPremium,
       basicMonthly, basicSemi, premiumSemi,
       jobsLive, jobsTotal, jobs24h, internalJobs, jobsInactive, jobsStale,
@@ -93,8 +99,9 @@ router.get("/overview", async (req, res) => {
       countRows("profiles", byStatus("trialing")),
       countRows("profiles", byStatus("past_due")),
       countRows("profiles", byStatus("canceled")),
-      countRows("profiles", (q) => q.eq("plan", "basic").in("subscription_status", ACTIVE_STATUSES)),
-      countRows("profiles", (q) => q.eq("plan", "premium").in("subscription_status", ACTIVE_STATUSES)),
+      countRows("profiles", (q) => q.in("subscription_status", ACTIVE_STATUSES).lte("current_period_end", nowIso)),
+      countRows("profiles", paying("basic")),
+      countRows("profiles", paying("premium")),
       countRows("profiles", activePlan("basic", "monthly")),
       countRows("profiles", activePlan("basic", "semiannual")),
       countRows("profiles", activePlan("premium", "semiannual")),
@@ -150,6 +157,7 @@ router.get("/overview", async (req, res) => {
         trialing: subsTrialing,
         pastDue: subsPastDue,
         canceled: subsCanceled,
+        ended: subsEnded, // plan or free trial ran out; not renewed yet
         basic: planBasic,
         premium: planPremium,
         paying: planBasic + planPremium,

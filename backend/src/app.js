@@ -13,7 +13,6 @@ import {
   apiRateLimiter,
   authRateLimiter,
   heavyRateLimiter,
-  publicRateLimiter,
   sessionRateLimiter,
 } from "./middleware/rateLimiter.js";
 
@@ -116,7 +115,9 @@ app.get("/api/health", (req, res) => {
 });
 
 // Free WhatsApp community invite link — public, no login (see community.routes.js).
-app.use("/api/community", publicRateLimiter, communityRoutes);
+// Fetched on every landing-page visit, so it gets the roomier session limit,
+// not the old checkout limit (20 per 10 minutes per IP).
+app.use("/api/community", sessionRateLimiter, communityRoutes);
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
 app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot"], authRateLimiter);

@@ -82,6 +82,15 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
   }
 
   const monthly = pending?.billingCycle === "monthly";
+  // What ran out, if anything: the free trial or a paid plan.
+  const endedWhat =
+    ["active", "trialing"].includes(profile?.subscription_status) &&
+    profile?.current_period_end &&
+    new Date(profile.current_period_end) <= new Date()
+      ? profile.subscription_status === "trialing"
+        ? "free trial"
+        : "plan"
+      : null;
   // Paying during the free trial keeps the free days: the server starts the
   // paid time when the trial ends (activatePaidPlan).
   const trialEnd =
@@ -183,7 +192,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
         />
       )}
 
-      {profile?.trial_ends_at && !profile?.trial_eligible && new Date(profile.trial_ends_at) <= new Date() && (
+      {endedWhat && (
         <div
           style={{
             marginTop: 20,
@@ -198,9 +207,9 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
             textAlign: "center",
           }}
         >
-          Your free trial ended on{" "}
+          Your {endedWhat} ended on{" "}
           <strong>
-            {new Date(profile.trial_ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            {new Date(profile.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           </strong>
           . Choose a plan to keep using AIFAGen.
         </div>
