@@ -1106,10 +1106,18 @@ router.get("/collector-runs", async (req, res) => {
     }),
   );
 
+  // When the collectors stop entirely (e.g. GitHub refuses to start the
+  // scheduled runs), no run rows are written at all, so the per-source
+  // statuses above still look fine. Say how long it has been instead.
+  const lastRunAt = withStatus[0]?.started_at || null;
+  const hoursSinceLastRun = lastRunAt ? Math.round((Date.now() - Date.parse(lastRunAt)) / 3600e3) : null;
+
   return res.json({
     success: true,
     runs: withStatus,
     latestBySource: latest,
+    lastRunAt,
+    hoursSinceLastRun,
   });
 });
 
