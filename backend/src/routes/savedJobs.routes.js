@@ -48,6 +48,15 @@ router.post("/", async (req, res) => {
   const { job_id } = req.body;
   if (!job_id) return res.status(400).json({ success: false, message: "job_id required" });
 
+  // A generous cap so one account can't fill the database.
+  const { count } = await supabase
+    .from("saved_jobs")
+    .select("job_id", { count: "exact", head: true })
+    .eq("user_id", req.user.id);
+  if (count >= 1000) {
+    return res.status(409).json({ success: false, message: "You can save up to 1,000 jobs. Remove some to save more." });
+  }
+
   const { error } = await supabase
     .from("saved_jobs")
     .upsert({ user_id: req.user.id, job_id });

@@ -5,6 +5,8 @@ import { dbError } from "../utils/dbError.js";
 const router = express.Router();
 
 const STATUSES = ["applied", "interviewing", "assessment", "offer", "rejected"];
+// Far more than anyone tracks by hand; stops one account filling the database.
+const MAX_APPLICATIONS = 1000;
 
 // Only plain web links may be stored — the tracker renders this as an href.
 function cleanUrl(value) {
@@ -57,6 +59,17 @@ router.post("/", async (req, res) => {
     if (existing) {
       return res.json({ success: true, application: existing, already: true });
     }
+  }
+
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", req.user.id);
+  if (count >= MAX_APPLICATIONS) {
+    return res.status(409).json({
+      success: false,
+      message: `You can track up to ${MAX_APPLICATIONS} applications. Delete some old ones to add more.`,
+    });
   }
 
   const { data, error } = await supabase

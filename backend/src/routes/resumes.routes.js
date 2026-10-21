@@ -34,6 +34,23 @@ const upload = multer({
 
 const ALLOWED = new Set(["pdf", "docx"]);
 
+// Only the latest resume is used (matching, analysis); older uploads are kept
+// for a short history and then removed, so storage can't grow without limit.
+const KEEP_RESUMES = 10;
+async function pruneOldResumes(userId) {
+  const { data: old, error } = await supabase
+    .from("resumes")
+    .select("id, file_path")
+    .eq("user_id", userId)
+    .order("uploaded_at", { ascending: false })
+    .range(KEEP_RESUMES, KEEP_RESUMES + 499);
+  if (error || !old?.length) return;
+  const paths = old.map((r) => r.file_path).filter(Boolean);
+  if (paths.length) await supabase.storage.from("resumes").remove(paths).catch(() => {});
+  const { error: delErr } = await supabase.from("resumes").delete().in("id", old.map((r) => r.id)).eq("user_id", userId);
+  if (delErr) console.error("Pruning old resumes failed", delErr.message);
+}
+
 function safeName(name = "") {
   return name
     .normalize("NFKD")
@@ -187,12 +204,26 @@ router.post("/", upload.single("file"), async (req, res) => {
   let profile = null;
   let ai_analysis = null;
   if (extracted_text) {
-    try {
-      const result = await analyzeAndExtract(extracted_text);
-      profile = result.profile;
-      ai_analysis = result.analysis;
-    } catch (e) {
-      console.error("Resume processing failed", e.message);
+    // An upload costs AI calls like the other AI features, so it counts
+    // against the same daily allowance (Basic and the free trial: 20 a day).
+    const allowed = await withAiContext({ userId: req.user.id, feature: "resume_upload" }, async () => {
+      if (!(await consumeAiUsage(req.user.id))) return false;
+      try {
+        const result = await analyzeAndExtract(extracted_text);
+        profile = result.profile;
+        ai_analysis = result.analysis;
+      } catch (e) {
+        console.error("Resume processing failed", e.message);
+      }
+      return true;
+    });
+    if (!allowed) {
+      await supabase.storage.from("resumes").remove([path]).catch(() => {});
+      return res.status(429).json({
+        success: false,
+        code: "AI_LIMIT",
+        message: "You've reached today's limit for resume checks. Please try again tomorrow.",
+      });
     }
   }
 
@@ -287,6 +318,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   // New resume → the user's cached matches are stale.
   invalidateMatches(req.user.id);
+  await pruneOldResumes(req.user.id);
 
   return res.status(201).json({ success: true, resume: data });
 });

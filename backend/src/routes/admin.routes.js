@@ -1408,10 +1408,12 @@ router.post("/admins", async (req, res) => {
   const email = (req.body?.email || "").trim().toLowerCase();
   if (!email) return res.status(400).json({ success: false, message: "email is required." });
 
+  // Exact match: emails are stored lower-cased, and ilike would treat "_"
+  // (common in emails) as a wildcard and could pick a different account.
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, email")
-    .ilike("email", email)
+    .eq("email", email)
     .maybeSingle();
 
   if (!profile) {
