@@ -5,6 +5,7 @@ import { supabase } from "../config/supabase.js";
 import { requireAuth } from "../middleware/auth.js";
 import { validArea } from "../utils/profileFields.js";
 import { toUsE164 } from "../utils/phone.js";
+import { assuranceLevel } from "../utils/sessionClaims.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -179,6 +180,88 @@ router.post("/logout", requireAuth, async (req, res) => {
   const { error } = await supabase.auth.admin.signOut(token, "local");
   if (error) console.error("Sign-out failed", error.message);
   return res.json({ success: true });
+});
+
+// ---------------------------------------------------------------------------
+// Two-step sign-in with an authenticator app (TOTP), required for admin pages
+// (middleware/requireAdmin.js). Supabase Auth creates the secret, checks the
+// codes and upgrades the session to "aal2"; these calls act as the signed-in
+// user. If an admin loses their phone, remove their factor in the Supabase
+// dashboard (Authentication → Users → the user → MFA) and they set it up again.
+// ---------------------------------------------------------------------------
+async function gotrue(path, method, token, body) {
+  const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/${path}`, {
+    method,
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+const bearer = (req) => req.get("authorization").split(" ")[1];
+
+// Whether this session has passed the second step, and the user's set-up apps.
+router.get("/mfa", requireAuth, (req, res) => {
+  const verified = (req.user.factors || []).filter((f) => f.status === "verified" && f.factor_type === "totp");
+  return res.json({
+    success: true,
+    aal: assuranceLevel(req),
+    factors: verified.map((f) => ({ id: f.id, name: f.friendly_name || "Authenticator app" })),
+  });
+});
+
+// Start setting up an authenticator app: returns the QR code to scan. Clears
+// any half-finished set-up first. Only for users with no app set up yet —
+// replacing one goes through the dashboard (see above).
+router.post("/mfa/enroll", requireAuth, async (req, res) => {
+  const factors = req.user.factors || [];
+  if (factors.some((f) => f.status === "verified")) {
+    return res.status(409).json({ success: false, message: "An authenticator app is already set up for this account." });
+  }
+  for (const f of factors) await gotrue(`factors/${f.id}`, "DELETE", bearer(req));
+
+  const r = await gotrue("factors", "POST", bearer(req), {
+    factor_type: "totp",
+    // Names must be unique per user; two set-ups started together would clash.
+    friendly_name: `Authenticator ${new Date().toISOString().slice(0, 10)} ${Math.random().toString(36).slice(2, 6)}`,
+    issuer: "AIFAGen Admin",
+  });
+  if (!r.ok || !r.data?.totp) {
+    console.error("MFA enroll failed", r.status, r.data?.msg || r.data?.message || r.data?.error_code);
+    return res.status(502).json({ success: false, message: "Could not start two-step set-up. Please try again." });
+  }
+  // Supabase returns the QR code as raw SVG markup; send it as an image URL
+  // the browser can show directly.
+  const qr = String(r.data.totp.qr_code || "");
+  return res.json({
+    success: true,
+    factorId: r.data.id,
+    qrCode: qr.startsWith("data:") ? qr : `data:image/svg+xml;base64,${Buffer.from(qr).toString("base64")}`,
+    secret: r.data.totp.secret,
+  });
+});
+
+// Check a 6-digit code. On success the session is upgraded to aal2 and the
+// new session is returned (the browser swaps it in).
+router.post("/mfa/verify", requireAuth, async (req, res) => {
+  const factorId = typeof req.body?.factorId === "string" ? req.body.factorId : "";
+  const code = String(req.body?.code || "").replace(/\D/g, "");
+  if (!/^[0-9a-f-]{36}$/i.test(factorId) || code.length !== 6) {
+    return res.status(400).json({ success: false, message: "Enter the 6-digit code from your authenticator app." });
+  }
+  const ch = await gotrue(`factors/${factorId}/challenge`, "POST", bearer(req), {});
+  if (!ch.ok || !ch.data?.id) {
+    return res.status(400).json({ success: false, message: "Could not check the code. Please try again." });
+  }
+  const v = await gotrue(`factors/${factorId}/verify`, "POST", bearer(req), { challenge_id: ch.data.id, code });
+  if (!v.ok || !v.data?.access_token) {
+    return res.status(400).json({ success: false, message: "That code didn't match. Check the time on your phone and try the newest code." });
+  }
+  return res.json({ success: true, session: publicSession(v.data) });
 });
 
 export default router;

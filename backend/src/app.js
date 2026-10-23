@@ -123,7 +123,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/community", sessionRateLimiter, communityRoutes);
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
-app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot"], authRateLimiter);
+app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot", "/api/auth/mfa/verify"], authRateLimiter);
 app.use("/api/auth", sessionRateLimiter, authRoutes);
 
 // =============================

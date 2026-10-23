@@ -1,4 +1,5 @@
 import { supabase } from "../config/supabase.js";
+import { assuranceLevel } from "../utils/sessionClaims.js";
 
 // Chain after requireAuth (needs req.user already set). Checks the same
 // public.admins allowlist the admin app's Supabase RLS policies use (see
@@ -21,6 +22,17 @@ export async function requireAdmin(req, res, next) {
   }
   if (!data) {
     return res.status(403).json({ success: false, message: "Admin access required." });
+  }
+
+  // Admin pages can change plans and see every user, so a password alone
+  // isn't enough: the session must have passed the authenticator-app step
+  // (/api/auth/mfa/*). The admin app sends admins through that step.
+  if (assuranceLevel(req) !== "aal2") {
+    return res.status(403).json({
+      success: false,
+      code: "MFA_REQUIRED",
+      message: "Admin pages need two-step sign-in. Enter the code from your authenticator app.",
+    });
   }
 
   return next();
