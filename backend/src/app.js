@@ -70,7 +70,10 @@ app.use(
 
 app.use(helmet());
 app.use(compression());
-app.use(morgan("dev"));
+// Request log: method, path, status, time. The query string is left out —
+// admin searches put emails and names there, and those don't belong in logs.
+morgan.token("path", (req) => (req.originalUrl || req.url).split("?")[0]);
+app.use(morgan(":method :path :status :response-time ms"));
 
 // Restore the /api prefix when a reverse proxy has stripped it.
 //

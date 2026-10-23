@@ -92,14 +92,26 @@ export function docxUnpackOk(buf) {
   return true;
 }
 
+// PDFs: resumes are a few pages. A huge or crafted PDF shouldn't tie up the
+// server, so refuse long files, read only the first pages, and give up after
+// a time limit. isEvalSupported: false stops pdf.js compiling font code from
+// the file (the route used by the 2024 pdf.js code-execution bug).
+const PDF_MAX_PAGES = 20;
+const PDF_TEXT_PAGES = 10;
+const EXTRACT_TIMEOUT_MS = 20_000;
+
+class TooManyPages extends Error {}
+
 // Server-side text extraction so the browser never needs pdfjs/mammoth.
 // NOTE: pdf-parse v2 exports a PDFParse class (no default function export).
 async function extractText(buffer, ext) {
   if (ext === "pdf") {
     const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const parser = new PDFParse({ data: new Uint8Array(buffer), isEvalSupported: false });
     try {
-      const result = await parser.getText();
+      const info = await parser.getInfo();
+      if (info.total > PDF_MAX_PAGES) throw new TooManyPages();
+      const result = await parser.getText({ first: PDF_TEXT_PAGES });
       return result.text || "";
     } finally {
       await parser.destroy().catch(() => {});
@@ -172,9 +184,21 @@ router.post("/", upload.single("file"), async (req, res) => {
   let extracted_text = "";
   let extractionError = null;
   try {
-    extracted_text = await extractText(file.buffer, ext);
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Text extraction timed out")), EXTRACT_TIMEOUT_MS);
+    });
+    extracted_text = await Promise.race([extractText(file.buffer, ext), timeout]).finally(() => clearTimeout(timer));
   } catch (e) {
-    console.error("Text extraction failed", e);
+    if (e instanceof TooManyPages) {
+      await supabase.storage.from("resumes").remove([path]).catch(() => {});
+      return res.status(422).json({
+        success: false,
+        code: "TOO_MANY_PAGES",
+        message: `That PDF is over ${PDF_MAX_PAGES} pages. Please upload your resume on its own.`,
+      });
+    }
+    console.error("Text extraction failed", e.message);
     extractionError = e;
   }
 
