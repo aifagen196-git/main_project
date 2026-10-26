@@ -47,7 +47,7 @@ const profileRow = async (id) => (await sb("GET", `/rest/v1/profiles?id=eq.${id}
 
 // The webhook handler, called directly with a correctly signed test event.
 process.env.RAZORPAY_WEBHOOK_SECRET = "local-test-" + tag;
-const { razorpayWebhook } = await import(pathToFileURL(path.join(wt, "backend/src/routes/paymentsWebhook.js")).href);
+const { razorpayWebhook } = await import(pathToFileURL(path.join(wt, "backend/src/routes/paymentsWebhook.routes.js")).href);
 async function webhook(orderId, paymentId) {
   const raw = Buffer.from(JSON.stringify({ event: "payment.captured", payload: { payment: { entity: { id: paymentId, order_id: orderId } } } }));
   const sig = crypto.createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET).update(raw).digest("hex");

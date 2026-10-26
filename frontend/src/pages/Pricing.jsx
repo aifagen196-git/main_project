@@ -6,33 +6,19 @@ import { startCheckout, startFreeTrial } from "../services/subscription";
 import { signOut } from "../services/auth";
 import ConfirmPayment from "../components/ConfirmPayment";
 
-/* Pricing screen in the "AIFAGen v3" design language.
+/* Plan picker. The cards come from PRICING_CARDS (utils/plan.js); prices are
+ * not repeated here. One-time plans are "semiannual" internally (access still
+ * ends server-side), but the UI never shows the period.
  *
- * Three cards, no free tier: Basic monthly ($229), Basic one-time payment
- * ($1299 — same features as monthly), and Premium one-time payment ($2499).
- * One-time plans are "semiannual" internally (access is still time-limited
- * server-side), but the UI never shows the period. PRICING_CARDS (utils/plan.js) is the
- * display list; each card carries both `id` (the plan tier) and
- * `billingCycle`, since Basic now has two cards with the same id.
+ * Two render modes:
+ *  - onboarding: full-screen gate for an account with no plan, with its own
+ *    header (no sidebar yet). Offers the 7-day free trial (no payment, one
+ *    per account and mobile number) or paying straight away.
+ *  - in-app (/pricing, inside AppShell): reached from Billing; a trial user
+ *    can pay here at any time and the paid time starts when the trial ends.
  *
- * Two render modes, unchanged from before this pass:
- *  - onboarding: full-screen gate shown right after account creation, with
- *    its own header (no sidebar exists yet — the user hasn't picked a plan).
- *    With no free tier, this is now the ONLY way into the app for a new
- *    account: checkout must complete before subscription_status becomes
- *    active/trialing (see isSubscribed in utils/plan.js).
- *  - in-app (/pricing route, inside AppShell): plain section, no header,
- *    reached from "Manage subscription" on Billing.
- *
- * Checkout (startCheckout — real Razorpay order + verify flow, see
- * services/subscription.js) charges the card immediately. CTA and body copy
- * now say so plainly — the old "Start 7-Day Free Trial" wording was removed
- * because no delayed-charge / trial-period mechanism exists (that would be a
- * Razorpay Subscriptions integration, not the one-time Orders flow here).
- *
- * Trust strip corrected: it previously said "Payments handled securely by
- * Stripe", but this app's payment processor is Razorpay; there is no Stripe
- * integration anywhere in the codebase.
+ * Paying runs a Razorpay order + verify (services/subscription.js) and charges
+ * immediately. Nothing renews automatically.
  */
 
 const P = {

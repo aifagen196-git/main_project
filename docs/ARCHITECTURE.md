@@ -79,8 +79,9 @@ Name, mobile and area of interest are **admin-only fields**; users cannot edit t
 `services/jobs/matching.service.js`: loads the user's latest resume profile and the
 live job pool, drops jobs that fail hard rules (role family, seniority, location), scores
 the rest, asks an AI judge about the top few, and caches the result per user for 30
-minutes. A user with no resume gets no matches. Background:
-[MATCHING_INTEGRATION.md](MATCHING_INTEGRATION.md).
+minutes. A user with no resume gets no matches. Before changing the scoring, run
+`npm run test:matching` in `backend/`: it checks that relevant jobs still outrank
+irrelevant ones for a set of sample candidates (it also runs in CI).
 
 ## Jobs and the collectors
 
@@ -94,7 +95,8 @@ admin Collectors page shows per-source status and warns after 12 hours with no r
 
 Tables: `profiles` (one per user; plan, trial, area, mobile), `resumes`, `applications`,
 `saved_jobs`, `user_job_preferences`, `jobs`, `internal_jobs`, `ai_usage`, `admins`,
-`admin_audit_log`, `collector_runs`, `manual_payments`, `trial_claims`. Storage buckets:
+`admin_audit_log`, `collector_runs`, `manual_payments`, `trial_claims`
+(`user_job_preferences` is no longer used: matching works from the resume only). Storage buckets:
 `resumes` (private, PDF/DOCX) and `avatars` (public images). `supabase/migrations/` is the
 full history; run in order, never edit a file that has been run. The sign-up trigger
 `handle_new_user` copies name, mobile and area into `profiles` and drops unknown areas.
@@ -108,7 +110,12 @@ full history; run in order, never edit a file that has been run. The sign-up tri
 - All network calls go through `services/` (`api.js` adds the token, refreshes it on
   401, and turns 402/403 into a profile refresh).
 - `utils/plan.js` holds plan rules and the plan cards shown on both the landing page and
-  the in-app plan picker; `utils/areas.js` the area list.
+  the in-app plan picker; `utils/areas.js` the area list; `data/site.js` the contact
+  email, phone, offices, social links and the WhatsApp community link.
+- Inner marketing pages (About, Services, Contact, legal pages ...) share
+  `components/marketing/SiteHeader.jsx` and `SiteFooter.jsx`; the landing page uses
+  the footer in its compact form. Pages are picked from `MARKETING_PAGES` in
+  `AIFAGen.jsx`.
 - The production build gets a Content-Security-Policy meta tag (`vite.config.js`); if the
   site starts using a new outside service, add it there or the browser will block it.
 

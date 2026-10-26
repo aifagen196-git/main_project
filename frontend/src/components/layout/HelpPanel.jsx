@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { PLAN_LABEL } from "../../utils/plan";
+import { SUPPORT_EMAIL, PHONE_HREF } from "../../data/site";
 
 /* Help & Support panel, opened from the sidebar.
  *
@@ -24,11 +25,6 @@ const H = {
   display: "'Bricolage Grotesque',sans-serif",
   mono: "'JetBrains Mono',monospace",
 };
-
-const SUPPORT_EMAIL = "info@aifagenlabs.com";
-// Only the dialable form is used — the display text no longer shows the raw
-// number (see the "Call us" link below).
-const SUPPORT_PHONE_HREF = "+14752240417";
 
 // Answers describe how the product actually behaves today.
 const FAQS = [
@@ -277,7 +273,7 @@ export default function HelpPanel({ open, onClose, profile, plan }) {
             Email us
           </a>
           <a
-            href={`tel:${SUPPORT_PHONE_HREF}`}
+            href={PHONE_HREF}
             className="v3-btn-outline-light"
             style={{
               display: "block",

@@ -1,8 +1,5 @@
 import { MessageSquare } from "lucide-react";
-
-// The WhatsApp job-seeker community is free and public, so the invite link
-// lives here rather than behind the server.
-export const COMMUNITY_WHATSAPP_URL = "https://chat.whatsapp.com/GjUoKpDEyM415A9WFzuXGP";
+import { COMMUNITY_WHATSAPP_URL } from "../../data/site";
 
 const buttonStyle = (brand) => ({
   display: "inline-flex",

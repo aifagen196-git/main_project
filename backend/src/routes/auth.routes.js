@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { validArea } from "../utils/profileFields.js";
 import { toUsE164 } from "../utils/phone.js";
 import { assuranceLevel } from "../utils/sessionClaims.js";
+import { SUPPORT_EMAIL } from "../config/site.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -104,7 +105,7 @@ router.post("/signup", async (req, res) => {
   if (taken?.length) {
     return res.status(409).json({
       success: false,
-      message: "This mobile number is already registered. Log in instead, or contact info@aifagenlabs.com.",
+      message: `This mobile number is already registered. Log in instead, or contact ${SUPPORT_EMAIL}.`,
     });
   }
   const { data, error } = await authClient().auth.signUp({

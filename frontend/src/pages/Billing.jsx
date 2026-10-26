@@ -2,22 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { Rocket, Crown, Star, Mail } from "lucide-react";
 
 import { PLAN_LABEL, isPaidPlan } from "../utils/plan";
+import { SUPPORT_EMAIL } from "../data/site";
 
-/* Billing screen in the "AIFAGen v3" design language.
- *
- * "Manage subscription" used to call openBillingPortal(), which unconditionally
- * threw — Razorpay has no hosted self-serve portal the way Stripe does, so
- * that function only ever produced an error, behind a whole card promising
- * "invoices, payment method and cancel — all in the secure Stripe portal"
- * (wrong processor name too; this app's checkout is Razorpay throughout,
- * see services/subscription.js). Both the fake portal and the fake card are
- * gone. The real ways to change something about a subscription today:
- *   - switch plans / billing cycle → the Pricing screen, which runs the real
- *     Razorpay checkout (Pricing.jsx, unchanged this pass)
- *   - anything Pricing can't do, most notably cancelling a paid plan back to
- *     free — POST /api/payments/free only activates from plan 'none'/'free'
- *     (see backend payments.routes.js), so a paid user can't self-serve that
- *     from the UI yet → email, same address the Help panel already uses
+/* Billing: the current plan and when access ends. Plans never renew, so
+ * there is nothing to cancel. Changing plan goes through the Pricing screen
+ * (Razorpay checkout); anything else is by email to SUPPORT_EMAIL.
  */
 
 const B = {
@@ -48,7 +37,6 @@ const BILLING_CYCLE_LABEL = {
   semiannual: "One-time payment",
 };
 
-const SUPPORT_EMAIL = "info@aifagenlabs.com";
 
 export default function Billing({ profile }) {
   const navigate = useNavigate();

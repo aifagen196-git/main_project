@@ -22,8 +22,8 @@ import {
   areaMatches,
   nameMatches,
 } from "../services/resume/resumeOwnership.js";
+import { SUPPORT_EMAIL } from "../config/site.js";
 
-const SUPPORT_EMAIL = "info@aifagenlabs.com";
 
 const router = express.Router();
 

@@ -6,8 +6,9 @@ import { updateProfile, uploadAvatar, removeAvatar, validateAvatarFile } from ".
 import { PLAN_LABEL, isPaidPlan, isSubscribed } from "../utils/plan";
 import { AREA_LABEL } from "../utils/areas";
 
-const LOCKED_HINT = "To change this, contact support at info@aifagenlabs.com.";
+const LOCKED_HINT = `To change this, contact support at ${SUPPORT_EMAIL}.`;
 import { getPreference, setPreference, resolveTheme } from "../lib/theme";
+import { SUPPORT_EMAIL } from "../data/site";
 
 /* Port of the "AIFAGen v3" settings screen, redesigned from the original
  * exact port: an identity strip (avatar, name, email) heads the Profile

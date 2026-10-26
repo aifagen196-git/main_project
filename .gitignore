@@ -32,6 +32,8 @@ coverage/
 # Temporary
 tmp/
 temp/
+# Supabase CLI cache
+supabase/.temp/
 
 # Stale backup archives — duplicate source already tracked as real files
 job-engine.zip
@@ -42,7 +44,6 @@ frontend.zip
 # just untracked.
 /verify/
 /admin/
-/DEPLOY.md
 /IMPLEMENTATION_NOTES.md
 
 # job-engine/ is NOT tracked here — it's its own repo

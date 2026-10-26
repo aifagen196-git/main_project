@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import AuthScreen from "./components/AuthScreen";
@@ -8,7 +8,6 @@ import { useProfile } from "./hooks/useProfile";
 import { signOut } from "./services/auth";
 import { DEV_PREVIEW } from "./devPreview";
 import AppShell from "./components/layout/AppShell";
-import Card from "./components/common/Card";
 import Pricing from "./pages/Pricing";
 import { PRICING_CARDS, isSubscribed } from "./utils/plan";
 import AboutPage from "./components/marketing/AboutPage";
@@ -21,6 +20,7 @@ import Collaborate from "./components/marketing/Collaborate";
 import Partners from "./components/marketing/Partners";
 import PrivacyPolicy from "./components/marketing/PrivacyPolicy";
 import Terms from "./components/marketing/Terms";
+import SiteFooter from "./components/marketing/SiteFooter";
 import {
   Sparkles,
   Briefcase,
@@ -32,61 +32,25 @@ import {
   Pencil,
   CheckCircle2,
   Check,
-  ChevronDown,
   ChevronRight,
   ArrowRight,
   Menu,
-  X,
   Bell,
-  BookmarkCheck,
-  MapPin,
-  Clock,
   TrendingUp,
   Calendar,
   Target,
-  Trophy,
-  Eye,
   Send,
   Loader2,
-  CreditCard,
-  Shield,
-  Lock,
-  Globe,
-  Linkedin,
-  Instagram,
   Twitter,
-  Github,
-  Phone,
-  Download,
   Plus,
-  Star,
-  Crown,
-  Rocket,
   Mail,
   Wand2,
-  CircleDollarSign,
   BadgeCheck,
-  GraduationCap,
   Mic,
   HelpCircle,
-  LogOut,
   ClipboardList,
 } from "lucide-react";
 
-import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import CommunityJoin from "./components/marketing/CommunityJoin";
 
 // Theming (fonts, brand colors, .card/.num/.btn-brand) now lives in
@@ -2359,110 +2323,7 @@ function Marketing({ enter, go }) {
         </div>
       </section>
 
-      {/* ---------------- FOOTER ---------------- */}
-      <footer className="relative bg-slate-900 overflow-hidden">
-        <div className="h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-64 w-[36rem] rounded-full bg-brand-500/25 blur-3xl"
-        />
-
-        {/* Brand block — centered now that the Company/Connect link columns
-            (About, Careers, Collaborate, Terms, Services, Partners, Privacy,
-            Contact) have been removed; a single block in a 3-col grid would
-            sit lopsided against a wall of empty space. */}
-        <div className="relative max-w-6xl mx-auto px-5 py-14 flex flex-col items-center text-center">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 ring-1 ring-brand-500/30">
-              <img src="/logo.png" alt="AIFAGen Labs" className="h-6 w-6 invert" />
-            </div>
-            <span className="font-display text-lg font-extrabold text-white">
-              AIFAGen <span className="text-brand-400">Labs</span>
-            </span>
-          </div>
-          <p className="text-sm text-slate-400 mt-4 max-w-sm leading-relaxed">
-            Building Intelligent Ecosystems for the Future. AI for All
-            Generations.
-          </p>
-          <div className="flex items-center gap-2.5 mt-5">
-            {[
-              [Linkedin, "LinkedIn", "https://www.linkedin.com/company/aifagenlabs/"],
-              [Twitter, "Twitter", "https://x.com/aifagenlabs"],
-              [Instagram, "Instagram", "https://www.instagram.com/aifagen_labs?igsh=Y3hqcWJoZWgxMDU0"],
-              [Mail, "Email", "mailto:pmo@aifagenlabs.com"],
-            ].map(([Icon, label, href], i) => (
-              <a
-                key={i}
-                href={href}
-                aria-label={label}
-                target={href.startsWith("http") ? "_blank" : undefined}
-                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:bg-brand-500 hover:text-white hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200"
-              >
-                <Icon size={16} />
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Contact + locations bar — centered to match the brand block above,
-            now that the link columns that used to balance this row are gone. */}
-        <div className="relative border-t border-white/10 bg-black/20">
-          <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col items-center gap-4">
-            <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-slate-400">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
-                <Globe size={13} className="text-brand-400" />
-                Global Operations
-              </span>
-              <a
-                href="mailto:pmo@aifagenlabs.com"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
-              >
-                <Mail size={13} className="text-brand-400" />
-                pmo@aifagenlabs.com
-              </a>
-              <a
-                href="tel:+14752240417"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 hover:border-brand-400/50 hover:text-white transition"
-              >
-                <Phone size={13} className="text-brand-400" />
-                +1 (475) 224-0417
-              </a>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
-                <MapPin size={13} className="text-brand-400" />
-                Hyderabad, India
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1.5">
-                <MapPin size={13} className="text-brand-400" />
-                USA: New Jersey
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-slate-500">
-              <span>© {new Date().getFullYear()} AIFAGen Labs Pvt. Ltd. All rights reserved.</span>
-              <button
-                type="button"
-                onClick={() => {
-                  go("privacy");
-                  window.scrollTo(0, 0);
-                }}
-                className="hover:text-white underline-offset-2 hover:underline"
-              >
-                Privacy Policy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  go("terms");
-                  window.scrollTo(0, 0);
-                }}
-                className="hover:text-white underline-offset-2 hover:underline"
-              >
-                Terms &amp; Conditions
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter go={go} compact />
     </div>
   );
 }
@@ -2478,6 +2339,20 @@ const RECOVERY_AT_LOAD =
 // rest of the marketing site stays on "/".
 const LEGAL_PAGES = { "/privacy": "privacy", "/privacy-policy": "privacy", "/terms": "terms" };
 const legalPageAt = (path) => LEGAL_PAGES[path.replace(/\/+$/, "")] || null;
+
+// Inner marketing pages by id (the landing page is the default).
+const MARKETING_PAGES = {
+  about: AboutPage,
+  innovation: InnovationLabs,
+  caseStudies: CaseStudies,
+  services: Services,
+  products: Products,
+  contact: Contact,
+  collaborate: Collaborate,
+  partners: Partners,
+  privacy: PrivacyPolicy,
+  terms: Terms,
+};
 
 /* ===================== ROOT ===================== */
 export default function AIFAGen() {
@@ -2547,7 +2422,6 @@ export default function AIFAGen() {
     refresh,
     error: profileError,
   } = useProfile(user);
-  const [finalizing, setFinalizing] = useState(false);
 
   // Navigate to a marketing page; if already on it, scroll to top so the click responds.
   const goTo = (p) => {
@@ -2557,34 +2431,6 @@ export default function AIFAGen() {
       setMarketingPage(p);
     }
   };
-
-  // Handle the redirect back from Stripe Checkout.
-  useEffect(() => {
-    if (!user) return;
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-    if (!checkout) return;
-
-    // Always send the user into the app after a checkout attempt.
-    setMode("app");
-
-    if (checkout === "success") {
-      // The webhook may take a moment; poll the profile until it's active.
-      setFinalizing(true);
-      let tries = 0;
-      const timer = setInterval(async () => {
-        tries += 1;
-        const p = await refresh();
-        if (isSubscribed(p) || tries >= 8) {
-          clearInterval(timer);
-          setFinalizing(false);
-        }
-      }, 2500);
-    }
-    // Clean the URL either way.
-    window.history.replaceState({}, "", window.location.pathname);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   const Splash = ({ text }) => (
     <div className="page-bg min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
@@ -2615,67 +2461,15 @@ export default function AIFAGen() {
     );
   }
 
+  const MarketingPage = MARKETING_PAGES[marketingPage];
+
   return (
     <div className="font-body">
       <style>{CSS}</style>
 
       {mode === "marketing" ? (
-        marketingPage === "about" ? (
-          <AboutPage
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "innovation" ? (
-          <InnovationLabs
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "caseStudies" ? (
-          <CaseStudies
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "services" ? (
-          <Services
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "products" ? (
-          <Products
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "contact" ? (
-          <Contact
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "collaborate" ? (
-          <Collaborate
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "partners" ? (
-          <Partners
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "privacy" ? (
-          <PrivacyPolicy
-            home={() => setMarketingPage("home")}
-            enter={() => setMode("app")}
-            go={goTo}
-          />
-        ) : marketingPage === "terms" ? (
-          <Terms
+        MarketingPage ? (
+          <MarketingPage
             home={() => setMarketingPage("home")}
             enter={() => setMode("app")}
             go={goTo}
@@ -2690,8 +2484,6 @@ export default function AIFAGen() {
             setMode("marketing");
           }}
         />
-      ) : finalizing ? (
-        <Splash text="Confirming your payment…" />
       ) : profileError && !profile ? (
         // A failed profile fetch previously fell through to the loading splash
         // and stuck there forever (no retry path). Surface it instead.

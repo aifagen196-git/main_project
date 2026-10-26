@@ -57,7 +57,7 @@ user; uploads and AI writes 20 per 10 min; matches 30 per minute; see
 
 Valid pairs: `basic:monthly`, `basic:semiannual` (one-time), `premium:semiannual` (one-time).
 
-## Jobs, saved jobs, applications, preferences (all need a plan)
+## Jobs, saved jobs, applications (all need a plan)
 
 | Method and path | Purpose |
 |---|---|
@@ -65,7 +65,6 @@ Valid pairs: `basic:monthly`, `basic:semiannual` (one-time), `premium:semiannual
 | `GET /jobs/search?q=` | keyword search over all jobs (2+ characters) |
 | `GET /saved-jobs`, `GET /saved-jobs/ids`, `POST /saved-jobs`, `DELETE /saved-jobs/:jobId` | bookmarks (max 1,000) |
 | `GET /applications`, `POST /applications`, `PATCH /applications/:id`, `DELETE /applications/:id` | tracker (max 1,000); statuses applied, interviewing, assessment, offer, rejected |
-| `GET /preferences`, `PUT /preferences` | job preferences |
 | `GET /internal-jobs` | postings added by the team |
 | `GET /analytics` | application statistics |
 

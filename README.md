@@ -46,10 +46,11 @@ Preview mode only works in dev builds.
 
 ```bash
 cd backend && npm test         # 17 unit tests, about 3 seconds, no database or keys
+cd backend && npm run test:matching   # ranking check: relevant jobs outrank irrelevant ones
 cd frontend && npm run build   # the site must compile
 ```
 
-GitHub runs both on every push and pull request (`.github/workflows/ci.yml`); a
+GitHub runs all three on every push and pull request (`.github/workflows/ci.yml`); a
 red cross means do not deploy that version.
 
 The live-database checks in `backend/test/integration/` (sign-up, trial, payments,
@@ -64,13 +65,15 @@ backend/src/
   routes/                  one file per area: auth, profile, payments, resumes, jobs ...
   middleware/              requireAuth, requireVerified, requireActivePlan, requireAdmin, rate limits
   services/                business logic: ai/, matching/, jobs/, resume/, payments/
-  utils/ prompts/ knowledge/   small helpers, AI prompts, skill lists
+  config/ utils/ prompts/ knowledge/   Supabase client and support address, helpers, AI prompts, skill lists
+backend/scripts/           evalMatching.js (npm run test:matching)
 backend/test/              unit tests (npm test) and integration/ (by hand)
 frontend/src/
   AIFAGen.jsx              landing page + app routing (large; being split up)
   pages/                   signed-in screens: Dashboard, JobMatches, Resume, Billing ...
-  components/              marketing/ pages, layout/, shared bits
+  components/              marketing/ pages (shared SiteHeader, SiteFooter), layout/, common/
   services/                the only code that calls the API (api.js is the base client)
+  data/site.js             contact email, phone, offices, social and WhatsApp links
   lib/ hooks/ utils/       sign-in session, hooks, plan rules and area list
 supabase/migrations/       database history, numbered; run in order
 docs/                      architecture and API reference
@@ -92,8 +95,29 @@ Caddyfile, docker-compose.yml, */Dockerfile   production setup
   `backend/src/services/resume/resumeOwnership.js`, `frontend/src/utils/areas.js`,
   the admin app's `lib/areas.js` and the sign-up function in the database (migration 0029).
   A unit test fails if the server and website disagree.
+- **Changing the contact email, phone, an office, a social link or the WhatsApp link?**
+  `frontend/src/data/site.js` only. The API's support address (used in its error
+  messages) is `backend/src/config/site.js`.
 - **Database changes are new numbered files** in `supabase/migrations/`; never edit one
   that has already been run.
+- **Delete, don't comment out.** Unused files and code are removed; git keeps the
+  history.
+
+## Naming
+
+| What | Pattern | Example |
+|---|---|---|
+| React components and pages | `PascalCase.jsx`, one component per file | `SiteFooter.jsx`, `JobMatches.jsx` |
+| Hooks | `useThing.js` | `useProfile.js` |
+| Website API calls | `services/<area>.js`, plain noun | `services/savedJobs.js` |
+| API routes | `routes/<area>.routes.js`, mounted at `/api/<area>` in `app.js` | `savedJobs.routes.js` |
+| API business logic | `services/<area>/<thing>.service.js` | `payments/razorpay.service.js` |
+| Middleware | `requireThing.js` for checks that can refuse a request | `requireActivePlan.js` |
+| Migrations | `NNNN_what_it_does.sql`, next free number | `0030_cleanup_follows_collectors.sql` |
+| Constants | `UPPER_SNAKE_CASE` | `SUPPORT_EMAIL`, `PRICING_CARDS` |
+
+A few older API helpers (`resumeOwnership.js`, `scoreMatch.js`, `usage.js`) predate the
+`.service.js` rule; leave them unless you are already changing the file.
 
 ## The admin console
 

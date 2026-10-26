@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import { getApplications } from "../services/applications";
-import { getMatchedJobs } from "../services/matchingService";
+import { getMatchedJobs } from "../services/matching";
 import { getLatestResume } from "../services/resume";
 import { getSavedJobIds } from "../services/savedJobs";
 import { matchHex } from "../utils/matchHex";

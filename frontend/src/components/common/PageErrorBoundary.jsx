@@ -1,4 +1,5 @@
 import { Component } from "react";
+import { SUPPORT_EMAIL } from "../../data/site";
 
 /* Catches a crash inside one page so the rest of the app (sidebar, other
  * pages) keeps working. Without it, any render error blanked the whole
@@ -36,7 +37,7 @@ export default class PageErrorBoundary extends Component {
         </div>
         <p style={{ margin: "10px 0 20px", fontSize: 14, lineHeight: 1.6, color: "var(--ink-2)" }}>
           The rest of AIFAGen still works. Try reloading; if it keeps happening, email
-          info@aifagenlabs.com and tell us which page it was.
+          {SUPPORT_EMAIL} and tell us which page it was.
         </p>
         <button
           type="button"

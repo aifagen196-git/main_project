@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getMatchedJobs, searchJobs } from "../services/matchingService";
+import { getMatchedJobs, searchJobs } from "../services/matching";
 import { getAppliedJobIds, markJobApplied } from "../services/applications";
 import { matchHex } from "../utils/matchHex";
 import { formatCompany, formatSalary } from "../utils/jobDisplay";

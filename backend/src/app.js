@@ -18,7 +18,6 @@ import {
 
 import jobsRoutes from "./routes/jobs.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
-import preferencesRoutes from "./routes/preferences.routes.js";
 import savedJobsRoutes from "./routes/savedJobs.routes.js";
 import internalJobsRoutes from "./routes/internalJobs.routes.js";
 import applicationsRoutes from "./routes/applications.routes.js";
@@ -26,7 +25,7 @@ import resumesRoutes from "./routes/resumes.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
 import authRoutes from "./routes/auth.routes.js";
-import { razorpayWebhook } from "./routes/paymentsWebhook.js";
+import { razorpayWebhook } from "./routes/paymentsWebhook.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
@@ -138,7 +137,6 @@ app.use("/api/payments", requireAuth, apiRateLimiter, requireVerified, paymentsR
 app.use("/api/admin", requireAuth, requireAdmin, adminRoutes);
 
 app.use("/api/jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, jobsRoutes);
-app.use("/api/preferences", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, preferencesRoutes);
 app.use("/api/saved-jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, savedJobsRoutes);
 app.use("/api/internal-jobs", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, internalJobsRoutes);
 app.use("/api/applications", requireAuth, apiRateLimiter, requireVerified, requireActivePlan, applicationsRoutes);

@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
         working-directory: frontend
       - run: npm test
+      # Ranking check: relevant jobs must still outrank irrelevant ones.
+      - run: npm run test:matching
 
   frontend:
     runs-on: ubuntu-latest

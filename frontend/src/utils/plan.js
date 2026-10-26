@@ -1,9 +1,8 @@
 // Central plan definitions + gating helpers used across the app.
 //
-// Two paid TIERS, no free tier. `profiles.plan` starts at 'none' (see
-// supabase/migrations/0001_subscriptions.sql) and a user must complete
-// Razorpay checkout for one of these before subscription_status becomes
-// 'active'/'trialing' and the app shell is reachable (isSubscribed below).
+// Two paid TIERS. `profiles.plan` starts at 'none'; the app shell opens once
+// the user starts the 7-day free trial (Basic, status 'trialing') or pays
+// (status 'active') — see isSubscribed below.
 // Feature entitlements (PLAN_LIMITS below, and consume_ai_usage() in
 // 0009_plan_tiers.sql) are keyed on the TIER alone — Basic gets the same
 // limits whichever cycle it's billed on.
