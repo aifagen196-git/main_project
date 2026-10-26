@@ -7,6 +7,7 @@ import { validArea } from "../utils/profileFields.js";
 import { toUsE164 } from "../utils/phone.js";
 import { assuranceLevel } from "../utils/sessionClaims.js";
 import { SUPPORT_EMAIL } from "../config/site.js";
+import { existingAccount } from "../utils/existingAccount.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -123,6 +124,21 @@ router.post("/signup", async (req, res) => {
     },
   });
   if (error) return fail(res, error, "Could not create the account.");
+  const existing = existingAccount(data.user, data.session);
+  if (existing === "confirmed") {
+    return res.status(409).json({
+      success: false,
+      code: "EMAIL_TAKEN",
+      message: "An account with this email already exists. Log in, or use Forgot password if you don't remember the password.",
+    });
+  }
+  if (existing === "unconfirmed") {
+    return res.status(409).json({
+      success: false,
+      code: "EMAIL_NOT_CONFIRMED",
+      message: "An account with this email already exists but hasn't been confirmed yet. We've sent the confirmation link to that email again.",
+    });
+  }
   return res.json({ success: true, session: publicSession(data.session) });
 });
 

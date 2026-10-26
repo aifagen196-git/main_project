@@ -27,7 +27,7 @@ user; uploads and AI writes 20 per 10 min; matches 30 per minute; see
 
 | Method and path | Access | Purpose |
 |---|---|---|
-| `POST /signup` | public | body `email, password (8+), data: { first_name, last_name, area_of_interest, mobile }`; US mobile only; 409 if the mobile is already registered |
+| `POST /signup` | public | body `email, password (8+), data: { first_name, last_name, area_of_interest, mobile }`; US mobile only; 409 if the email (`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`) or the mobile is already registered |
 | `POST /login` | public | `email, password`; returns `session` |
 | `POST /refresh` | public | `refresh_token`; returns a new session |
 | `POST /forgot` | public | `email`; always answers success (no account probing) |

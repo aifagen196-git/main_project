@@ -109,7 +109,9 @@ function friendlyAuthError(err) {
     return "That email and password don't match. Try again or reset your password.";
   if (/email not confirmed/i.test(msg))
     return "Please confirm your email first — check your inbox for the confirmation link.";
-  if (/already registered|already exists/i.test(msg))
+  // Supabase's own wording; the API's duplicate-email and duplicate-mobile
+  // messages are already written for people and pass through unchanged.
+  if (/^user already registered/i.test(msg))
     return "An account with this email already exists. Log in instead.";
   return msg || "Something went wrong. Please try again.";
 }
