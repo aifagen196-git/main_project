@@ -108,7 +108,9 @@ export default function AppShell({ profile, refresh, exit }) {
             }}
           >
             <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-              <TrialBanner profile={profile} />
+              {/* Not on the plan page itself: its "Choose a plan" link
+                  leads there, and the page has its own trial wording. */}
+              {pathname !== "/pricing" && <TrialBanner profile={profile} />}
               <Suspense
                 fallback={
                   <div className="flex justify-center py-20">
@@ -186,7 +188,7 @@ export default function AppShell({ profile, refresh, exit }) {
   );
 }
 
-/* Shown on every page while the 7-day free trial runs. */
+/* Shown on every page but the plan page while the 7-day free trial runs. */
 function TrialBanner({ profile }) {
   const days = trialDaysLeft(profile);
   if (days == null) return null;
