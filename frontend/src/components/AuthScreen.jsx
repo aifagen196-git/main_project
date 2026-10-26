@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { signIn, signUp, sendPasswordReset } from "../services/auth";
 import { AREAS_OF_INTEREST } from "../utils/areas";
+import { PLACED_AT } from "../data/companies";
 
 /* Exact port of the "AIFAGen v3" auth screen. Palette, type ramp and spacing
    come from the design spec, so static properties are written inline; hover
-   and focus states live in the v3 CSS block in AIFAGen.jsx. The sign-up mode
+   and focus states live in styles/app.css. The sign-up mode
    reuses the same treatment, since the spec only draws the log-in state. */
 
 const C = {
@@ -41,23 +42,16 @@ const fieldInput = {
   transition: "border-color .2s,box-shadow .2s",
 };
 
-/* Same scrolling-strip technique as the marketing page's "Candidates placed
-   at" company marquee (AIFAGen.jsx, PLACED_AT): a doubled array animated
+/* Same scrolling-strip technique as the landing page's "Candidates placed
+   at" company marquee (components/landing/Marquee.jsx): a doubled array animated
    with the existing `marquee` keyframe for a seamless loop, edge-faded with
    a mask so nothing hard-cuts at the panel border.
    No actual logo image files exist anywhere in this project, and using
    another company's trademarked logo image without verified permission is
    a different, bigger risk than a stock photo — so this reuses the exact
-   company list the marketing Hero already trusts (PLACED_AT), styled as
+   company list as the landing page (data/companies.js), styled as
    bold text wordmarks, the standard "trusted by" treatment when you don't
    have official logo assets to drop in. */
-
-// Same list as AIFAGen.jsx's PLACED_AT — kept as a local copy since that
-// file only exports its default component, not this constant.
-const COMPANIES = [
-  "Stripe", "Anthropic", "Vercel", "Notion", "Snowflake",
-  "Cloudflare", "Okta", "Spotify", "Atlassian",
-];
 
 function CompanyMarqueeRow({ duration, reverse, top }) {
   return (
@@ -86,7 +80,7 @@ function CompanyMarqueeRow({ duration, reverse, top }) {
           animationDirection: reverse ? "reverse" : "normal",
         }}
       >
-        {[...COMPANIES, ...COMPANIES].map((name, i) => (
+        {[...PLACED_AT, ...PLACED_AT].map((name, i) => (
           <span
             key={`${name}-${i}`}
             style={{

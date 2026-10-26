@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 // Top bar of the inner marketing pages (About, Services, Contact, the legal
-// pages ...). The landing page has its own (MarketingNav in AIFAGen.jsx).
+// pages ...). The landing page has its own (components/landing/LandingNav.jsx).
 const LINKS = [
   ["Home", "home"],
   ["Services", "services"],

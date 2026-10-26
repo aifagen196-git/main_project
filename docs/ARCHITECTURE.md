@@ -103,8 +103,12 @@ full history; run in order, never edit a file that has been run. The sign-up tri
 
 ## Website structure
 
-- `AIFAGen.jsx`: landing page sections plus the top-level switch between marketing
-  pages, login, plan picker and the app shell (`components/layout/AppShell.jsx`).
+- `AIFAGen.jsx` is the root: it switches between the marketing site, sign-in, password
+  reset, the plan picker and the signed-in app (`components/layout/AppShell.jsx`).
+- The landing page is `components/landing/LandingPage.jsx`, one file per section (Hero,
+  Features, HowItWorks, PricingSection, FAQ, JoinSection ...); its colours and type are
+  in `theme.js`, its animations in `motion.js`. Global CSS beyond Tailwind is in
+  `styles/app.css` (loaded after `index.css`).
 - Signed-in screens are lazy-loaded pages in `pages/`; each page is wrapped in an error
   boundary so one crash does not blank the app.
 - All network calls go through `services/` (`api.js` adds the token, refreshes it on

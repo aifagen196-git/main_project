@@ -1,0 +1,176 @@
+/* Styles Tailwind's config doesn't cover: landing-page motion, hover and
+   keyframe rules, and a few app-shell layout fixes. Loaded after index.css
+   (see main.jsx), so these win over it where both set the same thing. */
+.font-body{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.page-bg{background:var(--surface-3)}
+.hero-bg{background:radial-gradient(900px 500px at 80% 0%,rgba(124,91,255,.10),transparent 60%),radial-gradient(700px 400px at 60% 40%,rgba(244,114,182,.06),transparent 60%),var(--surface-3)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.fadeUp{animation:fadeUp .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.floaty{animation:floaty 6s ease-in-out infinite}
+.scroll::-webkit-scrollbar{width:8px;height:8px}
+.scroll::-webkit-scrollbar-thumb{background:#cdd2e0;border-radius:9px}
+*{scrollbar-width:thin;scrollbar-color:#cdd2e0 transparent}
+.lift{transition:transform .2s}.lift:hover{transform:translateY(-2px)}
+
+/* ---------------------------------------------------------------------------
+   v3 landing design system. Keyframes and hover states ported verbatim from
+   the AIFAGen v3 design spec. Static properties live inline on the elements;
+   only things inline styles can't express (:hover, ::after, keyframes) are
+   here. Everything degrades under prefers-reduced-motion via the guard at the
+   bottom of this block.
+   ------------------------------------------------------------------------ */
+@keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes v3FadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes sheen{0%{transform:translateX(-120%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,-4%) scale(1.06)}66%{transform:translate(-3%,3%) scale(.97)}100%{transform:translate(0,0) scale(1)}}
+@keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.94)}60%{transform:translateY(-3px) scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes wordIn{0%{opacity:0;transform:translateY(.16em)}100%{opacity:1;transform:none}}
+@keyframes wordInB{0%{opacity:0;transform:translateY(.16em)}100%{opacity:1;transform:none}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(109,74,255,.34)}70%{box-shadow:0 0 0 12px rgba(109,74,255,0)}100%{box-shadow:0 0 0 0 rgba(109,74,255,0)}}
+@keyframes auroraA{0%,100%{transform:translate(0,0) scale(1);opacity:.5}50%{transform:translate(6%,-8%) scale(1.18);opacity:.85}}
+@keyframes auroraB{0%,100%{transform:translate(0,0) scale(1.1);opacity:.45}50%{transform:translate(-7%,6%) scale(.92);opacity:.75}}
+@keyframes lineDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes kenBurns{from{transform:scale(1.06) translate(0,0)}to{transform:scale(1.14) translate(-1.5%,-1%)}}
+@keyframes cardFlip{0%{opacity:0;transform:perspective(900px) rotateY(-100deg)}60%{opacity:1}100%{opacity:1;transform:perspective(900px) rotateY(0)}}
+
+.v3-navlink{transition:color .18s}
+.v3-navlink:hover{color:var(--ink)}
+.v3-btn-outline{transition:background .18s,border-color .18s}
+.v3-btn-outline:hover{background:var(--surface);border-color:var(--inverse)}
+.v3-btn-dark{transition:transform .2s cubic-bezier(.2,.7,.2,1),background .2s}
+.v3-btn-dark:hover{background:#6D4AFF;transform:translateY(-2px)}
+.v3-join-cta:hover{background:#6D4AFF!important;transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(109,74,255,.6)!important}
+.v3-pulse-dot{animation:v3PulseDot 2s ease-in-out infinite}
+@keyframes v3PulseDot{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.55)}50%{box-shadow:0 0 0 5px rgba(37,211,102,0)}}
+.v3-step-card{transition:transform .35s cubic-bezier(.2,.7,.2,1),border-color .35s,background .35s}
+.v3-step-card:hover{transform:translateY(-6px);border-color:rgba(109,74,255,.5);background:rgba(255,255,255,.05)}
+.v3-step-card:hover .v3-step-chip{transform:scale(1.12) rotate(-6deg)}
+.v3-step-card:hover .v3-step-line{transform:scaleX(1)}
+.v3-step-chip{transition:transform .4s cubic-bezier(.34,1.4,.4,1)}
+.v3-step-line{transform-origin:left;transform:scaleX(.35);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.v3-btn-hero::after{content:'';position:absolute;top:0;bottom:0;left:0;width:70px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:sheen 3.4s cubic-bezier(.3,.6,.3,1) 1.4s infinite}
+.v3-btn-light{transition:transform .2s cubic-bezier(.2,.7,.2,1)}
+.v3-btn-light:hover{transform:translateY(-2px)}
+.v3-btn-outline-light{transition:background .2s,border-color .2s}
+.v3-btn-outline-light:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)!important}
+.v3-feedrow{transition:background .2s}
+.v3-feedrow:hover{background:var(--surface-3)}
+[data-feature-card]:hover [data-feature-flip]{transform:rotateY(180deg)}
+.v3-feature-card{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}
+.v3-feature-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px -22px rgba(15,23,42,.28)}
+.v3-stat-card{transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+.v3-stat-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px -20px rgba(15,23,42,.3)}
+@media (prefers-reduced-motion:reduce){
+  [data-feature-flip]{transition:none!important}
+}
+.v3-footlink{transition:color .18s}
+.v3-footlink:hover{color:var(--ink)}
+/* AuthScreen's decorative company marquee is absolutely positioned at
+   top:80% of its panel. On desktop the grid stretches both auth columns to
+   equal height, so that lands in genuine empty space below the text. Below
+   the grid's single-column breakpoint (auto-fit minmax(340px,1fr) collapses
+   under ~680px) the panel only grows to fit its own content, so 80% down
+   lands inside the real headline/paragraph text instead — hide it there. */
+@media (max-width: 767px) {
+  .v3-auth-marquee{display:none!important}
+}
+/* Applications page calendar view: month grid + a fixed 260px day-detail
+   panel side by side. At mobile widths the 260px panel alone eats most of
+   the viewport, squeezing the 7-column month grid into a sliver too narrow
+   for its own day-number cells — the numbers then visually spill into the
+   panel next to it rather than the grid track itself overflowing (grid
+   track sizing is still satisfied; it's the cell CONTENT that doesn't fit).
+   Stack to one column below the width where 260px stops leaving reasonable
+   room for the calendar. */
+@media (max-width: 640px) {
+  .v3-app-calendar-grid{grid-template-columns:1fr!important}
+}
+.v3-input:focus{border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
+.v3-search:focus{background:var(--surface)!important;border-color:#6D4AFF!important;box-shadow:0 0 0 3px rgba(109,74,255,.1)}
+.v3-navbtn{transition:background .22s,color .22s}
+.v3-navbtn[data-active-nav="0"]:hover{background:var(--surface-2)}
+.v3-softbtn{transition:background .18s}
+.v3-softbtn:hover{background:var(--surface-2)}
+.v3-dangerbtn{transition:background .18s}
+.v3-dangerbtn:hover{background:var(--rose-wash)}
+.v3-iconbtn{transition:border-color .2s}
+.v3-iconbtn:hover{border-color:var(--inverse)}
+
+.v3-card{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+.v3-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px -26px rgba(15,23,42,.28)}
+.v3-matchrow{transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.7,.2,1)}
+.v3-matchrow:hover{border-color:var(--line);background:var(--surface);transform:translateX(3px)}
+.v3-trackerbtn{transition:background .2s,border-color .2s}
+.v3-trackerbtn:hover{background:var(--surface);border-color:var(--inverse)}
+.v3-jobcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s,border-color .24s}
+.v3-jobcard:hover{transform:translateY(-3px);box-shadow:0 22px 46px -28px rgba(15,23,42,.3);border-color:var(--line)}
+.v3-ddrow:hover{background:var(--surface-3)!important}
+.v3-approw{transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s}
+.v3-approw:hover{transform:translateY(-2px);box-shadow:0 18px 40px -28px rgba(15,23,42,.3)}
+.v3-removebtn:hover{background:var(--rose-wash);color:#F43F5E}
+.v3-field:focus{background:var(--surface)!important;border-color:#6D4AFF!important}
+.v3-savedcard{transition:transform .24s cubic-bezier(.2,.7,.2,1),box-shadow .24s}
+.v3-savedcard:hover{transform:translateY(-4px);box-shadow:0 24px 48px -28px rgba(15,23,42,.3)}
+.v3-applybtn:hover{background:#6D4AFF!important}
+.v3-removecard:hover{border-color:#F43F5E!important;color:#F43F5E!important}
+.v3-dangerzone:hover{background:var(--rose-wash)!important}
+.v3-backlink:hover{color:var(--ink)!important}
+/* Settings: the profile card spans both rail columns once there's room. */
+@media (min-width:760px){.v3-settings-wide{grid-column:span 2}}
+@media (max-width:759px){.v3-settings-wide{grid-column:auto!important}}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px) scaleY(.96)}to{opacity:1;transform:translateY(0) scaleY(1)}}
+@keyframes expand{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:-460px 0}100%{background-position:460px 0}}
+@keyframes barGrow{from{transform:scaleY(.06)}to{transform:scaleY(1)}}
+
+/* Dashboard grids. Stats stay two-up, the main row is a single full-width
+   column now that its Pipeline rail card is gone, and suggestions go
+   1 → 2 → 3 across. */
+[data-dashgrid]{display:grid;gap:16px;min-width:0}
+/* Two stat cards (Job Matches, Saved Jobs) — auto-fit keeps them side by side
+   wherever there's room and drops to one column when there isn't, without
+   needing a hardcoded breakpoint. */
+[data-dashgrid="stats"]{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+[data-dashgrid="main"]{grid-template-columns:1fr}
+[data-dashgrid="sugg"]{grid-template-columns:1fr}
+@media (min-width:760px){
+  [data-dashgrid="sugg"]{grid-template-columns:1fr 1fr}
+  [data-dashgrid="sugg"] > *:last-child{grid-column:1 / -1}
+}
+@media (min-width:1180px){
+  [data-dashgrid="sugg"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+  [data-dashgrid="sugg"] > *:last-child{grid-column:auto}
+}
+
+/* App shell: the sidebar is a static column on wide screens and a slide-over
+   drawer below 1024px, matching the spec's [data-r="sidebar"] behaviour. */
+@media (max-width:1023px){
+  .v3-sidebar{position:fixed!important;top:0;left:0;bottom:0;z-index:60;transform:translateX(-102%);transition:transform .34s cubic-bezier(.2,.7,.2,1)}
+  .v3-sidebar[data-open="1"]{transform:none!important}
+}
+@media (min-width:1024px){
+  .v3-scrim{display:none!important}
+}
+
+@media (max-width:1023px){
+  .v3-narrowhide{display:none!important}
+}
+@media (min-width:1024px){
+  .v3-burger{display:none!important}
+}
+/* Below 1024px the floating menu button is fixed over the page, so the main
+   column needs to start clear of it. */
+@media (max-width:1023px){
+  .v3-main{padding-top:70px!important}
+}
+@media (max-width:480px){
+  .v3-hdrbtns{gap:6px!important}
+  .v3-hdrbtns button{padding:9px 12px!important;font-size:12.5px!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important}
+}

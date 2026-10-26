@@ -69,7 +69,8 @@ backend/src/
 backend/scripts/           evalMatching.js (npm run test:matching)
 backend/test/              unit tests (npm test) and integration/ (by hand)
 frontend/src/
-  AIFAGen.jsx              landing page + app routing (large; being split up)
+  AIFAGen.jsx              root: marketing site / sign-in / plan picker / app
+  components/landing/      the home page, one file per section
   pages/                   signed-in screens: Dashboard, JobMatches, Resume, Billing ...
   components/              marketing/ pages (shared SiteHeader, SiteFooter), layout/, common/
   services/                the only code that calls the API (api.js is the base client)

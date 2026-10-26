@@ -13,7 +13,7 @@ import SavedJobs from "../../pages/SavedJobs";
 // Recharts-heavy pages — lazy-loaded so recharts is split out of the main bundle.
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
 // HIDDEN — kept out of the bundle entirely while the route is disabled.
-// Restore alongside the /analytics route below. See data/constants.js.
+// Restore alongside the /analytics route below. See data/nav.js.
 // const Analytics = lazy(() => import("../../pages/Analytics"));
 import SettingsView from "../../pages/SettingsView";
 import Pricing from "../../pages/Pricing";
@@ -72,7 +72,7 @@ export default function AppShell({ profile, refresh, exit }) {
           {/* The topbar used to carry the only control that opened the sidebar
               drawer below 1024px. With it gone, this floating button takes that
               job — it is hidden at >=1024px, where the sidebar is a static
-              column (see .v3-burger in the v3 CSS block). */}
+              column (see .v3-burger in styles/app.css). */}
           <button
             className="v3-burger"
             onClick={() => setOpen(true)}
@@ -145,7 +145,7 @@ export default function AppShell({ profile, refresh, exit }) {
                 />
 
                 {/* HIDDEN — see the note on the Analytics NAV entry in
-                    data/constants.js. The page and its endpoint still exist;
+                    data/nav.js. The page and its endpoint still exist;
                     without this route /analytics falls through to the
                     catch-all below and redirects to the dashboard. */}
                 {/* <Route path="/analytics" element={<Analytics plan={plan} />} /> */}

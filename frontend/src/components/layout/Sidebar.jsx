@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { NAV } from "../../data/constants";
+import { NAV } from "../../data/nav";
 import HelpPanel from "./HelpPanel";
 
 /* Port of the "AIFAGen v3" app sidebar. The spec drops icons in favour of a
    status dot per item, an active state that inverts to the ink pill, and a
    mono count on the right. Static properties are inline; hover, and the
-   below-1024px slide-over behaviour, live in the v3 CSS block in AIFAGen.jsx.
+   below-1024px slide-over behaviour, live in styles/app.css.
 
    The account block at the bottom came from the spec's topbar. That bar was
    removed — once search moved onto the pages that own it, the only things
@@ -16,7 +16,7 @@ import HelpPanel from "./HelpPanel";
    It's a direct link to Settings rather than its own dropdown: account
    details, plan and log out already live on that screen, and "Settings" is
    no longer a separate sidebar entry — this button replaces it (see NAV in
-   data/constants.js). The plan summary that used to sit above this button
+   data/nav.js). The plan summary that used to sit above this button
    is also gone; it doesn't need to be visible on every single screen.
 
    Light theme with real color (2026-08-27): a dark sidebar was tried and
