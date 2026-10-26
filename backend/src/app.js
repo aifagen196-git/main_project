@@ -25,7 +25,6 @@ import applicationsRoutes from "./routes/applications.routes.js";
 import resumesRoutes from "./routes/resumes.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import paymentsRoutes from "./routes/payments.routes.js";
-import communityRoutes from "./routes/community.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { razorpayWebhook } from "./routes/paymentsWebhook.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -117,10 +116,6 @@ app.get("/api/health", (req, res) => {
   res.json({ success: true, message: "AIFAGen Backend Running", timestamp: new Date() });
 });
 
-// Free WhatsApp community invite link — public, no login (see community.routes.js).
-// Fetched on every landing-page visit, so it gets the roomier session limit,
-// not the old checkout limit (20 per 10 minutes per IP).
-app.use("/api/community", sessionRateLimiter, communityRoutes);
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
 app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot", "/api/auth/mfa/verify"], authRateLimiter);

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
 import { MessageSquare } from "lucide-react";
 
-import { getCommunityLink } from "../../services/community";
+// The WhatsApp job-seeker community is free and public, so the invite link
+// lives here rather than behind the server.
+export const COMMUNITY_WHATSAPP_URL = "https://chat.whatsapp.com/GjUoKpDEyM415A9WFzuXGP";
 
 const buttonStyle = (brand) => ({
   display: "inline-flex",
@@ -21,53 +22,22 @@ const buttonStyle = (brand) => ({
   transition: "transform .18s,box-shadow .18s",
 });
 
-/* Join button for the landing page's community section. The community is
-   free: the button opens the WhatsApp invite link in a new tab. */
+/* Join button for the landing page's community section: opens the WhatsApp
+   invite link in a new tab. */
 export default function CommunityJoin({ brand, faint }) {
-  const [link, setLink] = useState("");
-  const [unavailable, setUnavailable] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    getCommunityLink()
-      .then((url) => live && setLink(url))
-      .catch(() => live && setUnavailable(true));
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  const note = { marginTop: 12, fontSize: 12.5, color: faint };
-
-  if (unavailable) {
-    return (
-      <>
-        <span style={{ ...buttonStyle(brand), opacity: 0.6, cursor: "default" }}>
-          <MessageSquare size={18} />
-          Join Our Community
-        </span>
-        <div style={note}>The community link isn't available right now. Please check back soon.</div>
-      </>
-    );
-  }
-
   return (
     <>
       <a
-        href={link || undefined}
+        href={COMMUNITY_WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-disabled={!link}
-        onClick={(e) => {
-          if (!link) e.preventDefault();
-        }}
-        style={{ ...buttonStyle(brand), opacity: link ? 1 : 0.75 }}
+        style={buttonStyle(brand)}
         className="v3-join-cta"
       >
         <MessageSquare size={18} />
         Join Our Community
       </a>
-      <div style={note}>Free to join on WhatsApp. No spam, ever.</div>
+      <div style={{ marginTop: 12, fontSize: 12.5, color: faint }}>Free to join on WhatsApp. No spam, ever.</div>
     </>
   );
 }
