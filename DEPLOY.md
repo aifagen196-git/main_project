@@ -1,76 +1,106 @@
 # Deploying AIFAGen
 
-Three pieces, three destinations:
+Production runs on one server with Docker Compose: **Caddy** (HTTPS and routing) in
+front of an **nginx** container serving the website and a **Node** container running
+the API. The database, login and file storage are in Supabase, so the server holds no
+user data.
 
-| Piece       | Host                    | Why |
-|-------------|-------------------------|-----|
-| `frontend/` | Vercel                  | Static Vite build, trivial env-var management, free subdomain to start. |
-| `backend/`  | Railway                 | Needs a persistent process, not serverless — it keeps an in-memory job-matching cache warm (see `warmJobPoolCache` in `backend/src/server.js`); a serverless cold start would silently reintroduce the ~60s "no job matches" bug this cache exists to prevent. |
-| `job-engine/` | GitHub Actions (scheduled workflow) | The collectors are long, sequential CLI scripts, not HTTP handlers — no fit for a serverless duration limit. Already wired up at `.github/workflows/job-engine.yml`. |
-
-Repo-side config for all three is already in place (`frontend/vercel.json`, `backend/railway.toml`, the workflow file). What's left needs your accounts/browser — I can't complete OAuth or create third-party accounts on your behalf.
-
-## 0. Push this repo to GitHub
-
-Neither Vercel nor Railway auto-deploys from a local folder, and the job-engine workflow only runs once it's *on* GitHub.
-
-```bash
-# create an empty repo on github.com first, then:
-git remote add origin https://github.com/<you>/<repo>.git
-git push -u origin master
+```
+browser -> Caddy (443) -+-> frontend (nginx :80)        aifagenlabs.com, www
+                        +-> backend  (node :3000)       /api/*  (prefix removed by Caddy;
+                                                         the API puts it back, see app.js)
+                        api.aifagenlabs.com -> backend  (prefix kept)
 ```
 
-## 1. Deploy the backend first (Railway)
+## Settings
 
-Order matters — the frontend needs the backend's URL, but not vice versa yet.
+One file, `.env` in the project folder next to `docker-compose.yml`, feeds the API
+container (`env_file: .env`). Never commit it. Full list with explanations:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#settings). The ones a deploy needs:
 
-1. [railway.app](https://railway.app) → New Project → **Deploy from GitHub repo** → select this repo.
-2. In the service settings, set **Root Directory** to `backend`.
-3. Add environment variables (Settings → Variables) — see `backend/.env.example` for the full list with descriptions:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `GEMINI_API_KEY`
-   - `GROQ_API_KEY`
-   - `NODE_ENV=production`
-   - `CORS_ORIGIN` — leave a placeholder for now (e.g. `https://placeholder.vercel.app`); you'll update it in step 3 once the frontend has a real URL. **Until this is set correctly, every request from the frontend will fail CORS — this looks identical to "the backend is down" in the browser.**
-4. Deploy. Railway assigns a domain like `https://your-service.up.railway.app` — copy it, you need it next.
-5. Sanity check: `curl https://your-service.up.railway.app/api/health` should return `{"success":true,...}`.
+| Setting | Value |
+|---|---|
+| `SUPABASE_URL` | the project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | the secret key (`sb_secret_...`) from Supabase, Settings, API Keys |
+| `CORS_ORIGIN` | `https://aifagenlabs.com,https://www.aifagenlabs.com` (add the admin console's address) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | live keys from Razorpay |
+| `RAZORPAY_WEBHOOK_SECRET` | a long random value you choose; also entered in Razorpay (below) |
+| `RAZORPAY_CURRENCY` | `USD` |
+| `ANTHROPIC_API_KEY` (and/or `GROQ_API_KEY`, `GEMINI_API_KEY`) | at least one AI provider |
+| `GITHUB_TOKEN` | optional: lets the admin "Start refresh" button run the collectors |
 
-## 2. Deploy the frontend (Vercel)
+`NODE_ENV=production` and `PORT=3000` are set by `docker-compose.yml`. The WhatsApp
+community link is in the website code, not a setting.
 
-1. [vercel.com](https://vercel.com) (you already have an account) → New Project → import this repo.
-2. Set **Root Directory** to `frontend`. Build command and output directory are already declared in `frontend/vercel.json`.
-3. Add environment variables (Settings → Environment Variables) — see `frontend/.env.example`:
-   - `VITE_API_URL` = the Railway URL from step 1 (e.g. `https://your-service.up.railway.app`, **no trailing slash**)
-4. Deploy. Vercel assigns a domain like `https://your-app.vercel.app`.
+## First-time setup
 
-## 3. Close the loop: point CORS at the real frontend URL
+1. Create the Supabase project and run every file in `supabase/migrations/` in order in
+   the SQL Editor. In Supabase turn **off** "Allow anonymous sign-ins".
+2. Point DNS for `aifagenlabs.com`, `www` and `api` at the server; open ports 80 and 443.
+3. Create `.env` as above, then:
+   ```bash
+   git clone https://github.com/aifagen196-git/main_project.git && cd main_project
+   docker compose up -d --build
+   ```
+   Caddy gets the HTTPS certificates by itself on first start.
+4. **Razorpay webhook** (Dashboard, Live mode, Account & Settings, Webhooks, Add):
+   URL `https://aifagenlabs.com/api/payments/webhook`, secret = `RAZORPAY_WEBHOOK_SECRET`,
+   events `payment.captured` and `order.paid`. This is what switches on a plan when a
+   customer closes the page right after paying.
+5. Make the first admin: create the account normally, then in the SQL Editor run
+   `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
+   On first admin sign-in they scan a QR code with an authenticator app.
+6. Collectors: see below.
 
-Back in Railway → the backend service → Variables:
+## Releasing a new version
 
-- Set `CORS_ORIGIN` to the real Vercel URL from step 2 (e.g. `https://your-app.vercel.app`). Comma-separate multiple origins if you later add a custom domain: `https://your-app.vercel.app,https://aifagenlabs.com`.
-- Redeploy the backend service so the new value takes effect.
+```bash
+git pull origin main
+docker compose up -d --build
+```
 
-## 4. Verify end to end
+Then check `https://aifagenlabs.com/api/health` says "AIFAGen Backend Running" and that
+the latest commit is what you expect: `git log --oneline -1`.
 
-Open the Vercel URL, sign in, and confirm the dashboard loads real data (not the dev preview — `?preview` is compiled out of production builds entirely, so it won't work there regardless). If sign-in or data loading fails, check in this order:
+- **Database changes first.** If the release adds files in `supabase/migrations/`, run
+  them in the SQL Editor **before** the deploy, in number order.
+- **New settings** go into `.env` before the rebuild; changing `.env` alone needs
+  `docker compose up -d` to take effect.
+- **Rolling back:** `git checkout <previous commit>` then `docker compose up -d --build`.
+  Migrations are not undone; they are written to be safe to re-run.
+- **Look at the CI result** on GitHub for the commit first (green tick = tests passed).
 
-1. Browser console/network tab — a CORS error means step 3 wasn't completed correctly.
-2. `curl <railway-url>/api/health` — confirms the backend itself is up.
-3. Railway's deploy logs — confirms env vars are actually set (a missing `SUPABASE_SERVICE_ROLE_KEY` fails loudly here, not silently).
+## Looking after it
 
-## 5. Enable the job-engine workflow
+```bash
+docker compose ps                    # is everything up?
+docker compose logs -f backend       # API log (method, path, status; no search terms)
+docker compose logs --tail 100 caddy
+```
 
-1. GitHub repo → Settings → Secrets and variables → Actions → New repository secret, add:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `ANTHROPIC_API_KEY`
-   - `ANTHROPIC_MODEL` (optional — only if the code has no built-in default)
-2. The workflow (`.github/workflows/job-engine.yml`) runs automatically every 6 hours once merged to the default branch. To confirm it works without waiting: Actions tab → "job-engine collectors" → **Run workflow** (manual trigger).
-3. Adjust the cron schedule in the workflow file to taste — 6 hours is a starting point, not a measured requirement.
+- The nightly job cleanup runs inside Supabase (pg_cron: `cleanup-old-jobs` and
+  `cleanup-inactive-jobs`). Since migration 0030 it measures job age from the last
+  successful collector run, so it never empties the site if the collectors stop.
+- Supabase backups: enable daily backups in the Supabase dashboard.
+- Rotating a key: change it in `.env` (and GitHub Secrets for the collectors), then
+  `docker compose up -d`. Disable old Supabase keys only after the server uses the new one.
 
-## Notes
+## Collectors (job gathering)
 
-- **Custom domain**: add it in Vercel first (Settings → Domains), then update `CORS_ORIGIN` on Railway to include it — CORS is exact-origin matching, so a bare domain add on Vercel alone does nothing on the backend side.
-- **Rotating a key**: update it in the relevant platform's dashboard (Railway for backend secrets, GitHub Actions secrets for job-engine) and redeploy/rerun — nothing in this repo needs to change.
-- **Supabase project must be reachable**: if it's paused or over its storage quota, every deployed piece fails the same way local dev did — check the Supabase dashboard first if things stop working after having worked.
+They live in a separate repository, `aifagen196-git/collectors`, and run on GitHub
+Actions every 6 hours (`job-engine.yml`). Secrets are set in that repo under Settings,
+Secrets and variables, Actions: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`ANTHROPIC_API_KEY` and the job-board keys named in the workflow file.
+
+A full run takes about two hours, so a **private** repo uses up GitHub's free 2,000
+monthly minutes in a few days and GitHub then refuses scheduled runs (jobs go stale).
+Keep the collectors repo **public** (free, unlimited), pay for minutes, or run a
+self-hosted runner. The admin Collectors page shows a red banner when no run has arrived
+for 12 hours, and can start a run if `GITHUB_TOKEN` is set.
+
+## Known leftovers
+
+- `docker-compose.yml` still passes `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as
+  build arguments; the website no longer uses them. Harmless; remove when convenient.
+- The production Caddyfile does not set a Content-Security-Policy; the website adds its
+  own through the built `index.html` (see `frontend/vite.config.js`).
