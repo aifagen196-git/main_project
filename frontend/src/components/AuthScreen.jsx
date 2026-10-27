@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { signIn, signUp, sendPasswordReset } from "../services/auth";
+import { useEffect, useRef, useState } from "react";
+import { signIn, signUp, sendPasswordReset, getAuthConfig } from "../services/auth";
 import { AREAS_OF_INTEREST } from "../utils/areas";
 import { PLACED_AT } from "../data/companies";
+import Turnstile from "./common/Turnstile";
 
 /* Exact port of the "AIFAGen v3" auth screen. Palette, type ramp and spacing
    come from the design spec, so static properties are written inline; hover
@@ -137,13 +138,23 @@ export default function AuthScreen({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // Cloudflare Turnstile on login and sign-up, when the server has keys set.
+  const [siteKey, setSiteKey] = useState(null);
+  const [captcha, setCaptcha] = useState("");
+  const turnstile = useRef(null);
 
   const isSignup = mode === "signup";
   const isForgot = mode === "forgot";
+  const needsCheck = Boolean(siteKey) && !isForgot;
+
+  useEffect(() => {
+    getAuthConfig().then((c) => setSiteKey(c?.turnstileSiteKey || null));
+  }, []);
 
   function switchMode(next) {
     setError("");
     setNotice("");
+    setCaptcha("");
     setMode(next);
   }
 
@@ -151,6 +162,10 @@ export default function AuthScreen({ onBack }) {
     e.preventDefault();
     setError("");
     setNotice("");
+    if (needsCheck && !captcha) {
+      setError("Please complete the security check.");
+      return;
+    }
     try {
       setLoading(true);
       if (isForgot) {
@@ -164,18 +179,20 @@ export default function AuthScreen({ onBack }) {
           lastName: lastName.trim(),
           mobile: `+1${mobile.replace(/\D/g, "").slice(-10)}`,
           areaOfInterest: area,
-        });
+        }, captcha);
         // With email confirmation off, sign-up signs the user straight in and
         // the app moves on by itself. Only ask them to check their inbox when
         // Supabase is still waiting on a confirmation click.
         if (!session) setNotice("Account created — check your email to confirm, then log in.");
       } else {
-        await signIn(email.trim(), password);
+        await signIn(email.trim(), password, captcha);
       }
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
+      // Each token works once: get a fresh one for the next try.
+      if (needsCheck) turnstile.current?.reset();
     }
   }
 
@@ -572,6 +589,16 @@ export default function AuthScreen({ onBack }) {
                   style={fieldInput}
                 />
               </label>
+            )}
+
+            {needsCheck && (
+              <Turnstile
+                key={mode}
+                ref={turnstile}
+                siteKey={siteKey}
+                action={isSignup ? "signup" : "login"}
+                onToken={setCaptcha}
+              />
             )}
 
             {error && (

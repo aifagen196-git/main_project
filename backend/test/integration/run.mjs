@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const backend = path.resolve(here, "../..");
 const repoRoot = path.resolve(backend, "..");
-const all = ["mfa-test", "key-test", "audit3-test", "audit4-test", "trial-test", "security-test"];
+const all = ["mfa-test", "key-test", "audit3-test", "audit4-test", "trial-test", "security-test", "turnstile-test"];
 const names = process.argv.slice(2).length ? process.argv.slice(2) : all;
 let failed = 0;
 for (const n of names) {

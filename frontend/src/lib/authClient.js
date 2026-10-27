@@ -135,15 +135,26 @@ export const auth = {
     return () => listeners.delete(fn);
   },
 
-  async signUp(email, password, data) {
-    const { session: next } = await post("/signup", { email, password, data });
+  /** Public sign-in settings: { turnstileSiteKey } (null while the bot check is off). */
+  async getConfig() {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/config`);
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  },
+
+  // captchaToken: from the Turnstile widget on the form (see components/common/Turnstile.jsx).
+  async signUp(email, password, data, captchaToken) {
+    const { session: next } = await post("/signup", { email, password, data, captchaToken });
     // With email confirmation on there's no session until the link is clicked.
     if (next) save(next, "SIGNED_IN");
     return next;
   },
 
-  async signIn(email, password) {
-    const { session: next } = await post("/login", { email, password });
+  async signIn(email, password, captchaToken) {
+    const { session: next } = await post("/login", { email, password, captchaToken });
     save(next, "SIGNED_IN");
     return next;
   },

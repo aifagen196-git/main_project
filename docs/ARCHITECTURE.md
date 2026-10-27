@@ -145,6 +145,7 @@ Backend (`backend/.env`; examples in `backend/.env.example`):
 | `MATCH_*`, `MAX_POSTING_AGE_DAYS` | matching tuning (cache minutes, pool size, judge count) |
 | `AI_MODEL_PRICES` | per-model prices for the admin AI cost page |
 | `GITHUB_TOKEN`, `COLLECTORS_REPO`, `COLLECTORS_WORKFLOW`, `COLLECTORS_REF` | lets the admin start a collector run |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile on login and sign-up (`middleware/requireTurnstile.js`); the forms get the site key from `GET /api/auth/config`; empty = off |
 
 Website (`frontend/.env`): only `VITE_API_URL`, and only when the API is on another
 address. Never put a secret in a `VITE_` setting; it ends up in the public JavaScript.

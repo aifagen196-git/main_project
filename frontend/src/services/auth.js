@@ -4,7 +4,7 @@ import { DEV_PREVIEW } from '../devPreview'
 // All of these go through the backend's /api/auth routes (lib/authClient.js);
 // the browser never talks to Supabase directly.
 
-export async function signUp(email, password, { firstName, lastName, mobile, areaOfInterest }) {
+export async function signUp(email, password, { firstName, lastName, mobile, areaOfInterest }, captchaToken) {
   // The matching profiles row is created by the handle_new_user database
   // trigger from this metadata (supabase/migrations/0021_signup_details.sql).
   return auth.signUp(email, password, {
@@ -12,11 +12,16 @@ export async function signUp(email, password, { firstName, lastName, mobile, are
     last_name: lastName,
     mobile,
     area_of_interest: areaOfInterest
-  })
+  }, captchaToken)
 }
 
-export async function signIn(email, password) {
-  return auth.signIn(email, password)
+export async function signIn(email, password, captchaToken) {
+  return auth.signIn(email, password, captchaToken)
+}
+
+/** { turnstileSiteKey } for the sign-in forms; null key = no bot check. */
+export async function getAuthConfig() {
+  return auth.getConfig()
 }
 
 export async function sendPasswordReset(email) {

@@ -27,6 +27,7 @@ container (`env_file: .env`). Never commit it. Full list with explanations:
 | `RAZORPAY_WEBHOOK_SECRET` | a long random value you choose; also entered in Razorpay (below) |
 | `RAZORPAY_CURRENCY` | `USD` |
 | `ANTHROPIC_API_KEY` (and/or `GROQ_API_KEY`, `GEMINI_API_KEY`) | at least one AI provider |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile, the "are you human" check on sign-in and sign-up (see below); empty = check off |
 | `GITHUB_TOKEN` | optional: lets the admin "Start refresh" button run the collectors |
 
 `NODE_ENV=production` and `PORT=3000` are set by `docker-compose.yml`. The WhatsApp
@@ -49,10 +50,16 @@ community link is in the website code, not a setting.
    URL `https://aifagenlabs.com/api/payments/webhook`, secret = `RAZORPAY_WEBHOOK_SECRET`,
    events `payment.captured` and `order.paid`. This is what switches on a plan when a
    customer closes the page right after paying.
-5. Make the first admin: create the account normally, then in the SQL Editor run
+5. **Cloudflare Turnstile** (free; Cloudflare dashboard, Turnstile, Add widget): mode
+   Managed, hostnames `aifagenlabs.com` and `www.aifagenlabs.com` (add `localhost` too
+   if the admin console runs on someone's computer). Put the site key and secret key in
+   `.env` as `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`, then `docker compose up -d`.
+   The website and admin console fetch the site key from the API, so no rebuild is
+   needed.
+6. Make the first admin: create the account normally, then in the SQL Editor run
    `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
    On first admin sign-in they scan a QR code with an authenticator app.
-6. Collectors: see below.
+7. Collectors: see below.
 
 ## Releasing a new version
 

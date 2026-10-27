@@ -10,6 +10,7 @@ import { SUPPORT_EMAIL } from "../config/site.js";
 import { existingAccount } from "../utils/existingAccount.js";
 import { tokenClaims } from "../utils/sessionClaims.js";
 import { clientIp, mfaAccountLimiter, passwordChangeLimiter } from "../middleware/rateLimiter.js";
+import { turnstileSiteKey } from "../utils/turnstile.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -150,6 +151,13 @@ router.post("/signup", async (req, res) => {
     });
   }
   return res.json({ success: true, session: publicSession(data.session) });
+});
+
+// Public settings the sign-in forms need: the Turnstile site key (null while
+// the check is off). The site key is public by design; the secret never leaves
+// the server.
+router.get("/config", (req, res) => {
+  res.json({ success: true, turnstileSiteKey: turnstileSiteKey() });
 });
 
 router.post("/login", async (req, res) => {

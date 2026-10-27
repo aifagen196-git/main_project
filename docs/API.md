@@ -4,7 +4,7 @@ Base address: `https://aifagenlabs.com/api` (same origin as the website). Every 
 JSON: `{ "success": true, ... }` or `{ "success": false, "message": "..." }`, sometimes
 with a `code` (`PLAN_REQUIRED`, `VERIFICATION_REQUIRED`, `MFA_REQUIRED`, `TRIAL_USED`,
 `AI_LIMIT`, `TOO_MANY_PAGES`, `NAME_MISMATCH`, `AREA_MISMATCH`, `UNREADABLE_RESUME`,
-`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`, `PLAN_INCLUDED`, `CURRENT_PASSWORD_REQUIRED`,
+`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`, `PLAN_INCLUDED`, `CAPTCHA_FAILED`, `CURRENT_PASSWORD_REQUIRED`,
 `WRONG_PASSWORD`).
 
 Protected routes need `Authorization: Bearer <access token>`.
@@ -37,8 +37,13 @@ Limits (all in `backend/src/middleware/rateLimiter.js`):
 
 | Method and path | Access | Purpose |
 |---|---|---|
-| `POST /signup` | public | body `email, password (8+), data: { first_name, last_name, area_of_interest, mobile }`; US mobile only; 409 if the email (`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`) or the mobile is already registered |
-| `POST /login` | public | `email, password`; returns `session` |
+| `GET /config` | public | `turnstileSiteKey` for the sign-in forms (null while Turnstile is off) |
+| `POST /signup` | public | body `email, password (8+), data: { first_name, last_name, area_of_interest, mobile }, captchaToken`; US mobile only; 409 if the email (`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`) or the mobile is already registered |
+| `POST /login` | public | `email, password, captchaToken`; returns `session` |
+
+`captchaToken` is the Cloudflare Turnstile token from the form. While the keys are set,
+login and sign-up without a valid one get 400 `CAPTCHA_FAILED` (503 if Cloudflare can't be
+reached); a token works once.
 | `POST /refresh` | public | `refresh_token`; returns a new session |
 | `POST /forgot` | public | `email`; always answers success (no account probing) |
 | `GET /user` | login | the signed-in user |

@@ -11,5 +11,7 @@ production data unless you mean to; a separate test Supabase project is better.
    `audit4-test`, `mfa-test`, `security-test`), or all with `npm run test:integration`.
    `security-test` covers the brute-force limits and password change; run it against a
    local server only (it relies on setting `X-Forwarded-For`, which Caddy overwrites).
+   `turnstile-test` starts its own copy of the API with Cloudflare's test keys and checks
+   login and sign-up against Cloudflare's real verification service.
 
 Each prints PASS/FAIL lines and a RESULT line; the exit code is 1 on any failure.

@@ -6,16 +6,17 @@ import react from "@vitejs/plugin-react";
 // send data elsewhere. Only added to production builds — the dev server's hot
 // reload needs inline scripts. Outside sources the site really uses:
 //   Razorpay checkout (script, iframe, its API), Google Fonts (index.css),
-//   Pexels (landing-page video and poster), Supabase storage (profile photos).
+//   Pexels (landing-page video and poster), Supabase storage (profile photos),
+//   Cloudflare Turnstile (sign-in check: script and iframe).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' https://checkout.razorpay.com https://*.razorpay.com",
+  "script-src 'self' https://checkout.razorpay.com https://*.razorpay.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://images.pexels.com https://*.supabase.co https://*.razorpay.com",
   "media-src 'self' https://videos.pexels.com",
   "connect-src 'self' https://*.razorpay.com",
-  "frame-src https://*.razorpay.com",
+  "frame-src https://*.razorpay.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
