@@ -14,6 +14,9 @@ import {
   authRateLimiter,
   heavyRateLimiter,
   sessionRateLimiter,
+  refreshRateLimiter,
+  loginAccountLimiter,
+  emailAccountLimiter,
 } from "./middleware/rateLimiter.js";
 
 import jobsRoutes from "./routes/jobs.routes.js";
@@ -117,7 +120,12 @@ app.get("/api/health", (req, res) => {
 
 
 // Sign-in, proxied so the browser never talks to Supabase (see auth.routes.js).
+// Per visitor IP, then per account (the code check and password change have
+// per-account limits inside auth.routes.js, after sign-in is checked).
 app.use(["/api/auth/login", "/api/auth/signup", "/api/auth/forgot", "/api/auth/mfa/verify"], authRateLimiter);
+app.use("/api/auth/login", loginAccountLimiter);
+app.use(["/api/auth/signup", "/api/auth/forgot"], emailAccountLimiter);
+app.use("/api/auth/refresh", refreshRateLimiter);
 app.use("/api/auth", sessionRateLimiter, authRoutes);
 
 // =============================

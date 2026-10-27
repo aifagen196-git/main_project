@@ -152,10 +152,14 @@ export const auth = {
     await post("/forgot", { email });
   },
 
-  async updatePassword(password) {
+  // currentPassword is required except right after a password-reset link.
+  // A password change signs out every session, so the API hands back a fresh
+  // one for this device.
+  async updatePassword(password, currentPassword) {
     const s = await this.getSession();
     if (!s) throw new Error("Your session has expired. Please log in again.");
-    await post("/password", { password }, s.access_token);
+    const { session: next } = await post("/password", { password, currentPassword }, s.access_token);
+    if (next) save(next, "TOKEN_REFRESHED");
   },
 
   async signOut() {

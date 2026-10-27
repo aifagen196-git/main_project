@@ -23,7 +23,7 @@ export async function sendPasswordReset(email) {
   return auth.sendPasswordReset(email)
 }
 
-export async function updatePassword(newPassword) {
+export async function updatePassword(newPassword, currentPassword) {
   if (DEV_PREVIEW) {
     // The preview user has no real session (see devPreview.js), so a genuine
     // call would 401. Resolve like a real save so the Settings UI's
@@ -31,7 +31,7 @@ export async function updatePassword(newPassword) {
     await new Promise((r) => setTimeout(r, 300))
     return
   }
-  return auth.updatePassword(newPassword)
+  return auth.updatePassword(newPassword, currentPassword)
 }
 
 export async function signOut() {

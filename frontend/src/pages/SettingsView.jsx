@@ -65,7 +65,7 @@ export default function SettingsView({ profile, refresh }) {
   // Device preference, not a profile field — see lib/theme.js.
   const [theme, setTheme] = useState(getPreference);
 
-  const [pw, setPw] = useState({ next: "", confirm: "" });
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
   const [pwErr, setPwErr] = useState("");
@@ -145,9 +145,9 @@ export default function SettingsView({ profile, refresh }) {
     }
     setPwSaving(true);
     try {
-      await updatePassword(pw.next);
+      await updatePassword(pw.next, pw.current);
       setPwSaved(true);
-      setPw({ next: "", confirm: "" });
+      setPw({ current: "", next: "", confirm: "" });
     } catch (e) {
       setPwErr(e.message || "Could not update password.");
     }
@@ -518,7 +518,8 @@ export default function SettingsView({ profile, refresh }) {
         >
           <h2 style={h2Style}>Security</h2>
           <p style={{ margin: "6px 0 0", fontSize: 13.5, color: T.muted }}>
-            Choose a new password for your account.
+            Choose a new password for your account. Changing it signs you out
+            on every other device.
           </p>
 
           <div
@@ -529,6 +530,20 @@ export default function SettingsView({ profile, refresh }) {
               marginTop: 20,
             }}
           >
+            <label style={{ display: "block" }}>
+              <span style={fieldLabel}>Current password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={pw.current}
+                onChange={(e) => {
+                  setPw((p) => ({ ...p, current: e.target.value }));
+                  setPwSaved(false);
+                }}
+                className="v3-field"
+                style={fieldInput}
+              />
+            </label>
             <label style={{ display: "block" }}>
               <span style={fieldLabel}>New password</span>
               <input
@@ -571,7 +586,7 @@ export default function SettingsView({ profile, refresh }) {
           >
             <button
               onClick={savePassword}
-              disabled={pwSaving || !pw.next || !pw.confirm}
+              disabled={pwSaving || !pw.current || !pw.next || !pw.confirm}
               className="v3-btn-dark"
               style={{
                 background: T.inverse,
@@ -582,7 +597,7 @@ export default function SettingsView({ profile, refresh }) {
                 fontWeight: 700,
                 color: T.onInverse,
                 cursor: pwSaving ? "default" : "pointer",
-                opacity: pwSaving || !pw.next || !pw.confirm ? 0.65 : 1,
+                opacity: pwSaving || !pw.current || !pw.next || !pw.confirm ? 0.65 : 1,
               }}
             >
               {pwSaving ? "Updating…" : "Update password"}

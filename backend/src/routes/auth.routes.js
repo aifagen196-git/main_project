@@ -8,6 +8,8 @@ import { toUsE164 } from "../utils/phone.js";
 import { assuranceLevel } from "../utils/sessionClaims.js";
 import { SUPPORT_EMAIL } from "../config/site.js";
 import { existingAccount } from "../utils/existingAccount.js";
+import { tokenClaims } from "../utils/sessionClaims.js";
+import { clientIp, mfaAccountLimiter, passwordChangeLimiter } from "../middleware/rateLimiter.js";
 
 // Sign-in goes through the backend so the browser never loads the Supabase
 // client, URL or key — it only ever talks to this API.
@@ -17,9 +19,17 @@ import { existingAccount } from "../utils/existingAccount.js";
 // concurrent requests.
 const router = express.Router();
 
-function authClient() {
+// Every sign-in reaches Supabase from this server, so without help Supabase's
+// per-IP limits would count all users together (one attacker could use them
+// up for everyone). Sb-Forwarded-For passes the visitor's IP instead; Supabase
+// honours it for requests made with an sb_secret_ key once "IP address
+// forwarding" is on in the project's Auth rate-limit settings.
+const forwardedFor = (req) => ({ "Sb-Forwarded-For": clientIp(req) });
+
+function authClient(req) {
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: forwardedFor(req) },
   });
 }
 
@@ -109,7 +119,7 @@ router.post("/signup", async (req, res) => {
       message: `This mobile number is already registered. Log in instead, or contact ${SUPPORT_EMAIL}.`,
     });
   }
-  const { data, error } = await authClient().auth.signUp({
+  const { data, error } = await authClient(req).auth.signUp({
     email,
     password,
     options: {
@@ -148,7 +158,7 @@ router.post("/login", async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Email and password are required." });
   }
-  const { data, error } = await authClient().auth.signInWithPassword({ email, password });
+  const { data, error } = await authClient(req).auth.signInWithPassword({ email, password });
   if (error) return fail(res, error, "Could not log in.");
   return res.json({ success: true, session: publicSession(data.session) });
 });
@@ -156,7 +166,7 @@ router.post("/login", async (req, res) => {
 router.post("/refresh", async (req, res) => {
   const refresh_token = str(req.body?.refresh_token, 500);
   if (!refresh_token) return res.status(400).json({ success: false, message: "Missing refresh token." });
-  const { data, error } = await authClient().auth.refreshSession({ refresh_token });
+  const { data, error } = await authClient(req).auth.refreshSession({ refresh_token });
   if (error || !data.session) {
     return res.status(401).json({ success: false, message: "Session expired. Please log in again." });
   }
@@ -166,7 +176,7 @@ router.post("/refresh", async (req, res) => {
 router.post("/forgot", async (req, res) => {
   const email = str(req.body?.email, 254);
   if (!email) return res.status(400).json({ success: false, message: "Email is required." });
-  const { error } = await authClient().auth.resetPasswordForEmail(email, {
+  const { error } = await authClient(req).auth.resetPasswordForEmail(email, {
     redirectTo: `${siteOrigin(req)}/?recovery=1`,
   });
   // Rate limits are worth surfacing; anything else stays generic so this
@@ -181,14 +191,42 @@ router.get("/user", requireAuth, (req, res) => {
   res.json({ success: true, user: publicUser(req.user) });
 });
 
-router.post("/password", requireAuth, async (req, res) => {
+// Signed in through an emailed link (password reset, sign-up confirmation)
+// within the last hour: the person has just proved they own the email, and a
+// reset has no old password to ask for.
+const EMAIL_LINK_METHODS = ["recovery", "otp", "magiclink", "email/signup", "invite"];
+function viaEmailLink(req) {
+  const amr = tokenClaims(req).amr;
+  const hourAgo = Date.now() / 1000 - 3600;
+  return Array.isArray(amr) && amr.some((a) => EMAIL_LINK_METHODS.includes(a?.method) && a.timestamp > hourAgo);
+}
+
+// Changing the password needs the current one (so a stolen session can't
+// lock the owner out), except right after a reset link. Supabase signs out
+// every session on a password change, this one included, so this device is
+// signed straight back in and gets a fresh session; other devices stay out.
+router.post("/password", requireAuth, passwordChangeLimiter, async (req, res) => {
   const password = typeof req.body?.password === "string" ? req.body.password : "";
+  const current = typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
   if (password.length < 8) {
     return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
   }
+  if (!viaEmailLink(req)) {
+    if (!current) {
+      return res.status(400).json({ success: false, code: "CURRENT_PASSWORD_REQUIRED", message: "Enter your current password." });
+    }
+    const check = await authClient(req).auth.signInWithPassword({ email: req.user.email, password: current });
+    if (check.error || !check.data?.session) {
+      return res.status(400).json({ success: false, code: "WRONG_PASSWORD", message: "Your current password isn't right." });
+    }
+    // The check opened a session of its own; close it.
+    await supabase.auth.admin.signOut(check.data.session.access_token, "local").catch(() => {});
+  }
   const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password });
   if (error) return fail(res, error, "Could not update the password.");
-  return res.json({ success: true });
+  const fresh = await authClient(req).auth.signInWithPassword({ email: req.user.email, password });
+  if (fresh.error) console.error("Sign-in after password change failed", fresh.error.message);
+  return res.json({ success: true, session: publicSession(fresh.data?.session) });
 });
 
 router.post("/logout", requireAuth, async (req, res) => {
@@ -206,13 +244,14 @@ router.post("/logout", requireAuth, async (req, res) => {
 // user. If an admin loses their phone, remove their factor in the Supabase
 // dashboard (Authentication → Users → the user → MFA) and they set it up again.
 // ---------------------------------------------------------------------------
-async function gotrue(path, method, token, body) {
+async function gotrue(req, path, method, body) {
   const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/${path}`, {
     method,
     headers: {
       apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${bearer(req)}`,
       "Content-Type": "application/json",
+      ...forwardedFor(req),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -239,9 +278,9 @@ router.post("/mfa/enroll", requireAuth, async (req, res) => {
   if (factors.some((f) => f.status === "verified")) {
     return res.status(409).json({ success: false, message: "An authenticator app is already set up for this account." });
   }
-  for (const f of factors) await gotrue(`factors/${f.id}`, "DELETE", bearer(req));
+  for (const f of factors) await gotrue(req, `factors/${f.id}`, "DELETE");
 
-  const r = await gotrue("factors", "POST", bearer(req), {
+  const r = await gotrue(req, "factors", "POST", {
     factor_type: "totp",
     // Names must be unique per user; two set-ups started together would clash.
     friendly_name: `Authenticator ${new Date().toISOString().slice(0, 10)} ${Math.random().toString(36).slice(2, 6)}`,
@@ -264,17 +303,17 @@ router.post("/mfa/enroll", requireAuth, async (req, res) => {
 
 // Check a 6-digit code. On success the session is upgraded to aal2 and the
 // new session is returned (the browser swaps it in).
-router.post("/mfa/verify", requireAuth, async (req, res) => {
+router.post("/mfa/verify", requireAuth, mfaAccountLimiter, async (req, res) => {
   const factorId = typeof req.body?.factorId === "string" ? req.body.factorId : "";
   const code = String(req.body?.code || "").replace(/\D/g, "");
   if (!/^[0-9a-f-]{36}$/i.test(factorId) || code.length !== 6) {
     return res.status(400).json({ success: false, message: "Enter the 6-digit code from your authenticator app." });
   }
-  const ch = await gotrue(`factors/${factorId}/challenge`, "POST", bearer(req), {});
+  const ch = await gotrue(req, `factors/${factorId}/challenge`, "POST", {});
   if (!ch.ok || !ch.data?.id) {
     return res.status(400).json({ success: false, message: "Could not check the code. Please try again." });
   }
-  const v = await gotrue(`factors/${factorId}/verify`, "POST", bearer(req), { challenge_id: ch.data.id, code });
+  const v = await gotrue(req, `factors/${factorId}/verify`, "POST", { challenge_id: ch.data.id, code });
   if (!v.ok || !v.data?.access_token) {
     return res.status(400).json({ success: false, message: "That code didn't match. Check the time on your phone and try the newest code." });
   }
