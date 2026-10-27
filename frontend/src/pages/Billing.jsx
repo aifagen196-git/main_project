@@ -43,6 +43,7 @@ export default function Billing({ profile }) {
   const plan = profile?.plan || "none";
   const status = profile?.subscription_status || "inactive";
   const paid = isPaidPlan(plan);
+  const trial = status === "trialing";
   const Icon = plan === "premium" ? Crown : plan === "basic" ? Rocket : Star;
   const meta = STATUS_META[status] || STATUS_META.inactive;
 
@@ -168,9 +169,14 @@ export default function Billing({ profile }) {
               }}
             >
               <Icon size={24} />
-              {PLAN_LABEL[plan] || "No plan"}
+              {trial ? "Free trial" : PLAN_LABEL[plan] || "No plan"}
             </div>
-            {profile?.billing_cycle && (
+            {trial && (
+              <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6" }}>
+                Basic features, no payment
+              </p>
+            )}
+            {!trial && profile?.billing_cycle && (
               <p style={{ margin: "6px 0 0", fontSize: 13, color: "#B9C2D6" }}>
                 {BILLING_CYCLE_LABEL[profile.billing_cycle] || profile.billing_cycle}
               </p>
@@ -213,7 +219,7 @@ export default function Billing({ profile }) {
               cursor: "pointer",
             }}
           >
-            {paid ? "Change plan" : "See plans"}
+            {trial ? "Choose a plan" : paid ? "Extend or change plan" : "See plans"}
           </button>
         </div>
       </div>
@@ -253,11 +259,12 @@ export default function Billing({ profile }) {
         >
           <div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: B.ink }}>
-              Change or renew your plan
+              Extend or change your plan
             </div>
             <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.6, color: B.muted }}>
-              Head to Plans &amp; pricing — a new plan runs a new checkout and
-              takes effect right away.
+              Head to Plans &amp; pricing. The plan you choose applies right
+              away, and its time is added after the time you have left — paying
+              early never loses days.
             </p>
             <button
               onClick={() => navigate("/pricing")}

@@ -54,8 +54,10 @@ Admins use a second factor (TOTP via Supabase Auth): `/api/auth/mfa`, `/mfa/enro
   from the server (`razorpay.service.js`, never from the browser). After checkout the
   browser calls `/verify`; Razorpay also calls `/api/payments/webhook`. Both end in
   `activatePaidPlan()` (`routes/payments.routes.js`), which applies a payment once
-  (keyed on the payment id) and starts the paid time **after** an unfinished trial, so
-  paying early loses no free days.
+  (keyed on the payment id). The plan bought applies right away and its time is added
+  **after** any time left, free trial or paid (`paidTimeStartsAt`), so paying early
+  never loses days and customers can extend their current plan. Basic can't be ordered
+  while Premium runs (`PLAN_INCLUDED`).
 - Webhook signatures are verified against `RAZORPAY_WEBHOOK_SECRET`; a failed handler
   returns 500 so Razorpay retries, and the idempotent activation makes retries safe.
 - Manual / cash payments are only *recorded* by admins (`manual_payments`); they do not

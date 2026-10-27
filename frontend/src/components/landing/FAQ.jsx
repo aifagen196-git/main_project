@@ -5,7 +5,7 @@ import { useRevealChildren } from "./motion";
 const FAQS = [
   {
     q: "Can I change my plan later?",
-    a: "Yes. Pick a new plan anytime from Billing — it starts right away. Plans never renew automatically, so there's nothing to cancel.",
+    a: "Yes. Pick a new plan any time from Billing — it applies right away, and any time you have left is kept. Plans never renew automatically, so there's nothing to cancel.",
   },
   {
     q: "Is there a free trial?",

@@ -36,6 +36,7 @@ const COLS = [
   { k: "offer", label: "Offer", hex: A.clay },
   { k: "rejected", label: "Closed", hex: A.faint },
 ];
+const statusLabel = (k) => COLS.find((c) => c.k === k)?.label || k;
 
 /** "12 Aug 2026" for the tracker's date column. */
 function formatWhen(value) {
@@ -376,7 +377,7 @@ export default function Applications() {
               >
                 {APPLICATION_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {statusLabel(s)}
                   </option>
                 ))}
               </select>
@@ -693,8 +694,8 @@ export default function Applications() {
                     }}
                   >
                     {APPLICATION_STATUSES.map((s) => (
-                      <option key={s} value={s} style={{ textTransform: "capitalize" }}>
-                        {s}
+                      <option key={s} value={s}>
+                        {statusLabel(s)}
                       </option>
                     ))}
                   </select>

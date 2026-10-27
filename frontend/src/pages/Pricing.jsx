@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Loader2, LogOut, Shield, CreditCard, Lock, HelpCircle } from "lucide-react";
 
-import { PRICING_CARDS } from "../utils/plan";
+import { PRICING_CARDS, timeLeftUntil } from "../utils/plan";
 import { startCheckout, startFreeTrial } from "../services/subscription";
 import { signOut } from "../services/auth";
 import ConfirmPayment from "../components/ConfirmPayment";
@@ -14,8 +14,10 @@ import ConfirmPayment from "../components/ConfirmPayment";
  *  - onboarding: full-screen gate for an account with no plan, with its own
  *    header (no sidebar yet). Offers the 7-day free trial (no payment, one
  *    per account and mobile number) or paying straight away.
- *  - in-app (/pricing, inside AppShell): reached from Billing; a trial user
- *    can pay here at any time and the paid time starts when the trial ends.
+ *  - in-app (/pricing, inside AppShell): reached from Billing. Paying here
+ *    never loses time: the plan applies right away and its time is added
+ *    after any time left (trial or paid). The current plan can be bought
+ *    again to extend it; Basic is shown as included while Premium runs.
  *
  * Paying runs a Razorpay order + verify (services/subscription.js) and charges
  * immediately. Nothing renews automatically.
@@ -77,12 +79,13 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
         ? "free trial"
         : "plan"
       : null;
-  // Paying during the free trial keeps the free days: the server starts the
-  // paid time when the trial ends (activatePaidPlan).
-  const trialEnd =
-    profile?.subscription_status === "trialing" && profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date()
-      ? new Date(profile.trial_ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric" })
-      : null;
+  // Paying never loses time: the plan bought applies right away and the
+  // server adds its time after any time left — free trial or paid
+  // (paidTimeStartsAt in payments.routes.js).
+  const endsAt = timeLeftUntil(profile);
+  const endsOn = endsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const onTrial = Boolean(endsAt) && profile?.subscription_status === "trialing";
+  const onPaidPlan = Boolean(endsAt) && profile?.subscription_status === "active";
   const confirm = pending && (
     <ConfirmPayment
       title="Confirm your plan"
@@ -92,8 +95,10 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       ]}
       total={`$${pending.price.toLocaleString("en-US")}`}
       note={
-        trialEnd
-          ? `You'll be charged once today and your plan unlocks right away. You keep your free days: the paid time starts when your trial ends on ${trialEnd}.`
+        onTrial
+          ? `You'll be charged once today and your plan unlocks right away. You keep your free days: the paid time starts when your trial ends on ${endsOn}.`
+          : onPaidPlan
+          ? `You'll be charged once today${monthly ? " for one month" : ""}. The plan applies right away, and its time is added after your current plan ends on ${endsOn}, so you lose no days.`
           : monthly
           ? "You'll be charged once today for one month, and your plan unlocks right after payment. It doesn't renew automatically."
           : "You'll be charged once today and your plan unlocks right after payment."
@@ -119,7 +124,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
             color: P.ink,
           }}
         >
-          {onboarding ? "Choose your plan to get started" : "Plans & pricing"}
+          {onboarding ? (endedWhat ? "Choose a plan to continue" : "Choose your plan to get started") : "Plans & pricing"}
         </h1>
         <p
           style={{
@@ -134,9 +139,11 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
             ? profile?.trial_eligible
               ? "Start with a free 7-day trial, or pick a plan to unlock your dashboard now."
               : "Pick a plan to unlock your dashboard. You pay once — nothing renews automatically."
-            : profile?.subscription_status === "trialing"
+            : onTrial
             ? "Enjoying the trial? Pay now and your paid time starts when the free trial ends — you keep your free days."
-            : "Change plans anytime. Charges apply immediately for the new plan."}
+            : onPaidPlan
+            ? `Extend or change your plan any time. The plan you choose applies right away, and its time is added after your current plan ends on ${endsOn} — paying early never loses days.`
+            : "Pick a plan. You pay once — nothing renews automatically."}
         </p>
       </div>
 
@@ -213,7 +220,11 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
       >
         {PRICING_CARDS.map((p) => {
           const key = `${p.id}:${p.billingCycle}`;
-          const isCurrent = currentPlan === p.id && currentCycle === p.billingCycle;
+          // Buying the current plan again extends it. Basic is part of
+          // Premium, so it can't be bought while Premium runs (the server
+          // refuses it too).
+          const isCurrent = onPaidPlan && currentPlan === p.id && currentCycle === p.billingCycle;
+          const included = onPaidPlan && currentPlan === "premium" && p.id === "basic";
           return (
             <div
               key={key}
@@ -309,7 +320,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   setErr("");
                   setPending(p);
                 }}
-                disabled={busy !== null || isCurrent}
+                disabled={busy !== null || included}
                 style={{
                   width: "100%",
                   marginTop: 20,
@@ -317,15 +328,15 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  background: isCurrent ? P.page : p.popular ? P.brand : "var(--surface)",
-                  border: `1px solid ${isCurrent ? P.line : p.popular ? P.brand : P.lineMid}`,
+                  background: included ? P.page : p.popular ? P.brand : "var(--surface)",
+                  border: `1px solid ${included ? P.line : p.popular ? P.brand : P.lineMid}`,
                   borderRadius: 12,
                   padding: 13,
                   fontSize: 13.5,
                   fontWeight: 700,
                   fontFamily: "inherit",
-                  color: isCurrent ? P.muted : p.popular ? "#fff" : P.ink,
-                  cursor: busy !== null || isCurrent ? "default" : "pointer",
+                  color: included ? P.muted : p.popular ? "#fff" : P.ink,
+                  cursor: busy !== null || included ? "default" : "pointer",
                   opacity: busy !== null && busy !== key ? 0.55 : 1,
                 }}
               >
@@ -333,8 +344,10 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
                   <>
                     <Loader2 size={15} className="animate-spin" /> Please wait…
                   </>
+                ) : included ? (
+                  "Included in your plan"
                 ) : isCurrent ? (
-                  "Current plan"
+                  "Your plan — extend it"
                 ) : (
                   p.cta
                 )}
@@ -485,7 +498,7 @@ export default function Pricing({ profile, refresh, onboarding = false }) {
               color: P.muted,
             }}
           >
-            Welcome, {profile.full_name.split(" ")[0]} 👋
+            {endedWhat ? "Welcome back" : "Welcome"}, {profile.full_name.split(" ")[0]} 👋
           </p>
         )}
         {grid}

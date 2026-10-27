@@ -487,8 +487,8 @@ export default function JobMatches({ saved, toggle }) {
           {isSearch ? `Jobs matching “${query.trim()}”` : "Top job matches for you"}
         </h1>
         <p style={{ margin: "9px 0 0", fontSize: 15, color: M.muted }}>
-          AI-matched opportunities based on your skills, experience and
-          preferences.
+          AI-matched opportunities based on the skills and experience in your
+          resume.
         </p>
       </div>
 

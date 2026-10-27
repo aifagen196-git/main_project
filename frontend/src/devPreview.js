@@ -261,22 +261,21 @@ export async function previewApi(path, method = "GET", body) {
   }
 
   if (route === "/api/internal-jobs") {
-    // Shape matches a real row inserted through the teammate's admin page
-    // (2026-08-31) — that schema has no `company` column, just
-    // `department`/`employment_type`/`skills` — this fixture mirrors it
-    // exactly so the fallback rendering gets exercised in preview too.
+    // Same shape as a row from the admin console: the table has no `company`
+    // column, just `department`/`employment_type`/`skills`, so the page's
+    // fallback rendering is exercised in preview too.
     return {
       jobs: [
         {
           id: "c883eeea-340e-4c46-9b03-3d115e8c0555",
-          title: "full stack",
-          location: "sidipet",
-          description: "sudybcuyaswvbdicuhabsdcgybasw",
+          title: "Full Stack Developer",
+          location: "Remote (US)",
+          description: "Build and ship features across our React front end and Node.js services for a US client team.",
           apply_url: "https://example.com/apply",
           is_active: true,
-          department: "full stack",
-          employment_type: "intership",
-          skills: ["frontend"],
+          department: "Engineering",
+          employment_type: "Full-time",
+          skills: ["React", "Node.js", "PostgreSQL"],
           created_at: new Date().toISOString(),
         },
       ],

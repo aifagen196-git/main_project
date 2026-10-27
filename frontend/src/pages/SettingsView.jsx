@@ -230,7 +230,8 @@ export default function SettingsView({ profile, refresh }) {
           Your account
         </h1>
         <p style={{ margin: "9px 0 0", fontSize: 15, color: T.muted }}>
-          Details here shape which jobs the matcher shows you.
+          Your details, password and theme. Job matches come from your
+          resume — upload a new one on the Resume screen to change them.
         </p>
       </div>
 

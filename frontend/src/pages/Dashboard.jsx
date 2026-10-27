@@ -164,27 +164,18 @@ export default function Dashboard({ profile }) {
   const interviews = applicationsAvailable ? applications.filter((app) =>
     ["interviewing", "assessment"].includes(app.status),
   ).length : null;
-  const offers = applicationsAvailable
-    ? applications.filter((app) => app.status === "offer").length
-    : null;
 
   const stats = [
     {
       t: "Job Matches",
       v: loading || !matchesAvailable ? "--" : String(matches.length),
-      d: loading ? "Loading" : matchesAvailable ? "From your profile" : "Unavailable",
+      d: loading ? "Loading" : matchesAvailable ? "From your resume" : "Unavailable",
       color: D.brand,
     },
     {
       t: "Saved Jobs",
       v: loading || !savedAvailable ? "--" : String(savedIds.length),
-      d: loading
-        ? "Loading"
-        : savedAvailable
-        ? applicationsAvailable
-          ? `${offers} offers tracked`
-          : "Saved from matches"
-        : "Unavailable",
+      d: loading ? "Loading" : savedAvailable ? "Saved from matches" : "Unavailable",
       color: D.clay,
     },
   ];
@@ -209,7 +200,7 @@ export default function Dashboard({ profile }) {
       tag: "Matches",
       color: D.ochre,
       title: "Matched Jobs",
-      text: `${matches.length} jobs are currently ranked against your profile.`,
+      text: `${matches.length} jobs are currently ranked against your resume.`,
       action: "View matches",
       view: "matches",
     },

@@ -115,7 +115,8 @@ export default function Terms({ home, enter, go }) {
         <List
           items={[
             "Fees must be paid in advance and are processed by Razorpay",
-            "Monthly plans cover one month from the date of payment; one-time payment plans are charged once at checkout",
+            "Monthly plans cover one month; one-time payment plans are charged once at checkout",
+            "Plan time starts on the date of payment, or, if you still have time left (a free trial or a current plan), when that time ends, so paying early never shortens your access",
             "Plans do not renew automatically — no further charges are made unless you choose and pay for a new plan",
           ]}
         />

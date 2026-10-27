@@ -45,7 +45,7 @@ Preview mode only works in dev builds.
 ## Tests
 
 ```bash
-cd backend && npm test         # 21 unit tests, about 3 seconds, no database or keys
+cd backend && npm test         # 26 unit tests, about 3 seconds, no database or keys
 cd backend && npm run test:matching   # ranking check: relevant jobs outrank irrelevant ones
 cd frontend && npm run build   # the site must compile
 ```

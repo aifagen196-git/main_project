@@ -24,6 +24,13 @@ import {
 } from "../services/resume/resumeOwnership.js";
 import { SUPPORT_EMAIL } from "../config/site.js";
 
+// Every AI step on this page counts toward the daily limit (consume_ai_usage):
+// 20 a day on Basic and the free trial, unlimited on Premium.
+const AI_LIMIT_REPLY = {
+  success: false,
+  code: "AI_LIMIT",
+  message: "You've used today's 20 AI resume checks (the Basic and free-trial limit). Please try again tomorrow, or move to Premium for unlimited checks.",
+};
 
 const router = express.Router();
 
@@ -243,11 +250,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     });
     if (!allowed) {
       await supabase.storage.from("resumes").remove([path]).catch(() => {});
-      return res.status(429).json({
-        success: false,
-        code: "AI_LIMIT",
-        message: "You've reached today's limit for resume checks. Please try again tomorrow.",
-      });
+      return res.status(429).json(AI_LIMIT_REPLY);
     }
   }
 
@@ -364,7 +367,7 @@ router.post("/:id/analyze", async (req, res) => {
     // can attribute the usage row it created.
     return await withAiContext({ userId: req.user.id, feature: "resume_analyze" }, async () => {
     if (!(await consumeAiUsage(req.user.id))) {
-      return res.status(429).json({ success: false, message: "AI plan inactive or daily limit reached" });
+      return res.status(429).json(AI_LIMIT_REPLY);
     }
     const analysis = await analyzeResume(row.extracted_text);
     // Preserve the cached rewrite/improvement across re-analysis.
@@ -433,7 +436,7 @@ router.post("/:id/rewrite/docx", async (req, res) => {
     let rewritten = row.ai_analysis?.rewrite;
     if (!rewritten || typeof rewritten !== "object" || !rewritten.experience) {
       if (!(await consumeAiUsage(req.user.id))) {
-        return res.status(429).json({ success: false, message: "AI plan inactive or daily limit reached" });
+        return res.status(429).json(AI_LIMIT_REPLY);
       }
       rewritten = await rewriteResume(row.extracted_text);
       // Cache failure is non-fatal — the download still proceeds.
@@ -481,7 +484,7 @@ router.post("/:id/improve", async (req, res) => {
       return res.json({ success: true, improvement: cached, cached: true });
     }
     if (!(await consumeAiUsage(req.user.id))) {
-      return res.status(429).json({ success: false, message: "AI plan inactive or daily limit reached" });
+      return res.status(429).json(AI_LIMIT_REPLY);
     }
     const improvement = await improveResume(row.extracted_text);
     const { error: cErr } = await supabase

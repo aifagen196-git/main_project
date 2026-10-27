@@ -3,7 +3,8 @@
 Base address: `https://aifagenlabs.com/api` (same origin as the website). Every reply is
 JSON: `{ "success": true, ... }` or `{ "success": false, "message": "..." }`, sometimes
 with a `code` (`PLAN_REQUIRED`, `VERIFICATION_REQUIRED`, `MFA_REQUIRED`, `TRIAL_USED`,
-`AI_LIMIT`, `TOO_MANY_PAGES`, `NAME_MISMATCH`, `AREA_MISMATCH`, `UNREADABLE_RESUME`).
+`AI_LIMIT`, `TOO_MANY_PAGES`, `NAME_MISMATCH`, `AREA_MISMATCH`, `UNREADABLE_RESUME`,
+`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`, `PLAN_INCLUDED`).
 
 Protected routes need `Authorization: Bearer <access token>`.
 Status codes: 400 bad input, 401 not signed in, 402 plan needed, 403 not allowed
@@ -51,7 +52,7 @@ user; uploads and AI writes 20 per 10 min; matches 30 per minute; see
 | Method and path | Access | Purpose |
 |---|---|---|
 | `POST /trial` | login (verified) | start the 7-day free trial; 409 `TRIAL_USED` if taken |
-| `POST /order` | login (verified) | `plan, billingCycle`; creates a Razorpay order, price set by the server |
+| `POST /order` | login (verified) | `plan, billingCycle`; creates a Razorpay order, price set by the server; 409 `PLAN_INCLUDED` for Basic while Premium runs. Paid time is added after any time left |
 | `POST /verify` | login (verified) | Razorpay `razorpay_order_id, razorpay_payment_id, razorpay_signature`; activates the plan |
 | `POST /webhook` | public, signed | Razorpay events `payment.captured`, `order.paid`; signature header required |
 

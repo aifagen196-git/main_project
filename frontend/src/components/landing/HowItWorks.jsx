@@ -3,7 +3,7 @@ import { V3, v3Kicker, h2Style } from "./theme";
 import { useRevealChildren } from "./motion";
 
 const STEP_CARDS = [
-  { t: "Create Your Profile", d: "Add your experience and career preferences.", icon: Upload },
+  { t: "Create Your Profile", d: "Sign up and upload your resume — we read your skills and experience.", icon: Upload },
   { t: "AI Finds Best Matches", d: "We scan thousands of jobs to find the perfect ones for you.", icon: Search },
   { t: "Optimize & Apply", d: "AI optimizes your resume and creates tailored applications.", icon: Wand2 },
   { t: "Get Interviews", d: "Stand out, get noticed, and land more interviews.", icon: Mic },

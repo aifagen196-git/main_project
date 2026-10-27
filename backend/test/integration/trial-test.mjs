@@ -56,7 +56,7 @@ async function webhook(orderId, paymentId) {
   return { status, out };
 }
 const near = (a, b, ms = 5 * 60e3) => Math.abs(new Date(a) - new Date(b)) < ms;
-const addMonth = (d) => { const x = new Date(d); x.setMonth(x.getMonth() + 1); return x; };
+const addMonth = (d, n = 1) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
 
 try {
   const A = await makeUser("a", PHONE_A);
@@ -112,14 +112,19 @@ try {
   const bAfter = await profileRow(B.id);
   check("B pays without a trial: month starts now", bAfter.subscription_status === "active" && near(bAfter.current_period_end, addMonth(new Date())), bAfter.current_period_end);
 
-  // ---- Community orders are ignored by the webhook
-  const co = await fetch(API + "/api/community/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-  const cob = await j(co);
-  if (cob.order?.id) {
-    const before2 = await profileRow(B.id);
-    await webhook(cob.order.id, `pay_TEST${tag}COMM`);
-    check("Community payment doesn't touch any plan", (await profileRow(B.id)).razorpay_payment_id === before2.razorpay_payment_id);
-  } else console.log(`SKIP  community webhook (community checkout ${co.status}: ${cob.message || ""})`);
+  // ---- B pays again with time left: the new month is added after it
+  const ob2 = await api(B, "POST", "/api/payments/order", { plan: "basic", billingCycle: "monthly" });
+  await webhook(ob2.body.order.id, `pay_TEST${tag}B2`);
+  const bExt = await profileRow(B.id);
+  check("B pays again early: month added after the current one", near(bExt.current_period_end, addMonth(bAfter.current_period_end)), bExt.current_period_end);
+
+  // ---- B upgrades: Premium applies now, its 6 months come after the time left
+  const op = await api(B, "POST", "/api/payments/order", { plan: "premium", billingCycle: "semiannual" });
+  await webhook(op.body.order.id, `pay_TEST${tag}BP`);
+  const bPrem = await profileRow(B.id);
+  check("B upgrades: Premium now, time added after", bPrem.plan === "premium" && near(bPrem.current_period_end, addMonth(bExt.current_period_end, 6)), `${bPrem.plan} ${bPrem.current_period_end}`);
+  const ob3 = await api(B, "POST", "/api/payments/order", { plan: "basic", billingCycle: "monthly" });
+  check("B on Premium can't order Basic", ob3.status === 409 && ob3.body.code === "PLAN_INCLUDED", `${ob3.status} ${ob3.body.code}`);
 
   // ---- C: trial ends → access stops
   const tc = await api(C, "POST", "/api/payments/trial");

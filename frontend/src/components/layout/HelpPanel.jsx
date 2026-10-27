@@ -38,7 +38,7 @@ const FAQS = [
   },
   {
     q: "How do I change my plan?",
-    a: "Open Billing and choose View plans — the new plan starts right away. Plans never renew automatically: when yours ends, pick a plan again to keep going. Questions about a payment? Email info@aifagenlabs.com.",
+    a: `Open Billing and choose View plans. The plan you pick applies right away, and its time is added after the time you have left, so paying early never loses days. Plans never renew automatically: to keep going, extend before yours ends or pick a plan again after. Questions about a payment? Email ${SUPPORT_EMAIL}.`,
   },
 ];
 

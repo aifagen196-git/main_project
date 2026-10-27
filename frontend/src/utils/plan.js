@@ -40,6 +40,13 @@ export function isSubscribed(profile) {
   );
 }
 
+/** End of the plan time the account still has (free trial or paid), or null.
+ *  Paying adds the new time after this (paidTimeStartsAt on the server). */
+export function timeLeftUntil(profile, now = new Date()) {
+  const end = profile?.current_period_end ? new Date(profile.current_period_end) : null;
+  return isSubscribed(profile) && end && end > now ? end : null;
+}
+
 /** Days left in a free trial, rounded up (1 on the last day; 0 once it has
  *  ended), or null if not in one. 3.5 days left reads as 4, not 3. */
 export function trialDaysLeft(profile) {

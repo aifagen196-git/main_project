@@ -22,14 +22,36 @@ export function periodEndFor(billingCycle, from = new Date()) {
 // Two paid tiers — Basic can be billed monthly or every 6 months (same
 // features either way); Premium is 6-monthly only. See razorpay.service.js's
 // PRICING for the actual amounts (source of truth) and
-// frontend/src/utils/plan.js for display copy. No free tier: profiles.plan
-// starts at 'none' and stays there until checkout completes.
+// frontend/src/utils/plan.js for display copy. profiles.plan starts at 'none'
+// and changes with the free trial (/trial) or a payment.
 export const VALID_PAIRS = new Set(["basic:monthly", "basic:semiannual", "premium:semiannual"]);
+
+// Time left on the account's current plan (free trial or paid), or null.
+function timeLeftUntil(profile, now = new Date()) {
+  const end = profile?.current_period_end ? new Date(profile.current_period_end) : null;
+  const running =
+    ["active", "trialing"].includes(profile?.subscription_status) &&
+    ["basic", "premium"].includes(profile?.plan);
+  return running && end && end > now ? end : null;
+}
+
+// When newly bought time begins. Paying never loses time: if the account
+// still has time left (free trial or a paid plan), the new time is added
+// after it; otherwise it starts now.
+export function paidTimeStartsAt(profile, now = new Date()) {
+  return timeLeftUntil(profile, now) || now;
+}
+
+// Premium includes everything in Basic, so buying Basic while Premium runs
+// would only downgrade the account.
+export function basicWhilePremium(profile, plan, now = new Date()) {
+  return plan === "basic" && profile?.plan === "premium" && Boolean(timeLeftUntil(profile, now));
+}
 
 // Turns on a paid plan for one Razorpay payment. Used by /verify and by the
 // webhook, so whichever arrives first applies it and the other is a no-op
-// (same payment id). Paying during the free trial keeps the free days: the
-// paid time starts when the trial would have ended, not at the payment.
+// (same payment id). The plan bought applies right away; its time is added
+// after any time left (paidTimeStartsAt).
 export async function activatePaidPlan({ userId, plan, billingCycle, paymentId, orderId }) {
   const { data: current, error } = await supabase
     .from("profiles")
@@ -39,8 +61,7 @@ export async function activatePaidPlan({ userId, plan, billingCycle, paymentId, 
   if (error) throw error;
   if (current.razorpay_payment_id === paymentId) return { profile: current, already: true };
 
-  const trialEnd = current.trial_ends_at ? new Date(current.trial_ends_at) : null;
-  const from = trialEnd && trialEnd > new Date() ? trialEnd : new Date();
+  const from = paidTimeStartsAt(current);
 
   const { data, error: upErr } = await supabase
     .from("profiles")
@@ -70,6 +91,23 @@ router.post("/order", async (req, res) => {
   const { plan, billingCycle } = req.body || {};
   if (!VALID_PAIRS.has(`${plan}:${billingCycle}`)) {
     return res.status(400).json({ success: false, message: "Invalid plan/billing cycle" });
+  }
+
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, current_period_end")
+    .eq("id", req.user.id)
+    .single();
+  if (profileErr) {
+    console.error("Order: profile lookup failed", profileErr);
+    return res.status(500).json({ success: false, message: "Could not create order" });
+  }
+  if (basicWhilePremium(profile, plan)) {
+    return res.status(409).json({
+      success: false,
+      code: "PLAN_INCLUDED",
+      message: "Your Premium plan already includes everything in Basic.",
+    });
   }
 
   try {
