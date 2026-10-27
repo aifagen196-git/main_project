@@ -33,7 +33,12 @@ through the API, which holds the secret key, so the browser can be treated as un
 | `requireVerified` | email address confirmed |
 | `requireActivePlan` | plan is `basic`/`premium`, status `active`/`trialing`, end date not passed (cached 60 s, never past the end date) |
 | `requireAdmin` | the user is in the `admins` table **and** the session passed the authenticator-app step (`aal2`) |
-| rate limiters | per user for signed-in routes, per IP for sign-in routes (Caddy appends the real IP as the last `X-Forwarded-For` entry) |
+| rate limiters | per user for signed-in routes, per IP for sign-in routes (Caddy sets `X-Forwarded-For` to the real IP; the API container isn't reachable otherwise), plus per-account limits on wrong passwords, codes and emails (see `docs/API.md`) |
+
+Supabase sees every sign-in coming from this server, so the API passes the visitor's IP
+in `Sb-Forwarded-For`; Supabase uses it for its own per-IP limits once "IP address
+forwarding" is on (Authentication, Rate Limits) and the server uses the `sb_secret_` key.
+Changing a password needs the current one, except within an hour of a reset link.
 
 4. The database is a second wall: row-level security is on and client write grants are
    revoked (migration 0020). Plan columns on `profiles` are protected by a trigger, so

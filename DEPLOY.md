@@ -35,7 +35,9 @@ community link is in the website code, not a setting.
 ## First-time setup
 
 1. Create the Supabase project and run every file in `supabase/migrations/` in order in
-   the SQL Editor. In Supabase turn **off** "Allow anonymous sign-ins".
+   the SQL Editor. In Supabase turn **off** "Allow anonymous sign-ins", and under
+   Authentication, Rate Limits turn **on** "IP address forwarding" (otherwise Supabase
+   counts all users' sign-ins as one visitor, this server).
 2. Point DNS for `aifagenlabs.com`, `www` and `api` at the server; open ports 80 and 443.
 3. Create `.env` as above, then:
    ```bash
@@ -104,3 +106,7 @@ for 12 hours, and can start a run if `GITHUB_TOKEN` is set.
   build arguments; the website no longer uses them. Harmless; remove when convenient.
 - The production Caddyfile does not set a Content-Security-Policy; the website adds its
   own through the built `index.html` (see `frontend/vite.config.js`).
+- The `api.aifagenlabs.com` block in the Caddyfile adds `Access-Control-Allow-Origin "*"`
+  and its two companion headers, which override the API's own allowed-origins list.
+  Remove those three lines (put the admin console's address in `CORS_ORIGIN` first if
+  it uses that domain).

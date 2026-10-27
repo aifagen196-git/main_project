@@ -4,7 +4,8 @@ Base address: `https://aifagenlabs.com/api` (same origin as the website). Every 
 JSON: `{ "success": true, ... }` or `{ "success": false, "message": "..." }`, sometimes
 with a `code` (`PLAN_REQUIRED`, `VERIFICATION_REQUIRED`, `MFA_REQUIRED`, `TRIAL_USED`,
 `AI_LIMIT`, `TOO_MANY_PAGES`, `NAME_MISMATCH`, `AREA_MISMATCH`, `UNREADABLE_RESUME`,
-`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`, `PLAN_INCLUDED`).
+`EMAIL_TAKEN`, `EMAIL_NOT_CONFIRMED`, `PLAN_INCLUDED`, `CURRENT_PASSWORD_REQUIRED`,
+`WRONG_PASSWORD`).
 
 Protected routes need `Authorization: Bearer <access token>`.
 Status codes: 400 bad input, 401 not signed in, 402 plan needed, 403 not allowed
@@ -14,9 +15,17 @@ cap reached), 413 too large, 422 resume rejected, 429 limit reached, 5xx server.
 **Access column:** *public* = no login; *login* = signed in; *plan* = signed in, email
 verified and an active plan or trial; *admin* = admin account with two-step sign-in.
 
-Limits: sign-in routes 30 per 10 min per IP; other signed-in routes 120 per minute per
-user; uploads and AI writes 20 per 10 min; matches 30 per minute; see
-`backend/src/app.js` for the rest.
+Limits (all in `backend/src/middleware/rateLimiter.js`):
+
+| What | Limit |
+|---|---|
+| Sign-in, sign-up, reset, code check | 30 per 10 min per IP |
+| Wrong passwords on one account | 10 per 15 min, from any IP |
+| Reset / sign-up emails to one address | 5 per hour |
+| Wrong authenticator codes on one account | 10 per 15 min |
+| Wrong current passwords (password change) | 5 per 15 min per account |
+| Session refresh | 60 per 10 min per IP; other `/auth` calls 300 per 10 min per IP |
+| Signed-in routes | 120 per minute per user; uploads and AI writes 20 per 10 min; matches 30 per minute |
 
 ## Health
 
@@ -33,7 +42,7 @@ user; uploads and AI writes 20 per 10 min; matches 30 per minute; see
 | `POST /refresh` | public | `refresh_token`; returns a new session |
 | `POST /forgot` | public | `email`; always answers success (no account probing) |
 | `GET /user` | login | the signed-in user |
-| `POST /password` | login | `password` (8+) |
+| `POST /password` | login | `password` (8+), `currentPassword` (not needed within an hour of a reset link; `CURRENT_PASSWORD_REQUIRED`, `WRONG_PASSWORD`). Signs out every other session and returns a fresh `session` for this one |
 | `POST /logout` | login | ends the session |
 | `GET /mfa` | login | `aal` and the user's authenticator apps |
 | `POST /mfa/enroll` | login | first-time set-up: returns `qrCode`, `secret`, `factorId` |

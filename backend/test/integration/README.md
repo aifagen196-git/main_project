@@ -8,6 +8,8 @@ production data unless you mean to; a separate test Supabase project is better.
 
 1. Start the server: `cd backend && npm run dev` (port 5000).
 2. Run one: `npm run test:integration -- key-test` (or `trial-test`, `audit3-test`,
-   `audit4-test`, `mfa-test`), or all with `npm run test:integration`.
+   `audit4-test`, `mfa-test`, `security-test`), or all with `npm run test:integration`.
+   `security-test` covers the brute-force limits and password change; run it against a
+   local server only (it relies on setting `X-Forwarded-For`, which Caddy overwrites).
 
 Each prints PASS/FAIL lines and a RESULT line; the exit code is 1 on any failure.
