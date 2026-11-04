@@ -10,10 +10,8 @@ import { DEV_PREVIEW } from "./devPreview";
 import AppShell from "./components/layout/AppShell";
 import Pricing from "./pages/Pricing";
 import AboutPage from "./components/marketing/AboutPage";
-import InnovationLabs from "./components/marketing/InnovationLabs";
 import CaseStudies from "./components/marketing/CaseStudies";
 import Services from "./components/marketing/Services";
-import Products from "./components/marketing/Products";
 import Contact from "./components/marketing/Contact";
 import Collaborate from "./components/marketing/Collaborate";
 import Partners from "./components/marketing/Partners";
@@ -42,10 +40,8 @@ const legalPageAt = (path) => LEGAL_PAGES[path.replace(/\/+$/, "")] || null;
 // Inner marketing pages by id (the landing page is the default).
 const MARKETING_PAGES = {
   about: AboutPage,
-  innovation: InnovationLabs,
   caseStudies: CaseStudies,
   services: Services,
-  products: Products,
   contact: Contact,
   collaborate: Collaborate,
   partners: Partners,
