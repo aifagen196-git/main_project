@@ -11,7 +11,7 @@
 --      insert/update, whatever collector writes the row.
 --   4. adds a full-text index on the description, which is much smaller.
 --      Keyword search (backend searchJobs) now matches descriptions by whole
---      words through this index; title and company keep their trigram
+--      words (all of them, not as a phrase) through this index; title and company keep their trigram
 --      indexes for partial matches.
 --
 -- Run it in the Supabase SQL Editor. Steps 2 and 3 rewrite many rows and can

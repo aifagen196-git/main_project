@@ -631,10 +631,12 @@ export async function searchJobs(userId, q, limit = 100) {
     .select("*")
     .eq("is_active", true)
     // Title and company match any part of the text (trigram indexes);
-    // descriptions match the words as a phrase (like the old ILIKE) through
-    // the full-text index from migration 0031, which replaced the much larger
-    // description trigram index.
-    .or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.phfts(english).${safe}`)
+    // descriptions must contain all the words, through the full-text index
+    // from migration 0031 (which replaced the much larger description trigram
+    // index). Not a phrase match: the index stores no word positions, so a
+    // phrase check re-reads every candidate and "data engineer" timed out;
+    // all-words takes 1-2s.
+    .or(`title.ilike.%${safe}%,company.ilike.%${safe}%,description.wfts(english).${safe}`)
     .limit(600);
   if (error) throw error;
 
